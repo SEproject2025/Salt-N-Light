@@ -1,17 +1,21 @@
 [MASTER]
 # Specify a configuration file
-init-hook='import sys; sys.path.append("path/to/your/django/project")'
+init-hook='import sys; sys.path.append("./app")'
+
 [MESSAGES CONTROL]
 # Disable warnings that might not be relevant for beginners
 disable=missing-docstring, invalid-name, too-few-public-methods, no-self-use
+
 [FORMAT]
 # Control line length for better readability
 max-line-length=80
+
 [DESIGN]
 # Set thresholds for complexity and other metrics
 max-args=5
 max-locals=10
 max-module-lines=1000
+
 [django]
 # Enable Django-specific checks
-enable=missing-final-newline, not-callable, no-else-return 
+enable=missing-final-newline, not-callable, no-else-return
