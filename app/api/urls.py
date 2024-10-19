@@ -1,17 +1,17 @@
-from django.urls import path
+from django.urls import path, include
 
 #Imports all views from view.py
-from .           import views
+from . import views
 
 urlpatterns = [
-   #Missionary List, Create URL
-   path('Missionary/',          views.Missionary_LC_view.as_view(),  name = "Missionary-list-create"),
-   #Missionary Retrieve, Update, Delete URL
-   path('Missionary/<int:pk>/', views.Missionary_RUD_view.as_view(), name = "Missionary-retrieve-update-delete"),
+   path('missionaries/', views.missionaries, name = 'missionaries'),
+   path('churches/', views.churches, name = 'churches'),
+   path('users/', views.users, name = 'users'),
+   path('connections_list/', views.connections_list, name = 'connections_list'),
 
-   #Church List, Create URL
-   path('Church/',          views.Church_LC_view.as_view(),  name = "Church-list-create"),
-   #Church Retrieve, Update, Delete URL
-   path('Church/<int:pk>/', views.Church_RUD_view.as_view(), name = "Church-retrieve-update-delete")
+   path('login/', views.login, name='login'),
+   path('signup/', views.signup, name='signup'),  # Optional for registration
+   path('connections/', views.connections_list, name='connections_list'),
+   path('logout/', views.logout_view, name='logout'),
+
 ]
-

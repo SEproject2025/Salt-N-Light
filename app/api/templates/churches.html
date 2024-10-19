@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>Churches:</h1>
+    {% for church in churches %}
+    <h2>{{ church.church_name }}</h2>
+    <ul>
+      <li>
+        <p>
+          <b><i>Pastor's Name: </i></b>{{ church.pastor_name }}
+        </p>
+      </li>
+      <li>
+        <p>
+          <b><i>Church Address: </i></b>{{ church.church_address }}
+        </p>
+      </li>
+      <li>
+        <p>
+          <b><i>Church Email: </i></b>{{ church.email_address }}
+        </p>
+      </li>
+      <li>
+        <p>
+          <b><i>Church Phone Number: </i></b>{{ church.church_number }}
+        </p>
+      </li>
+    </ul>
+    {% endfor %}
+  </body>
+</html>

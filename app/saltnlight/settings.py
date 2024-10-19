@@ -40,11 +40,8 @@ INSTALLED_APPS = [
 
     #My Apps
     'rest_framework',
-    #'corsheaders',
     'api',
 ]
-
-#CORS_ORIGIN_ALLOW_ALL = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
