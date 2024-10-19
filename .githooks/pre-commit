@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+
+import subprocess
+import sys
+
+# Get the current branch name
+current_branch = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], stdout=subprocess.PIPE, text=True).stdout.strip()
+
+# Prevent commits to the main branch
+if current_branch == "main":
+    print("Error: Direct commits to 'main' branch are not allowed.")
+    sys.exit(1)
+
+print("Commit to non-main branch allowed.")

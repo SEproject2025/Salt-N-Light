@@ -1,10 +1,11 @@
 [MASTER]
 # Specify a configuration file
 init-hook='import sys; sys.path.append("./app")'
+load-plugins=pylint_spelling
 
 [MESSAGES CONTROL]
 # Disable warnings that might not be relevant for beginners
-disable=missing-docstring, invalid-name, too-few-public-methods, no-self-use
+disable=missing-docstring, invalid-name, too-few-public-methods
 
 [FORMAT]
 # Control line length for better readability
@@ -19,3 +20,6 @@ max-module-lines=1000
 [django]
 # Enable Django-specific checks
 enable=missing-final-newline, not-callable, no-else-return
+
+[SPELLING]
+ignored-words=jabberwocky

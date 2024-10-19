@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+
+import subprocess
+import sys
+import os
+
+# Define paths
+pylint_config = ".pylintrc"
+project_path = "app/saltnlight"
+
+# Read from stdin to get the references being pushed
+for line in sys.stdin:
+    # Each line contains local_ref, local_sha, remote_ref, remote_sha
+    local_ref, local_sha, remote_ref, remote_sha = line.strip().split()
+    
+    # Check if the remote reference is the main branch
+    if remote_ref == "refs/heads/main":
+        print("Error: Pushing to 'main' branch is not allowed.")
+        sys.exit(1)
+
+print("Push to non-main branch allowed.")
+
+
+# Check for the SKIP_LINT environment variable
+if os.getenv('SKIP_LINT'):
+    print("Skipping Pylint checks.")
+    sys.exit(0)
+
+# Run Pylint
+print("Running Pylint...")
+result = subprocess.run(["pylint", "--rcfile=" + pylint_config, project_path], capture_output=True, text=True)
+
+# Check the exit code
+if result.returncode != 0:
+    print(result.stdout)  # Show Pylint output
+    print("Pylint found issues. Please fix them before pushing.")
+    sys.exit(1)
+
+print("Pylint passed. Proceeding with push.")
+
