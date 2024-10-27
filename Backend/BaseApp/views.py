@@ -1,9 +1,10 @@
 # Imports
-from django.contrib.auth import logout
+from rest_framework.viewsets import ModelViewSet
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from .models import Missionary, Church
+from .serializer import ChurchSerializer
 
 # Gets all church and missionary objects and renders the data on matching.html
 @login_required
@@ -30,3 +31,7 @@ def authView(request):
    else:
       form = UserCreationForm()
    return render(request, "registration/signup.html",{"form": form})
+
+class ChurchViewSet(ModelViewSet):
+   queryset = Church.objects.all()
+   serializer_class = ChurchSerializer
