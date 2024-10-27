@@ -10,7 +10,7 @@
     <tbody>
       <tr v-for="church in churches" :key="church.id">
         <td>{{ church.church_name }}</td>
-        <td>{{ church.church_addresss }}</td>
+        <td>{{ church.church_address }}</td>
         <td>{{ church.pastor_name }}</td>
         <td>{{ church.church_number }}</td>
         <td>{{ church.email_address }}</td>
