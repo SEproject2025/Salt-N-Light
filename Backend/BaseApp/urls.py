@@ -8,8 +8,8 @@ router = routers.DefaultRouter()
 router.register('church', ChurchViewSet)
 
 urlpatterns = [
-   path('routers/', include(router.urls)),
+   path('', include(router.urls)),
    path('matching/', matching, name='matching'),
-   path('', authView, name ="authView"),
+   path('auth/', authView, name ="authView"),
    path('accounts/', include("django.contrib.auth.urls")),
 ]

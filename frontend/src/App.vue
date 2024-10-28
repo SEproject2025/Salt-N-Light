@@ -5,27 +5,27 @@
         type="text"
         class="form-control col-3 mx-2"
         placeholder="Church Name"
-        v-model="church['Church Name']"
-      /><input
-        type="text"
-        class="form-control col-3 mx-2"
-        placeholder="Church Address"
-        v-model="church['Church Address']"
+        v-model="church.church_name"
       /><input
         type="text"
         class="form-control col-3 mx-2"
         placeholder="Pastor Name"
-        v-model="church['Pastor Name']"
+        v-model="church.pastor_name"
+      /><input
+        type="text"
+        class="form-control col-3 mx-2"
+        placeholder="Church Address"
+        v-model="church.church_address"
       /><input
         type="text"
         class="form-control col-3 mx-2"
         placeholder="Church Number"
-        v-model="church['Church Number']"
+        v-model="church.church_number"
       /><input
         type="text"
         class="form-control col-3 mx-2"
         placeholder="Email Address"
-        v-model="church['Email Address']"
+        v-model="church.email_address"
       /><button class="btn btn-success">Submit</button>
     </div>
   </form>
@@ -33,17 +33,19 @@
   <h1>List of Churches:</h1>
   <table class="table">
     <thead>
-      <th>Church Name</th>
-      <th>Address</th>
-      <th>Pastor</th>
-      <th>Phone #</th>
-      <th>Email</th>
+      <tr>
+        <th>Church Name</th>
+        <th>Address</th>
+        <th>Pastor</th>
+        <th>Phone Number</th>
+        <th>Email</th>
+      </tr>
     </thead>
     <tbody>
       <tr
         v-for="church in churches"
         :key="church.id"
-        @dblclick="$data.church = churches"
+        @dblclick="$data.church = church"
       >
         <td>{{ church.church_name }}</td>
         <td>{{ church.church_address }}</td>
@@ -77,23 +79,21 @@ export default {
   },
 
   methods: {
-    submitForm() {
+    async submitForm() {
       if (this.church.id === undefined) {
-        this.createChurch();
+        await this.createChurch();
       } else {
-        this.editChurch();
+        await this.editChurch();
       }
     },
     async getChurches() {
-      var response = await fetch(
-        "http://127.0.0.1:8000/baseapp/routers/church/"
-      );
+      var response = await fetch("http://127.0.0.1:8000/church/");
       this.churches = await response.json();
     },
     async createChurch() {
       await this.getChurches();
-      await fetch("http://127.0.0.1:8000/baseapp/routers/church/", {
-        method: "post",
+      await fetch("http://127.0.0.1:8000/church/", {
+        method: "POST",
         headers: {
           "Content-type": "application/json",
         },
@@ -103,31 +103,25 @@ export default {
     },
     async editChurch() {
       await this.getChurches();
-      await fetch(
-        `http://127.0.0.1:8000/baseapp/routers/church/${this.church.id}/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-type": "application/json",
-          },
-          body: JSON.stringify(this.church),
-        }
-      );
+      await fetch(`http://127.0.0.1:8000/church/${this.church.id}/`, {
+        method: "PUT",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify(this.church),
+      });
       await this.getChurches();
       this.church = {};
     },
     async deleteChurch(church) {
       await this.getChurches();
-      await fetch(
-        `http://127.0.0.1:8000/baseapp/routers/church/${church.id}/`,
-        {
-          method: "delete",
-          headers: {
-            "Content-type": "application/json",
-          },
-          body: JSON.stringify(this.church),
-        }
-      );
+      await fetch(`http://127.0.0.1:8000/church/${church.id}/`, {
+        method: "delete",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify(this.church),
+      });
       await this.getChurches();
     },
   },
