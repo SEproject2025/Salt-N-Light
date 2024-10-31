@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from .models import Missionary, Church
-from .serializer import ChurchSerializer
+from .serializer import ChurchSerializer, MissionarySerializer
 
 # Gets all church and missionary objects and renders the data on matching.html
 @login_required
@@ -35,3 +35,7 @@ def authView(request):
 class ChurchViewSet(ModelViewSet):
    queryset = Church.objects.all()
    serializer_class = ChurchSerializer
+
+class MissionaryViewSet(ModelViewSet):
+   queryset = Missionary.objects.all()
+   serializer_class = MissionarySerializer
