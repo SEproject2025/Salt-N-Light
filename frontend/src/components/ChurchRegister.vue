@@ -93,7 +93,7 @@ export default {
     },
     async createChurch() {
       await this.getChurches();
-      await axios.post("http://127.0.0.1:8000/churchpost/", {
+      await axios.post("http://127.0.0.1:8000/createaccount/", {
         method: "POST",
         headers: {
           "Content-type": "application/json",
