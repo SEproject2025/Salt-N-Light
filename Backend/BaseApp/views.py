@@ -1,8 +1,11 @@
 # Imports
 from rest_framework.viewsets import ModelViewSet
+from rest_framework import status
+from rest_framework.decorators import api_view
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from .models import Missionary, Church
 from .serializer import ChurchSerializer, MissionarySerializer
 
@@ -39,3 +42,9 @@ class ChurchViewSet(ModelViewSet):
 class MissionaryViewSet(ModelViewSet):
    queryset = Missionary.objects.all()
    serializer_class = MissionarySerializer
+
+
+@api_view(['POST'])
+def church_post(request):
+   if request.method =="POST":
+      return JsonResponse({"message": "Request recieved!"}, status=status.HTTP_200_OK)

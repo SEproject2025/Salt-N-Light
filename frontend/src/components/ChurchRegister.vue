@@ -66,6 +66,7 @@
 </template>
 
 <script>
+import axios from "axios";
 export default {
   name: "ChurchRegister",
   data() {
@@ -92,7 +93,7 @@ export default {
     },
     async createChurch() {
       await this.getChurches();
-      await fetch("http://127.0.0.1:8000/church/", {
+      await axios.post("http://127.0.0.1:8000/churchpost/", {
         method: "POST",
         headers: {
           "Content-type": "application/json",

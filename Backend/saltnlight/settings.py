@@ -56,6 +56,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+#List of specified origins that are allowed to perform cross-domain communicatino
 CORS_ORIGIN_WHITELIST = [
    'http://localhost:8080',
 ]
