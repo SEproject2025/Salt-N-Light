@@ -1,3 +1,5 @@
+# pylint: disable=too-many-ancestors
+
 # Imports
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
@@ -45,6 +47,8 @@ class MissionaryViewSet(ModelViewSet):
 
 
 @api_view(['POST'])
-def church_post(request):
-   if request.method =="POST":
-      return JsonResponse({"message": "Request recieved!"}, status=status.HTTP_200_OK)
+def church_post():
+   return JsonResponse(
+      {"message": "Request recieved!"},
+      status=status.HTTP_200_OK
+   )
