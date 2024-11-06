@@ -17,6 +17,7 @@ indent-string="   "
 max-args=5
 max-locals=10
 max-module-lines=1000
+max-parents=15
 
 [django]
 # Enable Django-specific checks
