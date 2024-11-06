@@ -49,22 +49,28 @@ class MissionaryViewSet(ModelViewSet):
 @api_view(['POST'])
 def account_creation(request):
    if request.method =="POST":
-      return JsonResponse({"message": "Request recieved!"}, status=status.HTTP_200_OK)
+      return JsonResponse({"message": "Request recieved!"},
+                          status=status.HTTP_200_OK)
 
 #Mock endpoint that the login page can use for reference
 @api_view(['POST', 'GET'])
 def user_login(request):
    if request.method == "POST":
-      return JsonResponse({"message": "Request recieved!"}, status=status.HTTP_200_OK)
+      return JsonResponse({"message": "Request recieved!"},
+                          status=status.HTTP_200_OK)
    if request.method == "GET":
-      return JsonResponse({"message": "Request recieved!"}, status=status.HTTP_200_OK)
-   
+      return JsonResponse({"message": "Request recieved!"},
+                          status=status.HTTP_200_OK)
+
 #Mock endpoint that the Profile Page can use for reference
 @api_view(['PUT', 'GET', 'POST'])
 def user_profile(request):
    if request.method == 'PUT':
-      return JsonResponse({"message": "Request recieved!"}, status=status.HTTP_200_OK)
+      return JsonResponse({"message": "Request recieved!"},
+                          status=status.HTTP_200_OK)
    if request.method == 'POST':
-      return JsonResponse({"message": "Request recieved!"}, status=status.HTTP_200_OK)
+      return JsonResponse({"message": "Request recieved!"},
+                          status=status.HTTP_200_OK)
    if request.method == 'GET':
-      return JsonResponse({"message": "Request recieved!"}, status=status.HTTP_200_OK)
+      return JsonResponse({"message": "Request recieved!"},
+                          status=status.HTTP_200_OK)
