@@ -3,10 +3,16 @@
     <div class="auth-wrapper">
       <div class="auth-inner">
         <h3>Login</h3>
-        <form>
+        <form @submit.prevent="handleLogin">
           <div class="form-group">
             <label>Email</label>
-            <input type="email" class="form-control" placeholder="Email" />
+            <input
+              type="email"
+              class="form-control"
+              placeholder="Email"
+              v-model="email"
+              required
+            />
           </div>
 
           <div class="form-group">
@@ -15,19 +21,70 @@
               type="password"
               class="form-control"
               placeholder="Password"
+              v-model="password"
+              required
             />
           </div>
 
-          <button class="btn btn-primary btn-block">Login</button>
+          <button class="btn btn-primary btn-block" type="submit">Login</button>
         </form>
+        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   name: "AppLogin",
+  data() {
+    return {
+      email: "",
+      password: "",
+      errorMessage: null,
+    };
+  },
+  methods: {
+    async fetchCSRFToken() {
+      try {
+        // Fetch the CSRF token
+        await axios.get("http://127.0.0.1:8000/login/");
+      } catch (error) {
+        console.error("Error fetching CSRF token:", error);
+      }
+    },
+    async handleLogin() {
+      try {
+        // Send login request with credentials and CSRF token
+        const response = await axios.post(
+          "http://127.0.0.1:8000/login/",
+          {
+            email: this.email,
+            password: this.password,
+          },
+          {
+            headers: {
+              "X-CSRFToken": this.getCookie("csrftoken"),
+            },
+          }
+        );
+        console.log("Login successful:", response.data);
+        this.$router.push("/SearchPage"); // Navigate to dashboard after login
+      } catch (error) {
+        this.errorMessage = error.response?.data?.message || "Login failed.";
+      }
+    },
+    getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(";").shift();
+    },
+  },
+  created() {
+    this.fetchCSRFToken(); // Ensure CSRF token is fetched when the component is created
+  },
 };
 </script>
 
@@ -49,7 +106,6 @@ export default {
   flex-direction: column;
   text-align: left;
 }
-
 .auth-inner {
   width: 450px;
   margin: auto;
@@ -59,20 +115,8 @@ export default {
   border-radius: 15px;
   transition: all 0.3s;
 }
-
-.auth-wrapper .form-control:focus {
-  border-color: #167bff;
-  box-shadow: none;
-}
-.auth-wrapper .form-control:focus {
-  border-color: #ffff;
-  box-shadow: none;
-}
-
-auth-wrapper h3 {
-  text-align: right;
-  margin: 0;
-  line-height: 1;
-  padding-bottom: 20px;
+.error-message {
+  color: red;
+  margin-top: 10px;
 }
 </style>
