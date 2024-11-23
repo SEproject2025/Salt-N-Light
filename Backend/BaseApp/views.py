@@ -1,12 +1,15 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny
 from rest_framework.authentication import SessionAuthentication
 from rest_framework import status
 from django.contrib.auth import login, logout, get_user_model
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
+#from django.http import JsonResponse
+#from django.views.decorators.csrf import csrf_exempt
+#from django.views.decorators.http import require_GET, require_POST
 from .models import User, Supporter, Missionary,\
                     Tag, TagRecord, SearchHistory,\
                     ExternalMedia
@@ -84,7 +87,7 @@ class LoginView(APIView):
 
 # Logout API view
 class LogoutView(APIView):
-   permission_classes = [IsAuthenticated]
+   permission_classes = [AllowAny]
    def post(self, request):
       logout(request)
       return Response({'message':'logout successful'},
@@ -109,7 +112,7 @@ class RegistrationView(APIView):
 # API View for retrieving user details (user type, associated tags)
 User = get_user_model()
 class UserDetailView(APIView):
-   permission_classes = [IsAuthenticated]
+   permission_classes = [AllowAny]
 
    # Retrieves a specific user by thier user ID
    def get(self, _request, pk):

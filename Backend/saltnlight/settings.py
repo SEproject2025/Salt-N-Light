@@ -79,7 +79,7 @@ CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_COOKIE_SECURE = False  
 CSRF_COOKIE_HTTPONLY = False  
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8080',  
+    'http://127.0.0.1:8000', 'http://localhost:8080',  
 ]
 
 # Session Authentication Configurations
