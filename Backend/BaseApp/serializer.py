@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from django.db.utils import OperationalError
 from .models import Tag, SearchHistory, \
     ExternalMedia, Profile, ProfileVote, ProfileComment, \
     Notification, Friendship
@@ -117,17 +118,23 @@ class ProfileSerializer(serializers.ModelSerializer):
       return instance
 
    def get_vote_count(self, obj):
-      upvotes = obj.votes_received.filter(is_upvote=True).count()
-      downvotes = obj.votes_received.filter(is_upvote=False).count()
-      return upvotes - downvotes
+      try:
+         upvotes = obj.votes_received.filter(is_upvote=True).count()
+         downvotes = obj.votes_received.filter(is_upvote=False).count()
+         return upvotes - downvotes
+      except OperationalError:
+         return 0
 
    def get_current_user_vote(self, obj):
-      request = self.context.get('request')
-      if request and request.user.is_authenticated:
-         vote = obj.votes_received.filter(voter=request.user).first()
-         if vote:
-            return vote.is_upvote
-      return None
+      try:
+         request = self.context.get('request')
+         if request and request.user.is_authenticated:
+            vote = obj.votes_received.filter(voter=request.user).first()
+            if vote:
+               return vote.is_upvote
+         return None
+      except OperationalError:
+         return None
 
 # Serializer class for Search History
 
