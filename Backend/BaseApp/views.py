@@ -8,6 +8,7 @@ from .models import Tag, SearchHistory, \
 from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
     ProfileSerializer, ProfileVoteSerializer, ProfileCommentSerializer
+from rest_framework.pagination import PageNumberPagination
 
 
 class ProfileListCreateView(generics.ListCreateAPIView):
@@ -203,17 +204,27 @@ class ProfileVoteStatusView(views.APIView):
 class ProfileSearchView(generics.ListAPIView):
    serializer_class = ProfileSerializer
    permission_classes = [AllowAny]
+   pagination_class = PageNumberPagination
 
    def get_queryset(self):
       queryset = Profile.objects.select_related('user').prefetch_related(
          'tags'
-      ).all()
+      )
 
       # Get search parameters from query string
       search_query = self.request.query_params.get('q', '')
       user_type = self.request.query_params.get('user_type', '')
       tags = self.request.query_params.getlist('tags', [])
       location = self.request.query_params.get('location', '')
+      sort = self.request.query_params.get('sort', 'recent')
+
+      # Apply sorting
+      if sort == 'recent':
+         queryset = queryset.order_by('-user_id')  # Most recent users first
+      elif sort == 'name':
+         queryset = queryset.order_by('first_name', 'last_name')
+      elif sort == 'location':
+         queryset = queryset.order_by('country', 'state', 'city')
 
       # Only apply filters if search parameters are provided
       if any([search_query, user_type, tags, location]):
@@ -232,9 +243,41 @@ class ProfileSearchView(generics.ListAPIView):
 
          if location:
             queryset = queryset.filter(
+               Q(street_address__icontains=location) |
                Q(city__icontains=location) |
                Q(state__icontains=location) |
                Q(country__icontains=location)
             )
 
       return queryset
+
+   def list(self, request, *args, **kwargs):
+      # Get the page size from query params, default to 'all'
+      page_size = request.query_params.get('page_size', 'all')
+      
+      # Handle 'all' option (now the default)
+      if page_size == 'all':
+         queryset = self.get_queryset()
+         serializer = self.get_serializer(queryset, many=True)
+         return response.Response({
+            'count': len(serializer.data),
+            'next': None,
+            'previous': None,
+            'results': serializer.data
+         })
+      
+      # Set the page size for pagination if a specific size is requested
+      try:
+         self.pagination_class.page_size = int(page_size)
+      except ValueError:
+         # If invalid page size, default to showing all
+         queryset = self.get_queryset()
+         serializer = self.get_serializer(queryset, many=True)
+         return response.Response({
+            'count': len(serializer.data),
+            'next': None,
+            'previous': None,
+            'results': serializer.data
+         })
+      
+      return super().list(request, *args, **kwargs)
