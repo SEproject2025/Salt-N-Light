@@ -188,6 +188,70 @@ export default {
         this.isLoading = false;
       }
     },
+    changePage(page) {
+      this.currentPage = page;
+      this.performSearch();
+      // Scroll to top of results
+      this.$nextTick(() => {
+        this.$el
+          .querySelector(".results-container")
+          .scrollIntoView({ behavior: "smooth" });
+      });
+    },
+    clearSearch() {
+      this.searchParams.q = "";
+      this.handleSearch();
+    },
+    clearUserType() {
+      this.searchParams.user_type = "";
+      this.handleSearch();
+    },
+    clearLocation() {
+      this.searchParams.location = "";
+      this.handleSearch();
+    },
+    removeTag(tag) {
+      this.selectedTags = this.selectedTags.filter((t) => t.id !== tag.id);
+      this.handleSearch();
+    },
+    clearAllFilters() {
+      this.searchParams.q = "";
+      this.searchParams.user_type = "";
+      this.searchParams.location = "";
+      this.selectedTags = [];
+      this.handleSearch();
+    },
+    retrySearch() {
+      this.performSearch();
+    },
+  },
+  watch: {
+    "searchParams.q": {
+      handler() {
+        this.handleSearch();
+      },
+    },
+    "searchParams.user_type": {
+      handler() {
+        this.handleSearch();
+      },
+    },
+    "searchParams.location": {
+      handler() {
+        this.handleSearch();
+      },
+    },
+    selectedTags: {
+      handler() {
+        this.handleSearch();
+      },
+      deep: true,
+    },
+    tagMatchType: {
+      handler() {
+        this.handleSearch();
+      },
+    },
   },
 };
 </script>
