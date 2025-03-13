@@ -74,8 +74,7 @@ class ProfileCommentSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
    user = UserSerializer()  # Nested User serializer
-   tags = serializers.PrimaryKeyRelatedField(
-       queryset=Tag.objects.all(), many=True, required=False)
+   tags = TagSerializer(many=True)
    vote_count = serializers.SerializerMethodField()
    comments = ProfileCommentSerializer(
       source='comments_received', many=True, read_only=True)

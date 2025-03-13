@@ -51,6 +51,7 @@
 
 <script>
 import userImage from "@/assets/pictures/missionaryprof.jpeg";
+
 export default {
   el: "#UserProfile",
   name: "UserCard",
@@ -82,6 +83,10 @@ export default {
     id: {
       type: Number,
       required: true,
+    },
+    tags: {
+      type: Array,
+      default: () => [],
     },
   },
   data() {
