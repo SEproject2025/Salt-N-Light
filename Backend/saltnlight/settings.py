@@ -91,10 +91,10 @@ REST_FRAMEWORK = {
     ),
 }
 
-ALLOWED_HOSTS = ["salt-n-light.vercel.app"]
+ALLOWED_HOSTS = ["evangelium.app"]
 
 CORS_ALLOWED_ORIGINS = [
-   "https://salt-n-light.vercel.app",
+   "https://evangelium.app",
    'http://localhost:8080'
 ]
 CORS_ALLOW_CREDENTIALS = True
