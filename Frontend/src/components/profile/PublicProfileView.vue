@@ -47,19 +47,51 @@
       <div class="profile-section">
         <div class="tag-header">
           <h3>Tags</h3>
-          <button
-            v-if="!isOwnProfile"
-            class="add-tag-btn"
-            @click="showTagDialog = true"
-          >
-            <span class="plus-icon">+</span>
-          </button>
+          <div class="tag-controls">
+            <div class="tag-dropdown">
+              <button
+                v-if="!isOwnProfile"
+                class="add-tag-btn"
+                @click="toggleTagDropdown"
+              >
+                <span class="plus-icon">+</span>
+              </button>
+              <div v-if="showTagDropdown" class="tag-dropdown-menu">
+                <div
+                  v-for="tag in availableTags"
+                  :key="tag.id"
+                  class="tag-dropdown-item"
+                  @click="handleAddTag(tag.id)"
+                >
+                  {{ tag.name }}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="tags">
-          <span v-for="tag in profile.tags" :key="tag.id" class="tag">
+          <span
+            v-for="tag in displayTags"
+            :key="tag.id"
+            class="tag"
+            :class="{ 'self-added': tag.added_by === profile.user.id }"
+            :title="
+              tag.added_by === profile.user.id
+                ? 'You can only remove tags that you added'
+                : ''
+            "
+          >
             {{ tag.name }}
+            <button
+              v-if="isOwnProfile && tag.added_by !== profile.user.id"
+              class="remove-tag-btn"
+              @click="handleRemoveTag(tag.id)"
+            >
+              ×
+            </button>
           </span>
         </div>
+        <div v-if="error" class="error" role="alert">{{ error }}</div>
       </div>
 
       <div class="profile-section">
@@ -85,22 +117,14 @@
                 {{ tag.name }}
               </option>
             </select>
-          </div>
-          <div class="form-group">
-            <label>Or Create New Tag:</label>
-            <input
-              v-model="newTagName"
-              type="text"
-              class="tag-input"
-              placeholder="Enter tag name"
-            />
+            <div v-if="error" class="error">{{ error }}</div>
           </div>
           <div class="dialog-actions">
             <button class="cancel-btn" @click="closeTagDialog">Cancel</button>
             <button
               class="add-btn"
               @click="handleAddTag"
-              :disabled="!selectedTag && !newTagName"
+              :disabled="!selectedTag"
             >
               Add Tag
             </button>
@@ -130,14 +154,33 @@ export default {
     return {
       showTagDialog: false,
       selectedTag: "",
-      newTagName: "",
       availableTags: [],
       error: null,
+      localTags: [],
+      showTagDropdown: false,
     };
+  },
+  computed: {
+    displayTags() {
+      return this.localTags.length > 0 ? this.localTags : this.profile.tags;
+    },
+  },
+  watch: {
+    "profile.tags": {
+      immediate: true,
+      handler(newTags) {
+        this.localTags = [...(newTags || [])];
+      },
+    },
   },
   methods: {
     getAuthHeader() {
       const token = localStorage.getItem("access_token");
+      if (!token) {
+        console.error("No access token found in localStorage");
+        this.error = "Please log in to manage tags";
+        return null;
+      }
       return {
         Authorization: `Bearer ${token}`,
       };
@@ -150,7 +193,7 @@ export default {
         this.availableTags = response.data.map((tag) => ({
           id: tag.id,
           name: tag.tag_name,
-          description: tag.tag_description,
+          added_by: tag.added_by,
         }));
       } catch (error) {
         console.error("Error fetching tags:", error);
@@ -159,43 +202,112 @@ export default {
     closeTagDialog() {
       this.showTagDialog = false;
       this.selectedTag = "";
-      this.newTagName = "";
     },
-    async handleAddTag() {
+    toggleTagDropdown() {
+      this.showTagDropdown = !this.showTagDropdown;
+    },
+    async handleAddTag(tagId) {
       try {
-        if (this.newTagName) {
-          // Create new tag and add to profile
-          const createResponse = await axios.post(
-            "http://127.0.0.1:8000/tag/",
-            {
-              tag_name: this.newTagName,
-              tag_description: "",
-              tag_is_predefined: false,
-              profile_id: this.profile.user.id,
-            },
-            {
-              headers: this.getAuthHeader(),
-            }
-          );
-          this.$emit("tag-added", createResponse.data);
-        } else if (this.selectedTag) {
-          // Add existing tag to profile
-          const addResponse = await axios.post(
-            "http://127.0.0.1:8000/tag/",
-            {
-              tag_id: this.selectedTag,
-              profile_id: this.profile.user.id,
-            },
-            {
-              headers: this.getAuthHeader(),
-            }
-          );
-          this.$emit("tag-added", addResponse.data);
+        const headers = this.getAuthHeader();
+        if (!headers) {
+          return; // Error message already set in getAuthHeader
         }
-        this.closeTagDialog();
+
+        // First verify the token is still valid
+        try {
+          await axios.get("http://127.0.0.1:8000/api/profiles/me/", {
+            headers,
+          });
+        } catch (verifyError) {
+          if (verifyError.response?.status === 401) {
+            localStorage.removeItem("access_token"); // Clear invalid token
+            this.error = "Your session has expired. Please log in again.";
+            return;
+          }
+        }
+
+        const addResponse = await axios.post(
+          "http://127.0.0.1:8000/tag/add-to-profile/",
+          {
+            profile_id: this.profile.user.id,
+            tag_id: tagId,
+          },
+          {
+            headers: {
+              ...headers,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        this.$emit("tag-added", addResponse.data);
+        this.showTagDropdown = false; // Close the dropdown after adding
+        this.$emit("refresh");
+        this.error = null;
       } catch (error) {
-        console.error("Error adding tag:", error);
-        this.error = error.response?.data?.message || "Error adding tag";
+        console.error("Error adding tag:", error.response || error);
+        if (error.response?.status === 401) {
+          localStorage.removeItem("access_token"); // Clear invalid token
+          this.error = "Your session has expired. Please log in again.";
+        } else if (
+          error.response?.data?.error?.includes("UNIQUE constraint failed")
+        ) {
+          this.error = "You already added this tag!";
+        } else {
+          this.error =
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            "Error adding tag";
+        }
+      }
+    },
+    async handleRemoveTag(tagId) {
+      try {
+        const headers = this.getAuthHeader();
+        if (!headers) {
+          return; // Error message already set in getAuthHeader
+        }
+
+        await axios.post(
+          "http://127.0.0.1:8000/tag/remove-from-profile/",
+          {
+            profile_id: this.profile.user.id,
+            tag_id: tagId,
+          },
+          {
+            headers: {
+              ...headers,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        // Update the UI immediately by filtering out the removed tag
+        const updatedTags = this.profile.tags.filter((tag) => tag.id !== tagId);
+        this.$emit("update:profile", {
+          ...this.profile,
+          tags: updatedTags,
+        });
+
+        // Still emit events for parent component
+        this.$emit("tag-removed", {
+          tagId,
+          profileId: this.profile.user.id,
+        });
+        this.$emit("refresh");
+        this.error = null;
+      } catch (error) {
+        console.error("Error removing tag:", error.response || error);
+        if (error.response?.status === 401) {
+          localStorage.removeItem("access_token"); // Clear invalid token
+          this.error = "Your session has expired. Please log in again.";
+        } else if (error.response?.status === 404) {
+          this.error = "You can only remove tags that you added!";
+        } else {
+          this.error =
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            "Error removing tag";
+        }
       }
     },
   },
@@ -275,6 +387,31 @@ export default {
   padding: 0.3rem 0.8rem;
   border-radius: 20px;
   font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.tag.self-added {
+  background: #f8f8f8;
+  color: #666;
+  cursor: help;
+  border: 1px solid #e0e0e0;
+}
+
+.tag.self-added:hover {
+  background: #f0f0f0;
+}
+
+.tag:not(.self-added) {
+  background: #e1f5fe;
+  color: #0288d1;
+}
+
+.tag:not(.self-added):hover {
+  background: #b3e5fc;
 }
 
 .description {
@@ -305,27 +442,106 @@ export default {
   margin-bottom: 1rem;
 }
 
+.tag-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tag-select {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tag-select option {
+  padding: 0.5rem;
+}
+
+/* For Webkit browsers like Chrome/Safari */
+.tag-select::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tag-select::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.tag-select::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.tag-select::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* For Firefox */
+.tag-select {
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f1f1f1;
+}
+
+.tag-dropdown {
+  position: relative;
+}
+
+.tag-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+  min-width: 150px;
+  margin-top: 0.5rem;
+}
+
+.tag-dropdown-item {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.tag-dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
 .add-tag-btn {
-  background: #3498db;
+  background: #000000;
   color: white;
   border: none;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  width: 35px;
+  height: 35px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: background-color 0.3s;
+  padding: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .add-tag-btn:hover {
-  background: #2980b9;
+  background: #333333;
+  transform: scale(1.05);
 }
 
 .plus-icon {
-  font-size: 20px;
+  font-size: 24px;
   line-height: 1;
+  font-weight: 300;
 }
 
 .dialog-overlay {
@@ -365,15 +581,6 @@ export default {
   color: #666;
 }
 
-.tag-select,
-.tag-input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
@@ -405,9 +612,34 @@ export default {
   cursor: not-allowed;
 }
 
+.remove-tag-btn {
+  background: none;
+  border: none;
+  color: #0288d1;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.remove-tag-btn:hover {
+  background-color: rgba(2, 136, 209, 0.1);
+}
+
 .error {
-  color: #e74c3c;
-  margin-top: 0.5rem;
   font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.3rem;
+  margin-top: 0.5rem;
+
+  opacity: 5;
+  transition: opacity 0.5s;
 }
 </style>

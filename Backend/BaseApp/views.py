@@ -4,7 +4,7 @@ from rest_framework import generics, filters, views, response, status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Q
 from .models import Tag, SearchHistory,\
-                    ExternalMedia, Profile, ProfileVote, ProfileComment
+                    ExternalMedia, Profile, ProfileVote, ProfileComment, ProfileTagging
 from .serializer import TagSerializer, SearchHistorySerializer,\
                         ExternalMediaSerializer,\
                         ProfileSerializer, ProfileVoteSerializer, ProfileCommentSerializer
@@ -14,6 +14,7 @@ from rest_framework import status
 from django.db.utils import IntegrityError
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from rest_framework.decorators import action
 
 class ProfileListCreateView(generics.ListCreateAPIView):
    queryset = Profile.objects.select_related(
@@ -59,41 +60,109 @@ class TagViewSet(ModelViewSet):
    filterset_fields = ['tag_name','tag_description','tag_is_predefined']
    queryset = Tag.objects.all()
    serializer_class = TagSerializer
-   permission_classes = [AllowAny]
+   permission_classes = [AllowAny]  # Allow public access
 
-   def create(self, request, *args, **kwargs):
+   def get_permissions(self):
+      if self.action in ['create', 'update', 'partial_update', 'destroy']:
+         return [IsAuthenticated()]
+      return [AllowAny()]
+
+   @action(detail=False, methods=['post'], url_path='add-to-profile', url_name='add_to_profile')
+   def add_to_profile(self, request):
       profile_id = request.data.get('profile_id')
-      tag_name = request.data.get('tag_name')
+      tag_id = request.data.get('tag_id')
 
-      if profile_id:
-         try:
-            # First check if profile exists
-            profile = Profile.objects.get(user_id=profile_id)
+      if not profile_id or not tag_id:
+         return Response(
+            {'error': 'Both profile_id and tag_id are required'}, 
+            status=status.HTTP_400_BAD_REQUEST
+         )
 
-            # If profile exists, then create/get tag
-            tag, created = Tag.objects.get_or_create(
-               tag_name=tag_name,
-               defaults={
-                  'tag_description': request.data.get('tag_description', ''),
-                  'tag_is_predefined': False
-               }
-            )
+      try:
+         profile = Profile.objects.get(user_id=profile_id)
+         tag = Tag.objects.get(id=tag_id)
 
-            profile.tags.add(tag)
+         # Create the ProfileTagging instance
+         ProfileTagging.objects.create(
+            profile=profile,
+            tag=tag,
+            added_by=request.user,
+            is_self_added=(request.user.id == profile.user.id)
+         )
 
-            return Response({
-               'message': f'Tag "{tag_name}" added to profile successfully',
-               'tag_id': tag.id,
-               'profile_id': profile_id
-            }, status=status.HTTP_200_OK)
+         return Response({
+            'message': f'Tag "{tag.tag_name}" added to profile successfully',
+            'tag_id': tag.id,
+            'profile_id': profile_id
+         }, status=status.HTTP_200_OK)
 
-         except Profile.DoesNotExist:
+      except Profile.DoesNotExist:
+         return Response(
+            {'error': 'Profile not found'}, 
+            status=status.HTTP_404_NOT_FOUND
+         )
+      except Tag.DoesNotExist:
+         return Response(
+            {'error': 'Tag not found'}, 
+            status=status.HTTP_404_NOT_FOUND
+         )
+      except Exception as e:
+         return Response(
+            {'error': str(e)}, 
+            status=status.HTTP_400_BAD_REQUEST
+         )
+
+   @action(detail=False, methods=['post'], url_path='remove-from-profile', url_name='remove_from_profile')
+   def remove_from_profile(self, request):
+      profile_id = request.data.get('profile_id')
+      tag_id = request.data.get('tag_id')
+
+      if not profile_id or not tag_id:
+         return Response(
+            {'error': 'Both profile_id and tag_id are required'}, 
+            status=status.HTTP_400_BAD_REQUEST
+         )
+
+      try:
+         profile = Profile.objects.get(user_id=profile_id)
+         tag = Tag.objects.get(id=tag_id)
+
+         # Delete the ProfileTagging instance
+         tagging = ProfileTagging.objects.filter(
+            profile=profile,
+            tag=tag,
+            added_by=request.user
+         ).first()
+
+         if not tagging:
             return Response(
-               {'error': 'Profile not found'}, 
+               {'error': 'Tag not found or you do not have permission to remove it'}, 
                status=status.HTTP_404_NOT_FOUND
             )
 
-      return super().create(request, *args, **kwargs)
+         tagging.delete()
+
+         return Response({
+            'message': f'Tag "{tag.tag_name}" removed from profile successfully',
+            'tag_id': tag.id,
+            'profile_id': profile_id
+         }, status=status.HTTP_200_OK)
+
+      except Profile.DoesNotExist:
+         return Response(
+            {'error': 'Profile not found'}, 
+            status=status.HTTP_404_NOT_FOUND
+         )
+      except Tag.DoesNotExist:
+         return Response(
+            {'error': 'Tag not found'}, 
+            status=status.HTTP_404_NOT_FOUND
+         )
+      except Exception as e:
+         return Response(
+            {'error': str(e)}, 
+            status=status.HTTP_400_BAD_REQUEST
+         )
 
 # Search history viewset that performs CRUD operations
 class SearchHistoryViewSet(ModelViewSet):

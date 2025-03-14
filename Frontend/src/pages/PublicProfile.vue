@@ -10,6 +10,7 @@
         :profile="profile"
         :is-own-profile="isOwnProfile"
         @tag-added="handleTagAdded"
+        @tag-removed="handleTagRemoved"
       />
     </div>
   </div>
@@ -111,6 +112,14 @@ export default {
         console.error("Error refreshing profile after tag addition:", error);
       }
     },
+    async handleTagRemoved() {
+      try {
+        // Refresh the profile data to show the removed tag
+        await this.fetchProfile();
+      } catch (error) {
+        console.error("Error refreshing profile after tag removal:", error);
+      }
+    },
   },
   created() {
     this.fetchProfile();
@@ -156,10 +165,10 @@ export default {
 }
 
 .error {
-  background: #fee;
-  color: #e74c3c;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.3rem;
   padding: 1rem;
   border-radius: 6px;
-  margin-bottom: 1rem;
 }
 </style>
