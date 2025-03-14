@@ -168,6 +168,7 @@
               :country="profile.country"
               :description="profile.description"
               :tags="profile.tags || []"
+              class="user-card"
             />
           </div>
           <div class="pagination" v-if="totalPages > 1">
@@ -587,9 +588,16 @@ export default {
 
 .card-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   padding: 20px 0;
+  width: 100%;
+}
+
+.user-card {
+  width: 100%;
+  min-height: 200px; /* Set a minimum height for consistency */
+  margin: 0; /* Remove any default margins */
 }
 
 .loading {
@@ -776,5 +784,12 @@ export default {
 
 .tag-match-type select:hover {
   border-color: #1976d2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-container {
+    grid-template-columns: 1fr; /* Single column on mobile */
+  }
 }
 </style>

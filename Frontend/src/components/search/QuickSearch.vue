@@ -1,5 +1,5 @@
 <template>
-  <div class="quick-search">
+  <div class="quick-search" @mousedown.stop>
     <div class="search-input">
       <input
         type="text"
@@ -14,7 +14,7 @@
         <i class="fas fa-search"></i>
       </div>
     </div>
-    <div class="quick-filters" v-if="showFilters">
+    <div class="quick-filters" v-if="showFilters" @mousedown.stop>
       <div class="filter-group">
         <label>Role</label>
         <select v-model="userType" @change="handleSearch">
@@ -69,6 +69,7 @@
       :results="searchResults"
       @view-all="navigateToSearch"
       @select-profile="handleProfileSelect"
+      @mousedown.stop
     />
   </div>
 </template>
@@ -147,7 +148,7 @@ export default {
 
       // Navigate to search page with parameters
       this.$router.push({
-        path: "/search",
+        path: "/searchpage",
         query: Object.fromEntries(params),
       });
     },
@@ -156,12 +157,14 @@ export default {
       this.showResults = false;
       this.showFilters = false;
     },
-    handleBlur() {
-      // Delay hiding the filters to allow clicking on them
-      setTimeout(() => {
-        this.showFilters = false;
-        this.showResults = false;
-      }, 200);
+    handleBlur(event) {
+      // Check if the related target is within the quick-search component
+      if (!event.relatedTarget || !this.$el.contains(event.relatedTarget)) {
+        setTimeout(() => {
+          this.showFilters = false;
+          this.showResults = false;
+        }, 200);
+      }
     },
     clearSearch() {
       this.searchQuery = "";

@@ -167,14 +167,12 @@ body {
 }
 
 .user-card-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
 }
 
 .user-card-col {
-  flex: 0 0 auto;
-  padding: 8px;
+  width: 100%;
+  padding: 0;
 }
 
 .card {
@@ -183,8 +181,10 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 24px;
   width: 100%;
-  max-width: 600px;
-  margin: 16px;
+  margin: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-header {
@@ -192,15 +192,19 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 20px;
+  width: 100%;
 }
 
 .profile-section {
   display: flex;
   gap: 16px;
-  align-items: center;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
 }
 
 .avatar {
+  flex-shrink: 0;
   width: 80px;
   height: 80px;
   border-radius: 50%;
@@ -218,6 +222,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  flex: 1;
 }
 
 .church-name {
@@ -225,12 +231,18 @@ body {
   font-weight: 600;
   color: #333;
   margin: 0;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .location {
   font-size: 16px;
   color: #666;
   margin: 0;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .bookmark-btn {
@@ -247,72 +259,66 @@ body {
   color: #333;
 }
 
+.card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
 .description {
-  color: #555;
-  font-size: 16px;
+  font-size: 14px;
+  color: #666;
   line-height: 1.5;
-  margin-bottom: 20px;
+  margin: 0;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .tags-container {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 24px;
-  min-height: 40px;
+  margin-top: auto;
 }
 
 .tag {
-  padding: 8px 16px;
-  border-radius: 100px;
-  background-color: #e3f2fd;
+  background: #e3f2fd;
   color: #1976d2;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
-  cursor: default;
-}
-
-.tag:hover {
-  background-color: #bbdefb;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .more-tags {
-  padding: 8px 16px;
-  border-radius: 100px;
-  background-color: #f5f5f5;
   color: #666;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 12px;
   cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.more-tags:hover {
-  background-color: #e0e0e0;
-}
-
-.no-tags {
-  color: #666;
-  font-size: 14px;
-  font-style: italic;
+  white-space: nowrap;
 }
 
 .view-profile-btn {
-  width: 100%;
-  padding: 12px;
-  background-color: #f5f5f5;
+  background: #1976d2;
+  color: white;
   border: none;
+  padding: 8px 16px;
   border-radius: 8px;
-  color: #333;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 14px;
   cursor: pointer;
   transition: background-color 0.2s;
+  width: 100%;
+  margin-top: auto;
 }
 
 .view-profile-btn:hover {
-  background-color: #e0e0e0;
+  background: #1565c0;
 }
 
 #UserProfile {
