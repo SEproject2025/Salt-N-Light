@@ -91,9 +91,11 @@ REST_FRAMEWORK = {
     ),
 }
 
-# CORS configurations
+ALLOWED_HOSTS = ["your-vercel-app.vercel.app"]
+
 CORS_ALLOWED_ORIGINS = [
-   'http://localhost:8080',
+   "https://your-vercel-app.vercel.app",
+   'http://localhost:8080'
 ]
 CORS_ALLOW_CREDENTIALS = True
 
