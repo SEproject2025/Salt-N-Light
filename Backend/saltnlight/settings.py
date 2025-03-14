@@ -91,10 +91,10 @@ REST_FRAMEWORK = {
     ),
 }
 
-ALLOWED_HOSTS = ["your-vercel-app.vercel.app"]
+ALLOWED_HOSTS = ["salt-n-light.vercel.app"]
 
 CORS_ALLOWED_ORIGINS = [
-   "https://your-vercel-app.vercel.app",
+   "https://salt-n-light.vercel.app",
    'http://localhost:8080'
 ]
 CORS_ALLOW_CREDENTIALS = True
