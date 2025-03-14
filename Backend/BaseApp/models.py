@@ -109,7 +109,7 @@ class ProfileTagging(models.Model):
    def save(self, *args, **kwargs):
       # Set is_self_added based on whether the user is adding a tag to their own profile
       if self.added_by and self.profile:
-         self.is_self_added = (self.added_by == self.profile.user)
+         self.is_self_added = (self.added_by == self.profile.user) # pylint: disable=no-member
       super().save(*args, **kwargs)
 
    class Meta:
