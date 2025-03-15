@@ -53,7 +53,7 @@ export default {
     },
     formatDate(dateString) {
       const date = new Date(dateString);
-      return date.toLocaleString();
+      return date.toLocaleDateString();
     },
     getAuthHeader() {
       const token = localStorage.getItem("access_token");
