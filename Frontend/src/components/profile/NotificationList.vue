@@ -163,11 +163,6 @@ export default {
   transition: background-color 0.2s;
 }
 
-.notification-item.unread {
-  background-color: #f0f7ff;
-  border-left: 3px solid #007bff;
-}
-
 .notification-header {
   display: flex;
   justify-content: space-between;
