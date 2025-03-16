@@ -59,3 +59,4 @@ class ExternalMediaSerializer(serializers.ModelSerializer):
    class Meta:
       model  = ExternalMedia
       fields = '__all__'
+      
