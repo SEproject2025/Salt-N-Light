@@ -4,7 +4,7 @@
       <h2>Profile Rating</h2>
 
       <div class="vote-count">
-        <span class="score">{{ profile.vote_count || 0 }}</span>
+        <span class="score">{{ profile?.vote_count || 0 }}</span>
         <span class="label">Total Score</span>
       </div>
 
@@ -118,7 +118,11 @@ export default {
   computed: {
     canVote() {
       const currentUserId = this.getCurrentUserId();
-      return currentUserId && currentUserId !== this.profile.user.id;
+      return (
+        currentUserId &&
+        this.profile?.user?.id &&
+        currentUserId !== this.profile.user.id
+      );
     },
     showCommentForm() {
       return this.canVote && this.hasVoted && !this.hasCommented;
