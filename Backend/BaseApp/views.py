@@ -370,5 +370,3 @@ class ProfileVoteStatusView(views.APIView):
           'has_voted': vote is not None,
           'is_upvote': vote.is_upvote if vote else None
       })
-
-      })
