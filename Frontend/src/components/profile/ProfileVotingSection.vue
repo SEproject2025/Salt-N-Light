@@ -176,11 +176,14 @@ export default {
           );
         }
 
+        // Log the state for debugging
         console.log("State updated:", {
           currentUserVote: this.currentUserVote,
           hasVoted: this.hasVoted,
           hasCommented: this.hasCommented,
           username: this.getCurrentUsername() || "Not logged in",
+          profileId: profile.user.id,
+          isSelfAdded: profile.is_self_added,
         });
       } catch (error) {
         console.error("Error updating user state:", error);

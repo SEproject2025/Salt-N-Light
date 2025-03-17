@@ -6,12 +6,21 @@
     </div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else>
-      <PublicProfileView
-        :profile="profile"
-        :is-own-profile="isOwnProfile"
-        @tag-added="handleTagAdded"
-        @tag-removed="handleTagRemoved"
-      />
+      <div class="profile-layout">
+        <div class="content-wrapper">
+          <PublicProfileView
+            :profile="profile"
+            :is-own-profile="isOwnProfile"
+            @tag-added="handleTagAdded"
+            @tag-removed="handleTagRemoved"
+          />
+          <ProfileVotingSection
+            :profile="profile"
+            @vote-updated="fetchProfile"
+            @comment-added="fetchProfile"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
