@@ -97,3 +97,25 @@ class ProfileComment(models.Model):
       if not ProfileVote.objects.filter(
          voter=self.commenter, profile=self.profile).exists():
          raise ValidationError("Must vote before commenting")
+
+class Notification(models.Model):
+   NOTIFICATION_TYPES = [
+      ('friend_request', 'Friend Request'),
+      ('general', 'General'),
+   ]
+
+   recipient = models.ForeignKey(User, on_delete=models.CASCADE,
+                                 related_name='notifications')
+   notification_type = models.CharField(max_length=20,
+                                        choices=NOTIFICATION_TYPES)
+   message = models.TextField()
+   created_at = models.DateTimeField(auto_now_add=True)
+   is_read = models.BooleanField(default=False)
+   related_object_id = models.IntegerField(null=True, blank=True)
+
+   class Meta:
+      ordering = ['-created_at']
+
+   def __str__(self):
+      return f"{
+         self.notification_type} notification for {self.recipient.username}" # pylint: disable=no-member
