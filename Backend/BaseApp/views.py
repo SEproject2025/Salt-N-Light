@@ -38,6 +38,7 @@ class ProfileListCreateView(generics.ListCreateAPIView):
    filterset_fields = ['user_type', 'city', 'state', 'country',
                        'denomination', 'tags']
 
+
 class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
    queryset = (
       Profile.objects
@@ -56,7 +57,8 @@ class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
 class MatchmakingResultsView(generics.ListAPIView):
    serializer_class = ProfileSerializer
    authentication_classes = [JWTAuthentication]
-   permission_classes = [IsAuthenticated]  # Only authenticated users can access
+   # Only authenticated users can access
+   permission_classes = [IsAuthenticated]
 
    def get_queryset(self):
       user_profile = Profile.objects.filter(
@@ -73,13 +75,15 @@ class MatchmakingResultsView(generics.ListAPIView):
       # the current user's profile
       matching_profiles = Profile.objects.filter(
          Q(tags__in=user_tags)).exclude(
-            user=self.request.user).distinct()
+          user=self.request.user).distinct()
 
       return matching_profiles.exclude(user_type=user_profile.user_type)
 
 # Tag viewset that performs CRUD operations
+
+
 class TagViewSet(ModelViewSet):
-   filterset_fields = ['tag_name','tag_description','tag_is_predefined']
+   filterset_fields = ['tag_name', 'tag_description', 'tag_is_predefined']
    queryset = Tag.objects.all()
    serializer_class = TagSerializer
    permission_classes = [AllowAny]  # Allow public access
@@ -235,18 +239,24 @@ class TagViewSet(ModelViewSet):
          )
 
 # Search history viewset that performs CRUD operations
+
+
 class SearchHistoryViewSet(ModelViewSet):
    queryset = SearchHistory.objects.all()
    serializer_class = SearchHistorySerializer
    permission_classes = [AllowAny]
 
 # External media viewset that performs CRUD operations
+
+
 class ExternalMediaViewSet(ModelViewSet):
    queryset = ExternalMedia.objects.all()
    serializer_class = ExternalMediaSerializer
    permission_classes = [AllowAny]
 
 # View for retrieving the currently logged in user
+
+
 class CurrentUserView(views.APIView):
    authentication_classes = [JWTAuthentication]
    permission_classes = [IsAuthenticated]
@@ -359,4 +369,6 @@ class ProfileVoteStatusView(views.APIView):
       return response.Response({
           'has_voted': vote is not None,
           'is_upvote': vote.is_upvote if vote else None
+      })
+
       })
