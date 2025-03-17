@@ -49,76 +49,58 @@ export default {
       }
       return null;
     },
-    async fetchProfile() {
+    async fetchProfile(profileId = null) {
       try {
-        const profileId = this.$route.params.id;
+        // Use provided profileId or get from current route
+        const id = profileId || this.$route.params.id;
         const currentUserId = this.getCurrentUserId();
 
         // If the profile being viewed belongs to the current user, redirect to UserProfile
-        if (currentUserId && parseInt(profileId) === currentUserId) {
+        if (currentUserId && parseInt(id) === currentUserId) {
           this.redirecting = true; // Set redirecting flag
           this.loading = false; // Stop loading
           await this.$router.push("/UserProfile");
           return;
         }
 
-        const [profileResponse, tagResponse] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/profiles/${profileId}/`),
-          axios.get(`${API_BASE_URL}/tag/`),
-        ]);
-
-        // Get the profile data
-        const profileData = profileResponse.data;
-
-        // Map the tags using the tag response data
-        const availableTags = tagResponse.data.map((tag) => ({
-          id: tag.id,
-          name: tag.tag_name,
-        }));
-
-        // Map the profile tags to include the full tag information
-        profileData.tags = profileData.tags.map(
-          (tagId) =>
-            availableTags.find((tag) => tag.id === tagId) || {
-              id: tagId,
-              name: "Unknown Tag",
-            }
-        );
-
-        this.profile = profileData;
-      } catch (err) {
-        console.error("Failed to load profile:", err);
-        this.error = "Failed to load profile data.";
-      } finally {
-        if (!this.redirecting) {
-          this.loading = false;
-        }
+        const response = await axios.get(`${API_BASE_URL}/api/profiles/${id}/`);
+        this.profile = response.data;
+        this.loading = false;
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        this.error = "Failed to load profile. Please try again.";
+        this.loading = false;
       }
     },
   },
-  beforeRouteEnter(to, from, next) {
-    // Always call next() once and handle the redirect in the component
+  beforeRouteUpdate(to, from, next) {
+    // Reset loading state and fetch new profile data using the new route parameters
+    this.loading = true;
+    this.error = null;
+    this.profile = {};
+    this.fetchProfile(to.params.id);
     next();
   },
   async created() {
     try {
-      // Try to get the current user's profile first
+      // First try to get the current user's profile
       const token = localStorage.getItem("access_token");
       if (token) {
         const response = await axios.get(`${API_BASE_URL}/api/profiles/me/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        const currentUserId = response.data.user.id;
+        const profileId = this.$route.params.id;
 
-        // If the profile ID matches the route param, redirect
-        if (response.data.user.id === parseInt(this.$route.params.id)) {
+        // If the profile being viewed belongs to the current user, redirect to UserProfile
+        if (currentUserId === parseInt(profileId)) {
           this.redirecting = true;
           this.loading = false;
-          this.$router.push("/UserProfile");
+          await this.$router.push("/UserProfile");
           return;
         }
       }
-
-      // If we get here, either there's no token or it's not the user's profile
+      // If the /me/ endpoint fails, just try to fetch the profile
       await this.fetchProfile();
     } catch (error) {
       // If the /me/ endpoint fails, just try to fetch the profile

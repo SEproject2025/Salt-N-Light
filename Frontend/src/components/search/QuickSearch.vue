@@ -1,5 +1,5 @@
 <template>
-  <div class="quick-search" @mousedown.stop>
+  <div class="quick-search">
     <div class="search-input">
       <input
         type="text"
@@ -7,14 +7,14 @@
         placeholder="Search by name, location, or tags..."
         @input="handleSearch"
         @keyup.enter="navigateToSearch"
-        @focus="showFilters = true"
+        @focus="handleFocus"
         @blur="handleBlur"
       />
       <div class="search-icon" @click="navigateToSearch">
         <i class="fas fa-search"></i>
       </div>
     </div>
-    <div class="quick-filters" v-if="showFilters" @mousedown.stop>
+    <div class="quick-filters" v-if="showFilters">
       <div class="filter-group">
         <label>Role</label>
         <select v-model="userType" @change="handleSearch">
@@ -65,11 +65,10 @@
       </div>
     </div>
     <QuickSearchResults
-      v-if="showResults && searchResults.length > 0"
+      v-if="showResults && searchResults.length > 0 && searchQuery.trim()"
       :results="searchResults"
       @view-all="navigateToSearch"
       @select-profile="handleProfileSelect"
-      @mousedown.stop
     />
   </div>
 </template>
@@ -119,6 +118,18 @@ export default {
       }
     },
     async performSearch() {
+      // Don't perform search if query is empty
+      if (
+        !this.searchQuery.trim() &&
+        !this.userType &&
+        !this.location &&
+        this.selectedTags.length === 0
+      ) {
+        this.showResults = false;
+        this.searchResults = [];
+        return;
+      }
+
       const params = {
         q: this.searchQuery,
         user_type: this.userType,
@@ -165,6 +176,13 @@ export default {
           this.showResults = false;
         }, 200);
       }
+    },
+    handleFocus() {
+      // If there's existing text, trigger a search
+      if (this.searchQuery) {
+        this.handleSearch();
+      }
+      this.showFilters = true;
     },
     clearSearch() {
       this.searchQuery = "";

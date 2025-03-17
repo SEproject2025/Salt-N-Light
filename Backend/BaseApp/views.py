@@ -203,7 +203,8 @@ class ProfileVoteStatusView(views.APIView):
 
 class ProfileSearchView(generics.ListAPIView):
    serializer_class = ProfileSerializer
-   permission_classes = [AllowAny]
+   authentication_classes = [JWTAuthentication]
+   permission_classes = [IsAuthenticated]
    pagination_class = PageNumberPagination
 
    def get_queryset(self):
