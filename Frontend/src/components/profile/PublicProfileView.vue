@@ -74,18 +74,15 @@
             v-for="tag in displayTags"
             :key="tag.id"
             class="tag"
-            :class="{ 'self-added': tag.added_by === profile.user.id }"
-            :title="
-              tag.added_by === profile.user.id
-                ? 'You can only remove tags that you added'
-                : ''
-            "
+            :class="{ 'self-added': tag.is_self_added }"
+            :title="getTagTitle(tag)"
           >
             {{ tag.name }}
             <button
-              v-if="isOwnProfile && tag.added_by !== profile.user.id"
+              v-if="canRemoveTag(tag)"
               class="remove-tag-btn"
               @click="handleRemoveTag(tag.id)"
+              :title="getTagTitle(tag)"
             >
               ×
             </button>
@@ -149,6 +146,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    currentUserId: {
+      type: Number,
+      required: true,
+    },
   },
   data() {
     return {
@@ -177,7 +178,6 @@ export default {
     getAuthHeader() {
       const token = localStorage.getItem("access_token");
       if (!token) {
-        console.error("No access token found in localStorage");
         this.error = "Please log in to manage tags";
         return null;
       }
@@ -185,45 +185,53 @@ export default {
         Authorization: `Bearer ${token}`,
       };
     },
+
     async fetchAvailableTags() {
       try {
         const response = await axios.get("http://127.0.0.1:8000/tag/", {
           headers: this.getAuthHeader(),
+          params: {
+            profile_id: this.profile.user.id,
+          },
         });
-        this.availableTags = response.data.map((tag) => ({
-          id: tag.id,
-          name: tag.tag_name,
-          added_by: tag.added_by,
-        }));
+
+        // Filter out tags that are already added to the profile
+        const existingTagIds = new Set(this.profile.tags.map((tag) => tag.id));
+        this.availableTags = response.data
+          .filter((tag) => !existingTagIds.has(tag.id))
+          .map((tag) => ({
+            id: tag.id,
+            name: tag.tag_name,
+            is_self_added: tag.is_self_added,
+            added_by: tag.added_by,
+          }));
       } catch (error) {
-        console.error("Error fetching tags:", error);
+        console.error("Error fetching tags:", error.response?.data || error);
+        this.error = "Error loading available tags";
       }
     },
+
     closeTagDialog() {
       this.showTagDialog = false;
       this.selectedTag = "";
     },
+
     toggleTagDropdown() {
       this.showTagDropdown = !this.showTagDropdown;
     },
+
     async handleAddTag(tagId) {
       try {
         const headers = this.getAuthHeader();
         if (!headers) {
-          return; // Error message already set in getAuthHeader
+          return;
         }
 
-        // First verify the token is still valid
-        try {
-          await axios.get("http://127.0.0.1:8000/api/profiles/me/", {
-            headers,
-          });
-        } catch (verifyError) {
-          if (verifyError.response?.status === 401) {
-            localStorage.removeItem("access_token"); // Clear invalid token
-            this.error = "Your session has expired. Please log in again.";
-            return;
-          }
+        // Check if tag is already added
+        if (this.profile.tags.some((tag) => tag.id === tagId)) {
+          this.error = "This tag is already added to the profile";
+          this.showTagDropdown = false;
+          return;
         }
 
         const addResponse = await axios.post(
@@ -239,32 +247,65 @@ export default {
             },
           }
         );
+
+        // Update local state with the new tag
+        const addedTag = this.availableTags.find((tag) => tag.id === tagId);
+        if (addedTag) {
+          const newTag = {
+            ...addedTag,
+            is_self_added: addResponse.data.is_self_added,
+            added_by: this.currentUserId,
+          };
+
+          // Update the profile's tags
+          this.$emit("update:profile", {
+            ...this.profile,
+            tags: [...this.profile.tags, newTag],
+          });
+
+          // Remove the tag from available tags
+          this.availableTags = this.availableTags.filter(
+            (tag) => tag.id !== tagId
+          );
+        }
+
         this.$emit("tag-added", addResponse.data);
-        this.showTagDropdown = false; // Close the dropdown after adding
-        this.$emit("refresh");
+        this.showTagDropdown = false;
         this.error = null;
       } catch (error) {
         console.error("Error adding tag:", error.response || error);
         if (error.response?.status === 401) {
-          localStorage.removeItem("access_token"); // Clear invalid token
+          localStorage.removeItem("access_token");
           this.error = "Your session has expired. Please log in again.";
-        } else if (
-          error.response?.data?.error?.includes("UNIQUE constraint failed")
-        ) {
-          this.error = "You already added this tag!";
         } else {
-          this.error =
-            error.response?.data?.message ||
-            error.response?.data?.error ||
-            "Error adding tag";
+          this.error = error.response?.data?.error || "Error adding tag";
         }
       }
     },
+
+    canRemoveTag(tag) {
+      // Return true only if:
+      // 1. It's the user's own profile (they can remove any tag)
+      // 2. OR if it's someone else's profile AND:
+      //    - The tag is NOT self-added AND
+      //    - The current user is the one who added the tag
+      if (this.isOwnProfile) {
+        return true;
+      }
+
+      return !tag.is_self_added && tag.added_by === this.currentUserId;
+    },
+
     async handleRemoveTag(tagId) {
       try {
         const headers = this.getAuthHeader();
         if (!headers) {
-          return; // Error message already set in getAuthHeader
+          return;
+        }
+
+        const tag = this.profile.tags.find((t) => t.id === tagId);
+        if (!tag || !this.canRemoveTag(tag)) {
+          return;
         }
 
         await axios.post(
@@ -282,33 +323,47 @@ export default {
         );
 
         // Update the UI immediately by filtering out the removed tag
-        const updatedTags = this.profile.tags.filter((tag) => tag.id !== tagId);
+        const updatedTags = this.profile.tags.filter((t) => t.id !== tagId);
         this.$emit("update:profile", {
           ...this.profile,
           tags: updatedTags,
         });
 
-        // Still emit events for parent component
+        // Add the removed tag back to available tags
+        this.availableTags.push({
+          id: tag.id,
+          name: tag.name,
+          is_self_added: false,
+          added_by: this.currentUserId,
+        });
+
         this.$emit("tag-removed", {
           tagId,
           profileId: this.profile.user.id,
         });
-        this.$emit("refresh");
         this.error = null;
       } catch (error) {
         console.error("Error removing tag:", error.response || error);
         if (error.response?.status === 401) {
-          localStorage.removeItem("access_token"); // Clear invalid token
+          localStorage.removeItem("access_token");
           this.error = "Your session has expired. Please log in again.";
-        } else if (error.response?.status === 404) {
-          this.error = "You can only remove tags that you added!";
         } else {
-          this.error =
-            error.response?.data?.message ||
-            error.response?.data?.error ||
-            "Error removing tag";
+          this.error = error.response?.data?.error || "Error removing tag";
         }
       }
+    },
+
+    getTagTitle(tag) {
+      if (this.isOwnProfile) {
+        return "Remove this tag";
+      }
+      if (tag.is_self_added) {
+        return "This tag was added by the profile owner";
+      }
+      if (tag.added_by === this.currentUserId) {
+        return "Remove tag you added";
+      }
+      return "This tag was added by another user";
     },
   },
   mounted() {

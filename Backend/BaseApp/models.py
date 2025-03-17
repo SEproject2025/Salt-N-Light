@@ -32,7 +32,8 @@ class Profile(models.Model):
    profile_picture = models.URLField(max_length=225, null=True, blank=True)
 
    # Tags with additional metadata through the intermediate model
-   tags = models.ManyToManyField(Tag, through='ProfileTagging', related_name='profiles', blank=True)
+   tags = models.ManyToManyField(Tag, through='ProfileTagging',
+   related_name='profiles', blank=True)
 
    def __str__(self):
       return f"{self.user.username} - {self.user_type}"  # pylint: disable=no-member
@@ -100,16 +101,18 @@ class ProfileComment(models.Model):
 
 # Through model for user-added tags
 class ProfileTagging(models.Model):
-   profile = models.ForeignKey('Profile', on_delete=models.CASCADE, related_name='profile_taggings')
+   profile = models.ForeignKey('Profile', on_delete=models.CASCADE,
+   related_name='profile_taggings')
    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
-   added_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='tags_added')
+   added_by = models.ForeignKey(User, on_delete=models.SET_NULL,
+   null=True, related_name='tags_added')
    added_at = models.DateTimeField(auto_now_add=True)
    is_self_added = models.BooleanField(default=False)
 
    def save(self, *args, **kwargs):
-      # Set is_self_added based on whether the user is adding a tag to their own profile
+      # Set is_self_added if the user is adding a tag to their own profile
       if self.added_by and self.profile:
-         self.is_self_added = (self.added_by == self.profile.user) # pylint: disable=no-member
+         self.is_self_added = self.added_by == self.profile.user # pylint: disable=no-member
       super().save(*args, **kwargs)
 
    class Meta:

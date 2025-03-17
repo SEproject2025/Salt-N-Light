@@ -1,20 +1,32 @@
+# Standard library imports
+import logging
+
+# Third-party imports
+# pylint: disable=C0412
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import generics, filters, views, response, status
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.db.models import Q
-from .models import Tag, SearchHistory,\
-                    ExternalMedia, Profile, ProfileVote, ProfileComment, ProfileTagging
-from .serializer import TagSerializer, SearchHistorySerializer,\
-                        ExternalMediaSerializer,\
-                        ProfileSerializer, ProfileVoteSerializer, ProfileCommentSerializer
-
-from rest_framework.response import Response
-from rest_framework import status
-from django.db.utils import IntegrityError
-from django.core.exceptions import ValidationError
-from django.db import transaction
 from rest_framework.decorators import action
+from rest_framework.response import Response
+# pylint: enable=C0412
+
+# Django imports
+from django.db.models import Q
+from django.core.exceptions import (ValidationError, ObjectDoesNotExist,
+                                   PermissionDenied)
+
+# Local imports
+from .models import (Tag, Profile, SearchHistory,
+                    ExternalMedia, ProfileVote, ProfileComment,
+                    ProfileTagging,)
+from .serializer import (TagSerializer, SearchHistorySerializer,
+                        ExternalMediaSerializer,
+                        ProfileSerializer, ProfileVoteSerializer,
+                        ProfileCommentSerializer,)
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 class ProfileListCreateView(generics.ListCreateAPIView):
    queryset = Profile.objects.select_related(
@@ -27,9 +39,19 @@ class ProfileListCreateView(generics.ListCreateAPIView):
                        'denomination', 'tags']
 
 class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
-   queryset = Profile.objects.select_related('user').all()
+   queryset = (
+      Profile.objects
+      .select_related('user')
+      .prefetch_related('tags')
+      .all()
+   )
    serializer_class = ProfileSerializer
    permission_classes = [AllowAny]  # Public access for testing
+
+   def get_serializer_context(self):
+      context = super().get_serializer_context()
+      context['profile_id'] = self.kwargs.get('pk')
+      return context
 
 class MatchmakingResultsView(generics.ListAPIView):
    serializer_class = ProfileSerializer
@@ -67,59 +89,74 @@ class TagViewSet(ModelViewSet):
          return [IsAuthenticated()]
       return [AllowAny()]
 
-   @action(detail=False, methods=['post'], url_path='add-to-profile', url_name='add_to_profile')
+   @action(detail=False, methods=['post'], url_path='add-to-profile',
+   url_name='add_to_profile')
    def add_to_profile(self, request):
       profile_id = request.data.get('profile_id')
       tag_id = request.data.get('tag_id')
-
       if not profile_id or not tag_id:
          return Response(
-            {'error': 'Both profile_id and tag_id are required'}, 
+            {'error': 'Both profile_id and tag_id are required'},
             status=status.HTTP_400_BAD_REQUEST
          )
 
       try:
          profile = Profile.objects.get(user_id=profile_id)
          tag = Tag.objects.get(id=tag_id)
+
+         # Check if the tag already exists on the profile
+         existing_tag = ProfileTagging.objects.filter(
+            profile=profile,
+            tag=tag
+         ).first()
+
+         if existing_tag:
+            return Response(
+               {'error': 'This tag is already added to the profile'},
+               status=status.HTTP_400_BAD_REQUEST
+            )
+
+         # A tag is self-added if the user is adding it to their own profile
+         is_self_added = request.user.id == profile.user.id
 
          # Create the ProfileTagging instance
          ProfileTagging.objects.create(
             profile=profile,
             tag=tag,
             added_by=request.user,
-            is_self_added=(request.user.id == profile.user.id)
+            is_self_added=is_self_added
          )
 
          return Response({
             'message': f'Tag "{tag.tag_name}" added to profile successfully',
             'tag_id': tag.id,
-            'profile_id': profile_id
+            'profile_id': profile_id,
+            'is_self_added': is_self_added,
+            'added_by': request.user.id
          }, status=status.HTTP_200_OK)
 
-      except Profile.DoesNotExist:
-         return Response(
-            {'error': 'Profile not found'}, 
+      except ObjectDoesNotExist:
+         return Response( # pylint: disable=eval-used
+            {'error': 'Profile or Tag not found'},
             status=status.HTTP_404_NOT_FOUND
          )
-      except Tag.DoesNotExist:
+
+      except ValidationError as e:
          return Response(
-            {'error': 'Tag not found'}, 
-            status=status.HTTP_404_NOT_FOUND
-         )
-      except Exception as e:
-         return Response(
-            {'error': str(e)}, 
+            {'error': str(e)},
             status=status.HTTP_400_BAD_REQUEST
          )
 
-   @action(detail=False, methods=['post'], url_path='remove-from-profile', url_name='remove_from_profile')
+   @action(detail=False, methods=['post'], url_path='remove-from-profile',
+   url_name='remove_from_profile')
+   # pylint: disable=too-many-return-statements
    def remove_from_profile(self, request):
       profile_id = request.data.get('profile_id')
       tag_id = request.data.get('tag_id')
 
       if not profile_id or not tag_id:
          return Response(
-            {'error': 'Both profile_id and tag_id are required'}, 
+            {'error': 'Both profile_id and tag_id are required'},
             status=status.HTTP_400_BAD_REQUEST
          )
 
@@ -127,41 +164,74 @@ class TagViewSet(ModelViewSet):
          profile = Profile.objects.get(user_id=profile_id)
          tag = Tag.objects.get(id=tag_id)
 
-         # Delete the ProfileTagging instance
+         # Get the tagging instance
          tagging = ProfileTagging.objects.filter(
             profile=profile,
-            tag=tag,
-            added_by=request.user
+            tag=tag
          ).first()
 
          if not tagging:
             return Response(
-               {'error': 'Tag not found or you do not have permission to remove it'}, 
+               {'error': 'Tag not found on this profile'},
                status=status.HTTP_404_NOT_FOUND
+            )
+
+         # Safely check if it's a self-added tag
+         try:
+            is_self_added = tagging.is_self_added
+         except AttributeError:
+            is_self_added = False
+
+         # Safely get the user who added the tag
+         try:
+            added_by_id = tagging.added_by.id if tagging.added_by else None
+         except AttributeError:
+            added_by_id = None
+
+         # First check if it's a self-added tag
+         if is_self_added and request.user.id != profile.user.id:
+            return Response(
+               {'error':
+               'Cannot remove tags that users added to their own profile'},
+               status=status.HTTP_403_FORBIDDEN
+            )
+
+         # Then check if the user has permission to remove the tag
+         if (
+            not is_self_added
+            and added_by_id != request.user.id
+            and request.user.id != profile.user.id
+         ):
+            return Response(
+               {'error': 'You can only remove tags you added'},
+               status=status.HTTP_403_FORBIDDEN
             )
 
          tagging.delete()
 
          return Response({
-            'message': f'Tag "{tag.tag_name}" removed from profile successfully',
+            'message': f'Tag "{tag.tag_name}" removed from profile.',
             'tag_id': tag.id,
             'profile_id': profile_id
          }, status=status.HTTP_200_OK)
 
-      except Profile.DoesNotExist:
+      except ObjectDoesNotExist as e:
+         logger.error("Profile not found: %s", e)
          return Response(
-            {'error': 'Profile not found'}, 
+            {'error': 'Profile or Tag not found'},
             status=status.HTTP_404_NOT_FOUND
          )
-      except Tag.DoesNotExist:
+
+      except ValidationError as e:
          return Response(
-            {'error': 'Tag not found'}, 
-            status=status.HTTP_404_NOT_FOUND
-         )
-      except Exception as e:
-         return Response(
-            {'error': str(e)}, 
+            {'error': str(e)},
             status=status.HTTP_400_BAD_REQUEST
+         )
+      except PermissionDenied as e:
+         print(f"Error in remove_from_profile: {str(e)}")
+         return Response(
+            {'error': 'Cannot remove this tag'},
+            status=status.HTTP_403_FORBIDDEN
          )
 
 # Search history viewset that performs CRUD operations
@@ -289,4 +359,4 @@ class ProfileVoteStatusView(views.APIView):
       return response.Response({
           'has_voted': vote is not None,
           'is_upvote': vote.is_upvote if vote else None
-      }) 
+      })
