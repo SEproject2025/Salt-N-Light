@@ -55,13 +55,10 @@ export default {
   methods: {
     async login() {
       try {
-        const response = await axios.post(
-          "https://104.131.171.128/api/token/",
-          {
-            username: this.username,
-            password: this.password,
-          }
-        );
+        const response = await axios.post("http://104.131.171.128/api/token/", {
+          username: this.username,
+          password: this.password,
+        });
 
         // Store tokens in local storage or Vuex
         localStorage.setItem("access_token", response.data.access);

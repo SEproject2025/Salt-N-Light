@@ -94,7 +94,7 @@
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
-const API_BASE_URL = "https://104.131.171.128";
+const API_BASE_URL = "http://104.131.171.128";
 
 export default {
   name: "ProfileVotingSection",

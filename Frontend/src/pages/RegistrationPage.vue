@@ -160,7 +160,7 @@ export default {
 
           // Fetch all profiles
           const response = await axios.get(
-            "https://104.131.171.128/api/profiles/"
+            "http://104.131.171.128/api/profiles/"
           );
           const existingUsernames = response.data.map((profile) =>
             profile.user.username.toLowerCase()
@@ -222,7 +222,7 @@ export default {
     // Fetches predefined tags from the backend
     async fetchTags() {
       try {
-        const response = await axios.get("https://104.131.171.128/tag/");
+        const response = await axios.get("http://104.131.171.128/tag/");
         this.availableTags = response.data.filter(
           (tag) => tag.tag_is_predefined
         );
@@ -273,7 +273,7 @@ export default {
         console.log("Registration data being sent:", formData);
 
         const response = await axios.post(
-          "https://104.131.171.128/api/profiles/",
+          "http://104.131.171.128/api/profiles/",
           formData
         );
         console.log("Registration response:", response.data);

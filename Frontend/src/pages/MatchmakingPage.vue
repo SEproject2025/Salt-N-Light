@@ -50,7 +50,7 @@ export default {
       const token = localStorage.getItem("access_token");
       try {
         const response = await axios.get(
-          "https://104.131.171.128/api/profiles/match",
+          "http://104.131.171.128/api/profiles/match",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -71,7 +71,7 @@ export default {
     },
     async fetchTags() {
       try {
-        const response = await axios.get("https://104.131.171.128/tag");
+        const response = await axios.get("http://104.131.171.128/tag");
         this.tags = response.data.reduce((acc, tag) => {
           acc[tag.id] = tag.tag_name;
           return acc;
@@ -90,7 +90,7 @@ export default {
 
       try {
         const response = await axios.post(
-          "https://104.131.171.128/api/token/refresh/",
+          "http://104.131.171.128/api/token/refresh/",
           {
             refresh: refreshToken,
           }

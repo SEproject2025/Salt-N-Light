@@ -69,7 +69,7 @@ export default {
     /* Fetches and filters predefined tags from the backend API */
     async fetchTags() {
       try {
-        const response = await axios.get("https://104.131.171.128/tag/");
+        const response = await axios.get("http://104.131.171.128/tag/");
         this.availableTags = response.data.filter(
           (tag) => tag.tag_is_predefined
         );

@@ -125,9 +125,7 @@ export default {
   methods: {
     async fetchUsers() {
       try {
-        const response = await axios.get(
-          "https://104.131.171.128/api/profiles"
-        );
+        const response = await axios.get("http://104.131.171.128/api/profiles");
         console.log("API Response:", response.data);
         this.users = response.data;
         console.log("First user data:", this.users[0]);
@@ -144,9 +142,9 @@ export default {
         // Fetch data from API endpoints
         const [usersResponse, supportersResponse, missionariesResponse] =
           await Promise.all([
-            axios.get("https://104.131.171.128/api/profiles"),
-            axios.get("https://104.131.171.128/api/profiles"),
-            axios.get("https://104.131.171.128/api/profiles/"),
+            axios.get("http://104.131.171.128/api/profiles"),
+            axios.get("http://104.131.171.128/api/profiles"),
+            axios.get("http://104.131.171.128/api/profiles/"),
           ]);
 
         const users = usersResponse.data;
