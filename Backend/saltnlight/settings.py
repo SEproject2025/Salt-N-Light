@@ -91,7 +91,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-ALLOWED_HOSTS = ["evangelium.app","baptist.coffee"]
+ALLOWED_HOSTS = ["evangelium.app","baptist.coffee","www.baptist.coffee"]
 
 CORS_ALLOWED_ORIGINS = [
    "https://evangelium.app",
