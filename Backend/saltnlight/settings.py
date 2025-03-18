@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     #My Apps
     'rest_framework',
     'BaseApp',
-    'bootstrap5',
+    #'bootstrap5',
     'corsheaders'
 ]
 
