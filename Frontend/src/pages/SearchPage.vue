@@ -7,7 +7,7 @@
           <input
             type="text"
             v-model="searchParams.q"
-            placeholder="Search by name or description..."
+            placeholder="Search by name, location, description, or tags..."
             @input="handleSearch"
           />
           <div class="search-icon">
@@ -73,11 +73,13 @@
                 </template>
               </multiselect>
               <div class="tag-match-type" v-if="selectedTags.length > 0">
+                <!-- Temporarily commented out match type selector
                 <label>Match:</label>
                 <select v-model="tagMatchType" @change="handleSearch">
                   <option value="any">Any Tag (OR)</option>
                   <option value="all">All Tags (AND)</option>
                 </select>
+                -->
               </div>
             </div>
           </div>
@@ -168,6 +170,7 @@
               :country="profile.country"
               :description="profile.description"
               :tags="profile.tags || []"
+              :user_type="profile.user_type"
               class="user-card"
             />
           </div>
@@ -357,6 +360,10 @@ export default {
       this.searchParams.user_type = "";
       this.searchParams.location = "";
       this.selectedTags = [];
+      // Update URL to remove all query parameters
+      this.$router.replace({
+        path: this.$route.path,
+      });
       this.handleSearch();
     },
     retrySearch() {

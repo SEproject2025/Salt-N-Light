@@ -1,5 +1,5 @@
 <template>
-  <div class="quick-search">
+  <div class="quick-search" v-click-outside="handleClickOutside">
     <div class="search-input">
       <input
         type="text"
@@ -8,12 +8,12 @@
         @input="handleSearch"
         @keyup.enter="navigateToSearch"
         @focus="handleFocus"
-        @blur="handleBlur"
       />
       <div class="search-icon" @click="navigateToSearch">
         <i class="fas fa-search"></i>
       </div>
     </div>
+    <!-- Temporarily commented out filters modal
     <div class="quick-filters" v-if="showFilters">
       <div class="filter-group">
         <label>Role</label>
@@ -51,9 +51,7 @@
           <template #tag="{ option, remove }">
             <span class="custom-tag">
               {{ option.tag_name }}
-              <span class="custom-tag-remove" @click="remove(option)"
-                >&times;</span
-              >
+              <span class="custom-tag-remove" @click="remove(option)">&times;</span>
             </span>
           </template>
         </multiselect>
@@ -64,6 +62,7 @@
         </button>
       </div>
     </div>
+    -->
     <QuickSearchResults
       v-if="showResults && searchResults.length > 0 && searchQuery.trim()"
       :results="searchResults"
@@ -74,15 +73,28 @@
 </template>
 
 <script>
-import Multiselect from "vue-multiselect";
 import searchService from "@/services/searchService";
 import QuickSearchResults from "./QuickSearchResults.vue";
 
 export default {
   name: "QuickSearch",
   components: {
-    Multiselect,
     QuickSearchResults,
+  },
+  directives: {
+    clickOutside: {
+      mounted(el, binding) {
+        el.clickOutsideEvent = function (event) {
+          if (!(el === event.target || el.contains(event.target))) {
+            binding.value(event);
+          }
+        };
+        document.addEventListener("click", el.clickOutsideEvent);
+      },
+      unmounted(el) {
+        document.removeEventListener("click", el.clickOutsideEvent);
+      },
+    },
   },
   data() {
     return {
@@ -99,6 +111,11 @@ export default {
   },
   created() {
     this.loadTags();
+    // Add route change listener
+    this.$router.beforeEach((to, from, next) => {
+      this.closeModal();
+      next();
+    });
   },
   methods: {
     debounce(func, wait) {
@@ -147,6 +164,24 @@ export default {
         console.error("Search error:", error);
       }
     },
+    handleClickOutside() {
+      this.closeModal();
+    },
+    closeModal() {
+      this.showFilters = false;
+      this.showResults = false;
+    },
+    handleFocus() {
+      // If there's existing text, trigger a search
+      if (this.searchQuery) {
+        this.handleSearch();
+      }
+      this.showFilters = true;
+    },
+    handleProfileSelect(profile) {
+      this.$router.push(`/profile/${profile.user.id}`);
+      this.closeModal();
+    },
     navigateToSearch() {
       // Build query parameters for the search page
       const params = new URLSearchParams();
@@ -162,34 +197,7 @@ export default {
         path: "/searchpage",
         query: Object.fromEntries(params),
       });
-    },
-    handleProfileSelect(profile) {
-      this.$router.push(`/profile/${profile.user.id}`);
-      this.showResults = false;
-      this.showFilters = false;
-    },
-    handleBlur(event) {
-      // Check if the related target is within the quick-search component
-      if (!event.relatedTarget || !this.$el.contains(event.relatedTarget)) {
-        setTimeout(() => {
-          this.showFilters = false;
-          this.showResults = false;
-        }, 200);
-      }
-    },
-    handleFocus() {
-      // If there's existing text, trigger a search
-      if (this.searchQuery) {
-        this.handleSearch();
-      }
-      this.showFilters = true;
-    },
-    clearSearch() {
-      this.searchQuery = "";
-      this.userType = "";
-      this.location = "";
-      this.selectedTags = [];
-      this.handleSearch();
+      this.closeModal();
     },
   },
   beforeUnmount() {

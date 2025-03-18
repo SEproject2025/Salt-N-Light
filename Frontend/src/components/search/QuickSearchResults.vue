@@ -1,10 +1,13 @@
 <template>
-  <div class="quick-search-results" v-if="results.length > 0">
+  <div class="quick-search-results">
     <div class="results-header">
       <h3>Quick Results</h3>
       <button class="view-all" @click="$emit('view-all')">View All</button>
     </div>
-    <ul class="results-list">
+    <div v-if="results.length === 0" class="no-results">
+      <p>No results found</p>
+    </div>
+    <ul v-else class="results-list">
       <li
         v-for="profile in results"
         :key="profile.user.id"
@@ -241,5 +244,12 @@ export default {
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
+}
+
+.no-results {
+  padding: 16px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
 }
 </style>

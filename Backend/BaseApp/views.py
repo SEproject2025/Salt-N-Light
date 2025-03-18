@@ -1,14 +1,15 @@
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import generics, filters, views, response, status
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from django.db.models import Q
 from .models import Tag, SearchHistory, \
     ExternalMedia, Profile, ProfileVote, ProfileComment
 from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
     ProfileSerializer, ProfileVoteSerializer, ProfileCommentSerializer
-from rest_framework.pagination import PageNumberPagination
 
 
 class ProfileListCreateView(generics.ListCreateAPIView):
@@ -208,9 +209,14 @@ class ProfileSearchView(generics.ListAPIView):
    pagination_class = PageNumberPagination
 
    def get_queryset(self):
-      queryset = Profile.objects.select_related('user').prefetch_related(
-         'tags'
-      )
+      # Start with base queryset and
+      # exclude profiles without a user_type or anonymous profiles
+      queryset = (Profile.objects
+                 .select_related('user')
+                 .prefetch_related('tags')
+                 .exclude(user_type__isnull=True)
+                 .exclude(user_type='')
+                 .exclude(user_type='anonymous'))
 
       # Get search parameters from query string
       search_query = self.request.query_params.get('q', '')
@@ -233,7 +239,11 @@ class ProfileSearchView(generics.ListAPIView):
             queryset = queryset.filter(
                Q(first_name__icontains=search_query) |
                Q(last_name__icontains=search_query) |
-               Q(description__icontains=search_query)
+               Q(description__icontains=search_query) |
+               Q(street_address__icontains=search_query) |
+               Q(city__icontains=search_query) |
+               Q(state__icontains=search_query) |
+               Q(country__icontains=search_query)
             )
 
          if user_type:
@@ -255,7 +265,7 @@ class ProfileSearchView(generics.ListAPIView):
    def list(self, request, *args, **kwargs):
       # Get the page size from query params, default to 'all'
       page_size = request.query_params.get('page_size', 'all')
-      
+
       # Handle 'all' option (now the default)
       if page_size == 'all':
          queryset = self.get_queryset()
@@ -266,7 +276,7 @@ class ProfileSearchView(generics.ListAPIView):
             'previous': None,
             'results': serializer.data
          })
-      
+
       # Set the page size for pagination if a specific size is requested
       try:
          self.pagination_class.page_size = int(page_size)
@@ -280,5 +290,5 @@ class ProfileSearchView(generics.ListAPIView):
             'previous': None,
             'results': serializer.data
          })
-      
+
       return super().list(request, *args, **kwargs)

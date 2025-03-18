@@ -10,6 +10,7 @@
             <div class="header-content">
               <h2 class="church-name">{{ first_name }} {{ last_name }}</h2>
               <p class="location">{{ city }}, {{ country }}</p>
+              <p class="profile-type">{{ user_type }}</p>
             </div>
           </div>
           <button class="bookmark-btn" @click="toggleBookmark">
@@ -118,6 +119,10 @@ export default {
     tags: {
       type: Array,
       default: () => [],
+    },
+    user_type: {
+      type: String,
+      required: true,
     },
   },
   data() {
@@ -243,6 +248,17 @@ body {
   white-space: normal;
   word-wrap: break-word;
   overflow-wrap: break-word;
+}
+
+.profile-type {
+  font-size: 14px;
+  color: #1976d2;
+  margin: 0;
+  padding: 2px 8px;
+  background: #e3f2fd;
+  border-radius: 4px;
+  display: inline-block;
+  text-transform: capitalize;
 }
 
 .bookmark-btn {

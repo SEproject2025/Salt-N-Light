@@ -118,7 +118,11 @@ export default {
   computed: {
     canVote() {
       const currentUserId = this.getCurrentUserId();
-      return currentUserId && currentUserId !== this.profile.user.id;
+      return (
+        currentUserId &&
+        this.profile?.user?.id &&
+        currentUserId !== this.profile.user.id
+      );
     },
     showCommentForm() {
       return this.canVote && this.hasVoted && !this.hasCommented;

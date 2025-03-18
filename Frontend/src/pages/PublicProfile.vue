@@ -1,8 +1,7 @@
 <template>
   <div class="profile-container">
-    <div v-if="loading" class="loading-spinner">
+    <div v-if="showSpinner" class="loading-spinner">
       <div class="spinner"></div>
-      <p>Loading...</p>
     </div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="!redirecting" class="profile-layout">
@@ -36,9 +35,33 @@ export default {
     return {
       profile: {},
       loading: true,
+      showSpinner: false,
+      spinnerTimeout: null,
       error: null,
       redirecting: false,
     };
+  },
+  watch: {
+    loading(newVal) {
+      if (newVal) {
+        // Clear any existing timeout
+        if (this.spinnerTimeout) {
+          clearTimeout(this.spinnerTimeout);
+        }
+        // Set a new timeout to show spinner after 300ms
+        this.spinnerTimeout = setTimeout(() => {
+          if (this.loading) {
+            this.showSpinner = true;
+          }
+        }, 300);
+      } else {
+        // Clear timeout and hide spinner when loading is done
+        if (this.spinnerTimeout) {
+          clearTimeout(this.spinnerTimeout);
+        }
+        this.showSpinner = false;
+      }
+    },
   },
   methods: {
     getCurrentUserId() {
@@ -151,19 +174,18 @@ export default {
 
 .loading-spinner {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
+  width: 30px;
+  height: 30px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
