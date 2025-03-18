@@ -92,7 +92,7 @@
 </style>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
 import ProfileView from "@/components/profile/ProfileView.vue";
 import ProfileEdit from "@/components/profile/ProfileEdit.vue";
 
@@ -132,10 +132,10 @@ export default {
         }
 
         const [profileResponse, tagResponse] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/profiles/me/`, {
+          api.get(`api/profiles/me/`, {
             headers: this.getAuthHeader(),
           }),
-          axios.get(`${API_BASE_URL}/tag/`),
+          api.get(`tag/`),
         ]);
 
         if (!profileResponse.data || !profileResponse.data.user) {
@@ -216,7 +216,7 @@ export default {
     },
 
     async sendProfileUpdate(profileId, data) {
-      return axios.patch(`${API_BASE_URL}/api/profiles/${profileId}/`, data, {
+      return api.patch(`api/profiles/${profileId}/`, data, {
         headers: this.getAuthHeader(),
       });
     },
@@ -261,12 +261,9 @@ export default {
       }
 
       try {
-        const response = await axios.post(
-          `${API_BASE_URL}/api/token/refresh/`,
-          {
-            refresh: refreshToken,
-          }
-        );
+        const response = await api.post("/api/token/refresh/", {
+          refresh: refreshToken,
+        });
         localStorage.setItem("access_token", response.data.access);
         return true;
       } catch (err) {

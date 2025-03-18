@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
 
 export default {
   data() {
@@ -49,14 +49,11 @@ export default {
     async fetchUsers(retry = true) {
       const token = localStorage.getItem("access_token");
       try {
-        const response = await axios.get(
-          "http://104.131.171.128/api/profiles/match",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await api.get("api/profiles/match", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         this.users = response.data;
       } catch (err) {
         if (err.response && err.response.status === 401 && retry) {
@@ -71,7 +68,7 @@ export default {
     },
     async fetchTags() {
       try {
-        const response = await axios.get("http://104.131.171.128/tag");
+        const response = await api.get("tag/");
         this.tags = response.data.reduce((acc, tag) => {
           acc[tag.id] = tag.tag_name;
           return acc;
@@ -89,12 +86,9 @@ export default {
       }
 
       try {
-        const response = await axios.post(
-          "http://104.131.171.128/api/token/refresh/",
-          {
-            refresh: refreshToken,
-          }
-        );
+        const response = await api.post("api/token/refresh/", {
+          refresh: refreshToken,
+        });
 
         localStorage.setItem("access_token", response.data.access);
       } catch (err) {
