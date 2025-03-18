@@ -27,7 +27,7 @@ export default {
   methods: {
     async fetchTags() {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/tag/");
+        const response = await axios.get("https://104.131.171.128/tag/");
         this.tags = response.data;
       } catch (error) {
         console.error("There was an error fetching the tags:", error);
