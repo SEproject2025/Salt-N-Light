@@ -96,8 +96,6 @@ import api from "@/api/axios.js";
 import ProfileView from "@/components/profile/ProfileView.vue";
 import ProfileEdit from "@/components/profile/ProfileEdit.vue";
 
-const API_BASE_URL = "http://104.131.171.128";
-
 export default {
   name: "UserProfile",
   components: {
