@@ -33,7 +33,7 @@ async function isAuthenticated() {
 async function refreshAccessToken() {
   try {
     const response = await axios.post(
-      "http://127.0.0.1:8000/api/token/refresh/",
+      "http://104.131.171.128/api/token/refresh/",
       {
         refresh: localStorage.getItem("refresh_token"),
       }
