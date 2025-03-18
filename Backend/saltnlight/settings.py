@@ -91,7 +91,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-ALLOWED_HOSTS = ["evangelium.app","djangodjango.us-east-1.elasticbeanstalk.com"]
+ALLOWED_HOSTS = ["evangelium.app","baptist.coffee"]
 
 CORS_ALLOWED_ORIGINS = [
    "https://evangelium.app",
