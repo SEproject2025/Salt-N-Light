@@ -101,7 +101,11 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF configurations
-CSRF_TRUSTED_ORIGIN = ['http://localhost:8080',"https://www.evangelium.app"]
+CSRF_TRUSTED_ORIGIN = [
+   'http://localhost:8080',
+   "https://www.evangelium.app",
+   "https://evangelium.app"
+]
 
 ROOT_URLCONF = 'saltnlight.urls'
 
