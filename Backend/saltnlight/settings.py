@@ -95,12 +95,13 @@ ALLOWED_HOSTS = ["evangelium.app","baptist.coffee","www.baptist.coffee"]
 
 CORS_ALLOWED_ORIGINS = [
    "https://evangelium.app",
+   "https://www.evangelium.app",
    'http://localhost:8080'
 ]
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF configurations
-CSRF_TRUSTED_ORIGIN = ['http://localhost:8080']
+CSRF_TRUSTED_ORIGIN = ['http://localhost:8080',"https://www.evangelium.app"]
 
 ROOT_URLCONF = 'saltnlight.urls'
 
