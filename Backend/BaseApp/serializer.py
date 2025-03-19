@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Tag, SearchHistory, \
-    ExternalMedia, Profile, ProfileVote, ProfileComment
+    ExternalMedia, Profile, ProfileVote, ProfileComment, Notification
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -136,3 +136,13 @@ class ExternalMediaSerializer(serializers.ModelSerializer):
    class Meta:
       model = ExternalMedia
       fields = '__all__'
+
+class NotificationSerializer(serializers.ModelSerializer):
+   recipient_username = serializers.CharField(source='recipient.username',
+                                              read_only=True)
+   created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S",
+                                          read_only=True)
+   class Meta:
+      model = Notification
+      fields = '__all__'
+      read_only_fields = ['created_at']

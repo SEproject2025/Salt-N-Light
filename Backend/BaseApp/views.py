@@ -13,17 +13,15 @@ from rest_framework.response import Response
 
 # Django imports
 from django.db.models import Q
-from django.core.exceptions import (ValidationError, ObjectDoesNotExist,
-                                   PermissionDenied)
-
-# Local imports
-from .models import (Tag, Profile, SearchHistory,
-                    ExternalMedia, ProfileVote, ProfileComment,
-                    ProfileTagging,)
-from .serializer import (TagSerializer, SearchHistorySerializer,
-                        ExternalMediaSerializer,
-                        ProfileSerializer, ProfileVoteSerializer,
-                        ProfileCommentSerializer,)
+from django.core.exceptions import ValidationError, ObjectDoesNotExist, \
+                                   PermissionDenied
+from .models import Tag, SearchHistory, \
+    ExternalMedia, Profile, ProfileVote, ProfileComment, \
+    ProfileTagging, Notification
+from .serializer import TagSerializer, SearchHistorySerializer, \
+    ExternalMediaSerializer, \
+    ProfileSerializer, ProfileVoteSerializer,\
+    ProfileCommentSerializer, NotificationSerializer
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -370,3 +368,17 @@ class ProfileVoteStatusView(views.APIView):
           'has_voted': vote is not None,
           'is_upvote': vote.is_upvote if vote else None
       })
+
+
+class NotificationView(ModelViewSet):
+   serializer_class = NotificationSerializer
+   authentication_classes = [JWTAuthentication]
+   permission_classes = [IsAuthenticated]
+
+   def get_queryset(self):
+      # Only return notifications for the current user
+      return Notification.objects.filter(recipient=self.request.user)
+
+   def perform_create(self, serializer):
+      # Set the recipient as the current user when creating a notification
+      serializer.save(recipient=self.request.user)

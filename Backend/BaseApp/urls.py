@@ -1,17 +1,15 @@
 from django.urls import path, include
 from rest_framework import routers
-from .views import (
-     TagViewSet,
-SearchHistoryViewSet,
-     ExternalMediaViewSet,
-    ProfileListCreateView, ProfileDetailView,
-    MatchmakingResultsView, CurrentUserView,
-    ProfileVoteView, ProfileCommentView,
-    ProfileVoteStatusView
-)
+from .views import TagViewSet, SearchHistoryViewSet, \
+    ExternalMediaViewSet, \
+    ProfileListCreateView, ProfileDetailView, \
+    MatchmakingResultsView, CurrentUserView, \
+    ProfileVoteView, ProfileCommentView, \
+    ProfileVoteStatusView, NotificationView
 
 # Automatically generates URLs for all ViewSet classes
 router = routers.DefaultRouter()
+router.register('api/notifications', NotificationView, basename='notification')
 router.register('tag', TagViewSet)
 router.register('searchhistory', SearchHistoryViewSet)
 router.register('externalmedia', ExternalMediaViewSet)

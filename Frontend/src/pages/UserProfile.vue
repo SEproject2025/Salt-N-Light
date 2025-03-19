@@ -5,38 +5,51 @@
       <p>Loading...</p>
     </div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else>
-      <transition name="fade" mode="out-in">
-        <ProfileView
-          v-if="!editing"
-          :profile="profile"
-          @edit="editing = true"
-          key="view"
-        >
-          <div class="tag-section">
-            <div class="tag-header">
-              <h3>Tags</h3>
-              <button class="plus-button" @click="showTagDialog = true">
-                <span class="plus-icon">+</span>
-              </button>
-            </div>
-            <div class="tags-list">
-              <div v-for="tag in profile.tags" :key="tag.id" class="tag-chip">
-                {{ tag.name }}
+    <div v-else class="profile-layout">
+      <div class="content-wrapper">
+        <div class="main-content">
+          <transition name="fade" mode="out-in">
+            <ProfileView
+              v-if="!editing"
+              :profile="profile"
+              @edit="editing = true"
+              key="view"
+            >
+              <div class="tag-section">
+                <div class="tag-header">
+                  <h3>Tags</h3>
+                  <button class="plus-button" @click="showTagDialog = true">
+                    <span class="plus-icon">+</span>
+                  </button>
+                </div>
+                <div class="tags-list">
+                  <div
+                    v-for="tag in profile.tags"
+                    :key="tag.id"
+                    class="tag-chip"
+                  >
+                    {{ tag.name }}
+                  </div>
+                </div>
               </div>
-            </div>
+            </ProfileView>
+            <ProfileEdit
+              v-else
+              :profile="profile"
+              :available-tags="availableTags"
+              :selected-tags="selectedTags"
+              @cancel="editing = false"
+              @submit="updateProfile"
+              key="edit"
+            />
+          </transition>
+        </div>
+        <aside class="side-panel">
+          <div class="notification-card">
+            <NotificationList />
           </div>
-        </ProfileView>
-        <ProfileEdit
-          v-else
-          :profile="profile"
-          :available-tags="availableTags"
-          :selected-tags="selectedTags"
-          @cancel="editing = false"
-          @submit="updateProfile"
-          key="edit"
-        />
-      </transition>
+        </aside>
+      </div>
     </div>
   </div>
 </template>
@@ -45,11 +58,35 @@
 .profile-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 2rem 1rem;
   min-height: 100vh;
+}
+
+.profile-layout {
+  position: relative;
+}
+
+.content-wrapper {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+  align-items: flex-start;
+}
+
+.main-content {
+  flex: 3;
+  padding: 20px;
+}
+
+.side-panel {
+  flex: 1;
+  max-width: 350px;
+  position: sticky;
+  top: 20px;
+}
+
+.notification-card {
+  padding: 20px;
 }
 
 .loading-spinner {
@@ -86,7 +123,6 @@
   margin-bottom: 1rem;
 }
 
-/* Transition animations */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -97,10 +133,26 @@
   opacity: 0;
 }
 
+@media (max-width: 1200px) {
+  .content-wrapper {
+    flex-direction: column;
+  }
+
+  .side-panel {
+    width: 100%;
+    max-width: none;
+    position: static;
+  }
+
+  .main-content,
+  .notification-card {
+    padding: 15px;
+  }
+}
+
 @media (max-width: 768px) {
   .profile-container {
-    padding: 2rem 1rem;
-    align-items: flex-start;
+    padding: 10px;
   }
 }
 
@@ -267,6 +319,7 @@
 import axios from "axios";
 import ProfileView from "@/components/profile/ProfileView.vue";
 import ProfileEdit from "@/components/profile/ProfileEdit.vue";
+import NotificationList from "@/components/profile/NotificationList.vue";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -275,6 +328,7 @@ export default {
   components: {
     ProfileView,
     ProfileEdit,
+    NotificationList,
   },
   data() {
     return {
@@ -461,5 +515,3 @@ export default {
   },
 };
 </script>
-
--p
