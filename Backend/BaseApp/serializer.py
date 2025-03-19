@@ -17,8 +17,6 @@ class UserSerializer(serializers.ModelSerializer):
       return User.objects.create_user(**validated_data)
 
 # Serializer class for Tags
-
-
 class TagSerializer(serializers.ModelSerializer):
    is_self_added = serializers.SerializerMethodField()
 
@@ -128,16 +126,12 @@ class ProfileSerializer(serializers.ModelSerializer):
       return None
 
 # Serializer class for Search History
-
-
 class SearchHistorySerializer(serializers.ModelSerializer):
    class Meta:
       model = SearchHistory
       fields = '__all__'
 
 # Serializer class for External Media
-
-
 class ExternalMediaSerializer(serializers.ModelSerializer):
    class Meta:
       model = ExternalMedia
