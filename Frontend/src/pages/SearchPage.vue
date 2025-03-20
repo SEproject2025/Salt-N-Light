@@ -96,7 +96,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
 import UserCard from "@/components/search/UserCard.vue";
 
 export default {
@@ -125,7 +125,7 @@ export default {
   methods: {
     async fetchUsers() {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/profiles");
+        const response = await api.get("api/profiles");
         console.log("API Response:", response.data);
         this.users = response.data;
         console.log("First user data:", this.users[0]);
@@ -142,9 +142,9 @@ export default {
         // Fetch data from API endpoints
         const [usersResponse, supportersResponse, missionariesResponse] =
           await Promise.all([
-            axios.get("http://127.0.0.1:8000/api/profiles"),
-            axios.get("http://127.0.0.1:8000/api/profiles"),
-            axios.get("http://127.0.0.1:8000/api/profiles/"),
+            api.get("api/profiles"),
+            api.get("api/profiles"),
+            api.get("api/profiles/"),
           ]);
 
         const users = usersResponse.data;

@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
 
 export default {
   name: "AdditionalInfoStep",
@@ -69,7 +69,7 @@ export default {
     /* Fetches and filters predefined tags from the backend API */
     async fetchTags() {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/tag/", {
+        const response = await api.get("tag/", {
           headers: {
             "Content-Type": "application/json",
           },

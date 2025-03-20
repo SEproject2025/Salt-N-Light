@@ -64,7 +64,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
 import ProgressBar from "@/components/registration/ProgressBar.vue";
 import AccountInfoStep from "@/components/registration/AccountInfoStep.vue";
 import PersonalInfoStep from "@/components/registration/PersonalInfoStep.vue";
@@ -159,9 +159,7 @@ export default {
           this.isSuccess = false;
 
           // Fetch all profiles
-          const response = await axios.get(
-            "http://127.0.0.1:8000/api/profiles/"
-          );
+          const response = await api.get("api/profiles/");
           const existingUsernames = response.data.map((profile) =>
             profile.user.username.toLowerCase()
           );
@@ -222,7 +220,7 @@ export default {
     // Fetches predefined tags from the backend
     async fetchTags() {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/tag/");
+        const response = await api.get("tag/");
         this.availableTags = response.data.filter(
           (tag) => tag.tag_is_predefined
         );
@@ -272,10 +270,7 @@ export default {
         // Log the data being sent
         console.log("Registration data being sent:", formData);
 
-        const response = await axios.post(
-          "http://127.0.0.1:8000/api/profiles/",
-          formData
-        );
+        const response = await api.post("api/profiles/", formData);
         console.log("Registration response:", response.data);
 
         this.message = "Registration successful!";

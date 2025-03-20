@@ -26,12 +26,10 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
 import PublicProfileView from "@/components/profile/PublicProfileView.vue";
 import ProfileVotingSection from "@/components/profile/ProfileVotingSection.vue";
 import { jwtDecode } from "jwt-decode";
-
-const API_BASE_URL = "http://127.0.0.1:8000";
 
 export default {
   name: "PublicProfile",
@@ -72,12 +70,12 @@ export default {
         }
 
         const [profileResponse, tagResponse] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/profiles/${profileId}/`, {
+          api.get(`api/profiles/${profileId}/`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("access_token")}`,
             },
           }),
-          axios.get(`${API_BASE_URL}/tag/`, {
+          api.get(`tag/`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("access_token")}`,
             },
@@ -143,7 +141,7 @@ export default {
       // Try to get the current user's profile first
       const token = localStorage.getItem("access_token");
       if (token) {
-        const response = await axios.get(`${API_BASE_URL}/api/profiles/me/`, {
+        const response = await api.get(`/api/profiles/me/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
