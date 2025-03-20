@@ -4,7 +4,7 @@
       <h2>Profile Rating</h2>
 
       <div class="vote-count">
-        <span class="score">{{ profile.vote_count || 0 }}</span>
+        <span class="score">{{ profile?.vote_count || 0 }}</span>
         <span class="label">Total Score</span>
       </div>
 
@@ -116,7 +116,11 @@ export default {
   computed: {
     canVote() {
       const currentUserId = this.getCurrentUserId();
-      return currentUserId && currentUserId !== this.profile.user.id;
+      return (
+        currentUserId &&
+        this.profile?.user?.id &&
+        currentUserId !== this.profile.user.id
+      );
     },
     showCommentForm() {
       return this.canVote && this.hasVoted && !this.hasCommented;
@@ -174,11 +178,14 @@ export default {
           );
         }
 
+        // Log the state for debugging
         console.log("State updated:", {
           currentUserVote: this.currentUserVote,
           hasVoted: this.hasVoted,
           hasCommented: this.hasCommented,
           username: this.getCurrentUsername() || "Not logged in",
+          profileId: profile.user.id,
+          isSelfAdded: profile.is_self_added,
         });
       } catch (error) {
         console.error("Error updating user state:", error);

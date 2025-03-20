@@ -5,14 +5,21 @@
       <p>Loading...</p>
     </div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else-if="!redirecting" class="profile-layout">
-      <div class="content-wrapper">
-        <PublicProfileView :profile="profile" />
-        <ProfileVotingSection
-          :profile="profile"
-          @vote-updated="fetchProfile"
-          @comment-added="fetchProfile"
-        />
+    <div v-else>
+      <div class="profile-layout">
+        <div class="content-wrapper">
+          <PublicProfileView
+            :profile="profile"
+            :is-own-profile="isOwnProfile"
+            @tag-added="handleTagAdded"
+            @tag-removed="handleTagRemoved"
+          />
+          <ProfileVotingSection
+            :profile="profile"
+            @vote-updated="fetchProfile"
+            @comment-added="fetchProfile"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -35,7 +42,7 @@ export default {
       profile: {},
       loading: true,
       error: null,
-      redirecting: false,
+      isOwnProfile: false,
     };
   },
   methods: {
@@ -52,17 +59,27 @@ export default {
         const profileId = this.$route.params.id;
         const currentUserId = this.getCurrentUserId();
 
+        // Check if this is the user's own profile
+        this.isOwnProfile =
+          currentUserId && parseInt(profileId) === currentUserId;
+
         // If the profile being viewed belongs to the current user, redirect to UserProfile
-        if (currentUserId && parseInt(profileId) === currentUserId) {
-          this.redirecting = true; // Set redirecting flag
-          this.loading = false; // Stop loading
-          await this.$router.push("/UserProfile");
+        if (this.isOwnProfile) {
+          this.$router.push("/UserProfile");
           return;
         }
 
         const [profileResponse, tagResponse] = await Promise.all([
-          api.get(`api/profiles/${profileId}/`),
-          api.get(`tag/`),
+          api.get(`api/profiles/${profileId}/`, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          }),
+          api.get(`tag/`, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          }),
         ]);
 
         // Get the profile data
@@ -72,16 +89,21 @@ export default {
         const availableTags = tagResponse.data.map((tag) => ({
           id: tag.id,
           name: tag.tag_name,
+          description: tag.tag_description,
         }));
 
         // Map the profile tags to include the full tag information
-        profileData.tags = profileData.tags.map(
-          (tagId) =>
-            availableTags.find((tag) => tag.id === tagId) || {
-              id: tagId,
-              name: "Unknown Tag",
-            }
-        );
+        if (Array.isArray(profileData.tags)) {
+          profileData.tags = profileData.tags.map(
+            (tagId) =>
+              availableTags.find((tag) => tag.id === tagId) || {
+                id: tagId,
+                name: "Unknown Tag",
+              }
+          );
+        } else {
+          profileData.tags = [];
+        }
 
         this.profile = profileData;
       } catch (err) {
@@ -91,6 +113,22 @@ export default {
         if (!this.redirecting) {
           this.loading = false;
         }
+      }
+    },
+    async handleTagAdded() {
+      try {
+        // Refresh the profile data to show the new tag
+        await this.fetchProfile();
+      } catch (error) {
+        console.error("Error refreshing profile after tag addition:", error);
+      }
+    },
+    async handleTagRemoved() {
+      try {
+        // Refresh the profile data to show the removed tag
+        await this.fetchProfile();
+      } catch (error) {
+        console.error("Error refreshing profile after tag removal:", error);
       }
     },
   },
@@ -192,11 +230,11 @@ export default {
 }
 
 .error {
-  background: #fee;
-  color: #e74c3c;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.3rem;
   padding: 1rem;
   border-radius: 6px;
-  margin-bottom: 1rem;
 }
 
 @media (max-width: 1200px) {

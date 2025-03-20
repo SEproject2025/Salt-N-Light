@@ -69,12 +69,19 @@ export default {
     /* Fetches and filters predefined tags from the backend API */
     async fetchTags() {
       try {
-        const response = await api.get("tag/");
-        this.availableTags = response.data.filter(
-          (tag) => tag.tag_is_predefined
-        );
+        const response = await api.get("tag/", {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        console.log("Tags response:", response.data); // Add logging to debug
+        this.availableTags = response.data;
       } catch (error) {
-        console.error("Failed to fetch tags:", error.response?.data);
+        console.error(
+          "Failed to fetch tags:",
+          error.response?.data || error.message
+        );
+        this.availableTags = []; // Ensure we reset to empty array on error
       }
     },
   },
