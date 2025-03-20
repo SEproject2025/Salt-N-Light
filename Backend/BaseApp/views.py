@@ -4,11 +4,11 @@ from rest_framework import generics, filters, views, response, status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Q
 from .models import Tag, SearchHistory, \
-    ExternalMedia, Profile, ProfileVote, ProfileComment
+    ExternalMedia, Profile, ProfileVote, ProfileComment, Notification
 from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
-    ProfileSerializer, ProfileVoteSerializer, ProfileCommentSerializer
-
+    ProfileSerializer, ProfileVoteSerializer,\
+    ProfileCommentSerializer, NotificationSerializer
 
 class ProfileListCreateView(generics.ListCreateAPIView):
    queryset = Profile.objects.select_related(
@@ -198,3 +198,17 @@ class ProfileVoteStatusView(views.APIView):
           'has_voted': vote is not None,
           'is_upvote': vote.is_upvote if vote else None
       })
+
+
+class NotificationView(ModelViewSet):
+   serializer_class = NotificationSerializer
+   authentication_classes = [JWTAuthentication]
+   permission_classes = [IsAuthenticated]
+
+   def get_queryset(self):
+      # Only return notifications for the current user
+      return Notification.objects.filter(recipient=self.request.user)
+
+   def perform_create(self, serializer):
+      # Set the recipient as the current user when creating a notification
+      serializer.save(recipient=self.request.user)
