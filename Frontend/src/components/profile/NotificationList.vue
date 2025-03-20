@@ -70,7 +70,7 @@ export default {
           return;
         }
 
-        const response = await api.get("api/notifications/", {
+        const response = await api.get("api/notifications", {
           headers: this.getAuthHeader(),
         });
 
