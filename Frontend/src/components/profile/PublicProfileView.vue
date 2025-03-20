@@ -133,7 +133,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
 
 export default {
   name: "PublicProfileView",
@@ -188,7 +188,7 @@ export default {
 
     async fetchAvailableTags() {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/tag/", {
+        const response = await api.get("tag/", {
           headers: this.getAuthHeader(),
           params: {
             profile_id: this.profile.user.id,
@@ -234,8 +234,8 @@ export default {
           return;
         }
 
-        const addResponse = await axios.post(
-          "http://127.0.0.1:8000/tag/add-to-profile/",
+        const addResponse = await api.post(
+          "tag/add-to-profile/",
           {
             profile_id: this.profile.user.id,
             tag_id: tagId,
@@ -308,8 +308,8 @@ export default {
           return;
         }
 
-        await axios.post(
-          "http://127.0.0.1:8000/tag/remove-from-profile/",
+        await api.post(
+          "tag/remove-from-profile/",
           {
             profile_id: this.profile.user.id,
             tag_id: tagId,
