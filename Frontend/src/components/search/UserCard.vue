@@ -172,24 +172,23 @@ body {
 }
 
 .user-card-row {
+  display: flex;
+  justify-content: flex-start;
   width: 100%;
 }
 
 .user-card-col {
   width: 100%;
-  padding: 0;
+  max-width: 450px; /* Limit card width to roughly half the header */
 }
 
 .card {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 24px;
-  width: 100%;
-  margin: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  padding: 20px;
 }
 
 .card-header {
@@ -198,6 +197,8 @@ body {
   align-items: flex-start;
   margin-bottom: 20px;
   width: 100%;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
 }
 
 .profile-section {
@@ -276,25 +277,25 @@ body {
 }
 
 .card-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
+  padding: 0;
 }
 
 .description {
-  font-size: 14px;
-  color: #666;
-  line-height: 1.5;
-  margin: 0;
-  white-space: normal;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 3; /* Limit to 3 lines */
   -webkit-box-orient: vertical;
   overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+  max-height: 4.5em; /* 3 lines × 1.5 line height */
+  margin-bottom: 1rem;
+}
+
+/* Add hover state to show full description */
+.description:hover {
+  -webkit-line-clamp: unset;
+  max-height: none;
+  cursor: pointer;
 }
 
 .tags-container {
@@ -330,7 +331,7 @@ body {
   cursor: pointer;
   transition: background-color 0.2s;
   width: 100%;
-  margin-top: auto;
+  margin-top: 20px;
 }
 
 .view-profile-btn:hover {

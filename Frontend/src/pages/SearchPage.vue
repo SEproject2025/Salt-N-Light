@@ -116,7 +116,7 @@
       </div>
 
       <!-- Results Section -->
-      <div class="results-container">
+      <div class="search-results">
         <div v-if="isLoading" class="loading">
           <div class="loading-spinner"></div>
           <p>Finding profiles...</p>
@@ -158,7 +158,7 @@
             <h3>No profiles found</h3>
             <p>Try adjusting your search criteria or clearing some filters</p>
           </div>
-          <div v-else class="card-container">
+          <div v-else class="results-grid">
             <UserCard
               v-for="profile in searchResults"
               :key="profile.user.id"
@@ -335,7 +335,7 @@ export default {
       // Scroll to top of results
       this.$nextTick(() => {
         this.$el
-          .querySelector(".results-container")
+          .querySelector(".search-results")
           .scrollIntoView({ behavior: "smooth" });
       });
     },
@@ -547,8 +547,17 @@ export default {
   color: #dc3545;
 }
 
-.results-container {
+.search-results {
   margin-top: 20px;
+  padding: 0 20px;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .results-header {
@@ -793,10 +802,17 @@ export default {
   border-color: #1976d2;
 }
 
-/* Responsive adjustments */
+/* Responsive layout */
+@media (max-width: 1024px) {
+  .results-grid {
+    grid-template-columns: 1fr;
+    max-width: 600px;
+  }
+}
+
 @media (max-width: 768px) {
-  .card-container {
-    grid-template-columns: 1fr; /* Single column on mobile */
+  .search-results {
+    padding: 0 10px;
   }
 }
 </style>

@@ -15,7 +15,7 @@
       <div class="tags-container">
         <select
           id="tags"
-          v-model="localData.tags"
+          v-model="localData.tags_ids"
           multiple
           @change="updateData"
         >
@@ -48,7 +48,7 @@ export default {
       localData: {
         description: this.additionalData.description || "",
         profile_picture: null,
-        tags: this.additionalData.tags || [],
+        tags_ids: this.additionalData.tags_ids || [],
       },
       availableTags: [],
     };
@@ -66,15 +66,24 @@ export default {
       });
     },
 
-    /* Fetches and filters predefined tags from the backend API */
+    /* Fetches predefined tags from the backend API */
     async fetchTags() {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/tag/");
-        this.availableTags = response.data.filter(
-          (tag) => tag.tag_is_predefined
+        console.log("Fetching tags...");
+        const response = await axios.get(
+          "http://127.0.0.1:8000/tag/?tag_is_predefined=true"
         );
+        console.log("Raw response:", response);
+        console.log("Response data:", response.data);
+        this.availableTags = response.data;
       } catch (error) {
-        console.error("Failed to fetch tags:", error.response?.data);
+        console.error("Failed to fetch tags:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          headers: error.response?.headers,
+        });
+        this.availableTags = []; // Set empty array as fallback
       }
     },
   },
@@ -85,7 +94,7 @@ export default {
         this.localData = {
           description: newValue.description || "",
           profile_picture: null,
-          tags: newValue.tags || [],
+          tags_ids: newValue.tags_ids || [],
         };
       },
       deep: true,

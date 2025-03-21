@@ -60,7 +60,13 @@ class ProfileCommentSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
    user = UserSerializer()  # Nested User serializer
-   tags = TagSerializer(many=True)
+   tags = TagSerializer(many=True, read_only=True)  # For reading tags
+   tags_ids = serializers.PrimaryKeyRelatedField(
+      queryset=Tag.objects.all(),
+      many=True,
+      write_only=True,
+      source='tags'
+   )  # For writing tags
    vote_count = serializers.SerializerMethodField()
    comments = ProfileCommentSerializer(
       source='comments_received', many=True, read_only=True)
@@ -68,19 +74,24 @@ class ProfileSerializer(serializers.ModelSerializer):
 
    class Meta:
       model = Profile
-      fields = '__all__'
+      fields = ['user', 'tags', 'tags_ids', 'vote_count', 'comments', 
+               'current_user_vote', 'user_type', 'first_name', 'last_name',
+               'denomination', 'street_address', 'city', 'state', 'country',
+               'phone_number', 'years_of_experience', 'description',
+               'profile_picture']
 
    def create(self, validated_data):
       user_data = validated_data.pop('user')
-      tag_data = validated_data.pop('tags', [])
+      tags = validated_data.pop('tags', [])  # This will contain the tag objects due to source='tags'
       user = User.objects.create_user(**user_data)
       profile = Profile.objects.create(user=user, **validated_data)
-      profile.tags.set(tag_data)
+      if tags:
+         profile.tags.set(tags)
       return profile
 
    def update(self, instance, validated_data):
       user_data = validated_data.pop('user', None)
-      tag_data = validated_data.pop('tags', None)
+      tags = validated_data.pop('tags', None)  # This will contain the tag objects due to source='tags'
 
       # Update user fields if provided
       if user_data:
@@ -97,8 +108,8 @@ class ProfileSerializer(serializers.ModelSerializer):
       instance.save()
 
       # Update tags if provided
-      if tag_data is not None:
-         instance.tags.set(tag_data)
+      if tags is not None:
+         instance.tags.set(tags)
 
       return instance
 

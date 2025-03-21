@@ -74,16 +74,7 @@ export default {
 
   async getTags() {
     try {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        throw new Error("Authentication required");
-      }
-
-      const response = await axios.get(`${API_URL}/tag/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(`${API_URL}/tag/`);
       // Sort tags alphabetically by tag_name
       const tags = response.data.sort((a, b) =>
         a.tag_name.localeCompare(b.tag_name)
@@ -91,26 +82,6 @@ export default {
       return tags;
     } catch (error) {
       console.error("Error fetching tags:", error);
-      if (error.response?.status === 401) {
-        // Try to refresh the token
-        try {
-          const refreshToken = localStorage.getItem("refresh_token");
-          if (refreshToken) {
-            const response = await axios.post(`${API_URL}/api/token/refresh/`, {
-              refresh: refreshToken,
-            });
-            localStorage.setItem("access_token", response.data.access);
-            // Retry the tags fetch with the new token
-            return this.getTags();
-          }
-        } catch (refreshError) {
-          console.error("Token refresh failed:", refreshError);
-        }
-        // If refresh fails or no refresh token, redirect to login
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        window.location.href = "/AppLogin";
-      }
       throw error;
     }
   },
