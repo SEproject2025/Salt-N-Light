@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from profanity.validators import validate_is_profane
 
 # Defines the Tag table
 class Tag(models.Model):
@@ -119,3 +120,7 @@ class Notification(models.Model):
    def __str__(self):
       return f"{
          self.notification_type} notification for {self.recipient.username}" # pylint: disable=no-member
+
+# Define profane filter word validator
+class Comment(models.Model):
+    content = models.TextField(validators=[validate_is_profane])

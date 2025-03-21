@@ -3,8 +3,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import generics, filters, views, response, status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Q
+from django.shortcuts import render, redirect
+from django.core.exceptions import ValidationError
 from .models import Tag, SearchHistory, \
-    ExternalMedia, Profile, ProfileVote, ProfileComment, Notification
+    ExternalMedia, Profile, ProfileVote, ProfileComment, Notification, Comment
 from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
     ProfileSerializer, ProfileVoteSerializer,\
@@ -212,3 +214,15 @@ class NotificationView(ModelViewSet):
    def perform_create(self, serializer):
       # Set the recipient as the current user when creating a notification
       serializer.save(recipient=self.request.user)
+
+# Define profanity error messge
+def add_comment(request):
+    if request.method == 'POST':
+        content = request.POST.get('content')
+        comment = Comment(content=content)
+        try:
+            comment.save()
+        except ValidationError as e:
+            # Handle the error (e.g., log it, display a message to the user)
+            return render(request, 'add_comment.html', {'error': 'Profane content is not allowed.'})
+    return render(request, 'add_comment.html')
