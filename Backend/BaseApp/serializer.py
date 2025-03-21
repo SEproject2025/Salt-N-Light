@@ -18,13 +18,23 @@ class UserSerializer(serializers.ModelSerializer):
       return User.objects.create_user(**validated_data)
 
 # Serializer class for Tags
-
-
 class TagSerializer(serializers.ModelSerializer):
+   is_self_added = serializers.SerializerMethodField()
+
    class Meta:
       model = Tag
-      fields = '__all__'
+      fields = ['id', 'tag_name', 'tag_description',
+      'tag_is_predefined', 'is_self_added']
 
+   def get_is_self_added(self, obj):
+      request = self.context.get('request')
+      profile_id = self.context.get('profile_id')
+      if not request or not profile_id:
+         return False
+      tagging = obj.profiletagging_set.filter(
+         profile_id=profile_id
+               ).first()
+      return tagging.is_self_added if tagging else False
 
 class ProfileVoteSerializer(serializers.ModelSerializer):
    voter_username = serializers.CharField(
@@ -133,16 +143,12 @@ class ProfileSerializer(serializers.ModelSerializer):
          return None
 
 # Serializer class for Search History
-
-
 class SearchHistorySerializer(serializers.ModelSerializer):
    class Meta:
       model = SearchHistory
       fields = '__all__'
 
 # Serializer class for External Media
-
-
 class ExternalMediaSerializer(serializers.ModelSerializer):
    class Meta:
       model = ExternalMedia

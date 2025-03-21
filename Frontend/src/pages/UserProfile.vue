@@ -13,7 +13,25 @@
               :profile="profile"
               @edit="editing = true"
               key="view"
-            />
+            >
+              <div class="tag-section">
+                <div class="tag-header">
+                  <h3>Tags</h3>
+                  <button class="plus-button" @click="showTagDialog = true">
+                    <span class="plus-icon">+</span>
+                  </button>
+                </div>
+                <div class="tags-list">
+                  <div
+                    v-for="tag in profile.tags"
+                    :key="tag.id"
+                    class="tag-chip"
+                  >
+                    {{ tag.name }}
+                  </div>
+                </div>
+              </div>
+            </ProfileView>
             <ProfileEdit
               v-else
               :profile="profile"
@@ -135,15 +153,171 @@
     padding: 10px;
   }
 }
+
+.tag-section {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.tag-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tag-header h3 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.plus-button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #2ecc71;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: transform 0.2s ease;
+}
+
+.plus-button:hover {
+  transform: scale(1.1);
+  background-color: #27ae60;
+}
+
+.plus-button:active {
+  transform: scale(0.95);
+}
+
+.plus-icon {
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1;
+  user-select: none;
+}
+
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-chip {
+  background-color: #3498db;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-content {
+  background-color: white;
+  padding: 24px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dialog-content h3 {
+  margin: 0 0 20px 0;
+  color: #2c3e50;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.tag-select {
+  background-color: white;
+  cursor: pointer;
+}
+
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.cancel-button,
+.submit-button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.cancel-button {
+  background-color: #f1f2f6;
+  color: #2c3e50;
+}
+
+.submit-button {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.cancel-button:hover {
+  background-color: #dcdde1;
+}
+
+.submit-button:hover {
+  background-color: #27ae60;
+}
 </style>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
 import ProfileView from "@/components/profile/ProfileView.vue";
 import ProfileEdit from "@/components/profile/ProfileEdit.vue";
 import NotificationList from "@/components/profile/NotificationList.vue";
-
-const API_BASE_URL = "http://127.0.0.1:8000";
 
 export default {
   name: "UserProfile",
@@ -163,6 +337,7 @@ export default {
       editing: false,
       selectedTags: [],
       availableTags: [],
+      showTagDialog: false,
     };
   },
   watch: {
@@ -204,10 +379,10 @@ export default {
         }
 
         const [profileResponse, tagResponse] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/profiles/me/`, {
+          api.get(`api/profiles/me/`, {
             headers: this.getAuthHeader(),
           }),
-          axios.get(`${API_BASE_URL}/tag/`),
+          api.get(`tag/`),
         ]);
 
         if (!profileResponse.data || !profileResponse.data.user) {
@@ -284,7 +459,7 @@ export default {
     },
 
     async sendProfileUpdate(profileId, data) {
-      return axios.patch(`${API_BASE_URL}/api/profiles/${profileId}/`, data, {
+      return api.patch(`api/profiles/${profileId}/`, data, {
         headers: this.getAuthHeader(),
       });
     },
@@ -329,12 +504,9 @@ export default {
       }
 
       try {
-        const response = await axios.post(
-          `${API_BASE_URL}/api/token/refresh/`,
-          {
-            refresh: refreshToken,
-          }
-        );
+        const response = await api.post("/api/token/refresh/", {
+          refresh: refreshToken,
+        });
         localStorage.setItem("access_token", response.data.access);
         return true;
       } catch (err) {

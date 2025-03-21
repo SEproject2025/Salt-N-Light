@@ -4,7 +4,7 @@
       <h2>Profile Rating</h2>
 
       <div class="vote-count">
-        <span class="score">{{ profile.vote_count || 0 }}</span>
+        <span class="score">{{ profile?.vote_count || 0 }}</span>
         <span class="label">Total Score</span>
       </div>
 
@@ -91,10 +91,8 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
 import { jwtDecode } from "jwt-decode";
-
-const API_BASE_URL = "http://127.0.0.1:8000";
 
 export default {
   name: "ProfileVotingSection",
@@ -144,7 +142,7 @@ export default {
   methods: {
     async fetchCurrentUser() {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/profiles/me/`, {
+        const response = await api.get(`api/profiles/me/`, {
           headers: this.getAuthHeader(),
         });
         this.currentUser = response.data;
@@ -164,8 +162,8 @@ export default {
 
       try {
         // Get current user's vote status
-        const voteResponse = await axios.get(
-          `${API_BASE_URL}/api/profiles/${profile.user.id}/vote-status/`,
+        const voteResponse = await api.get(
+          `api/profiles/${profile.user.id}/vote-status/`,
           { headers: this.getAuthHeader() }
         );
 
@@ -180,11 +178,14 @@ export default {
           );
         }
 
+        // Log the state for debugging
         console.log("State updated:", {
           currentUserVote: this.currentUserVote,
           hasVoted: this.hasVoted,
           hasCommented: this.hasCommented,
           username: this.getCurrentUsername() || "Not logged in",
+          profileId: profile.user.id,
+          isSelfAdded: profile.is_self_added,
         });
       } catch (error) {
         console.error("Error updating user state:", error);
@@ -197,12 +198,9 @@ export default {
       }
 
       try {
-        const response = await axios.post(
-          `${API_BASE_URL}/api/token/refresh/`,
-          {
-            refresh: refreshToken,
-          }
-        );
+        const response = await api.post(`api/token/refresh/`, {
+          refresh: refreshToken,
+        });
         localStorage.setItem("access_token", response.data.access);
         return true;
       } catch (err) {
@@ -222,8 +220,8 @@ export default {
 
     async vote(isUpvote, retry = true) {
       try {
-        const response = await axios.post(
-          `${API_BASE_URL}/api/profiles/vote/`,
+        const response = await api.post(
+          `api/profiles/vote/`,
           {
             profile: this.profile.user.id,
             is_upvote: isUpvote,
@@ -254,8 +252,8 @@ export default {
       if (!this.newComment.trim()) return;
 
       try {
-        await axios.post(
-          `${API_BASE_URL}/api/profiles/comment/`,
+        await api.post(
+          `api/profiles/comment/`,
           {
             profile: this.profile.user.id,
             comment: this.newComment.trim(),
@@ -282,8 +280,8 @@ export default {
       if (!this.editedComment.trim()) return;
 
       try {
-        await axios.patch(
-          `${API_BASE_URL}/api/profiles/comment/${comment.id}/`,
+        await api.patch(
+          `api/profiles/comment/${comment.id}/`,
           {
             comment: this.editedComment.trim(),
           },

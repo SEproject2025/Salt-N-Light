@@ -33,7 +33,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
 
 export default {
   name: "NotificationList",
@@ -70,12 +70,9 @@ export default {
           return;
         }
 
-        const response = await axios.get(
-          "http://localhost:8000/api/notifications/",
-          {
-            headers: this.getAuthHeader(),
-          }
-        );
+        const response = await api.get("api/notifications", {
+          headers: this.getAuthHeader(),
+        });
 
         console.log("Notifications response:", response.data);
         this.notifications = response.data;
@@ -89,24 +86,18 @@ export default {
               throw new Error("No refresh token");
             }
 
-            const refreshResponse = await axios.post(
-              "http://localhost:8000/api/token/refresh/",
-              {
-                refresh: refreshToken,
-              }
-            );
+            const refreshResponse = await api.post("api/token/refresh/", {
+              refresh: refreshToken,
+            });
 
             localStorage.setItem("access_token", refreshResponse.data.access);
 
             // Retry the original request with new token
-            const response = await axios.get(
-              "http://localhost:8000/api/notifications/",
-              {
-                headers: {
-                  Authorization: `Bearer ${refreshResponse.data.access}`,
-                },
-              }
-            );
+            const response = await api.get("api/notifications/", {
+              headers: {
+                Authorization: `Bearer ${refreshResponse.data.access}`,
+              },
+            });
 
             this.notifications = response.data;
           } catch (refreshError) {

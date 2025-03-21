@@ -7,7 +7,7 @@ import SearchPage from "@/pages/SearchPage.vue";
 import MatchmakingPage from "@/pages/MatchmakingPage.vue";
 import RegistrationPage from "@/pages/RegistrationPage.vue";
 import PublicProfile from "@/pages/PublicProfile.vue";
-import axios from "axios"; // Needed for refreshing tokens
+import api from "@/api/axios.js";
 
 async function isAuthenticated() {
   const token = localStorage.getItem("access_token");
@@ -32,12 +32,9 @@ async function isAuthenticated() {
 
 async function refreshAccessToken() {
   try {
-    const response = await axios.post(
-      "http://127.0.0.1:8000/api/token/refresh/",
-      {
-        refresh: localStorage.getItem("refresh_token"),
-      }
-    );
+    const response = await api.post("api/token/refresh/", {
+      refresh: localStorage.getItem("refresh_token"),
+    });
 
     localStorage.setItem("access_token", response.data.access);
     return true;

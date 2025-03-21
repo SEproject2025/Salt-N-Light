@@ -31,8 +31,9 @@ class Profile(models.Model):
    description = models.TextField(blank=True, null=True)
    profile_picture = models.URLField(max_length=225, null=True, blank=True)
 
-   # Sample tag field
-   tags = models.ManyToManyField(Tag, related_name='profiles', blank=True)
+   # Tags with additional metadata through the intermediate model
+   tags = models.ManyToManyField(Tag, through='ProfileTagging',
+   related_name='profiles', blank=True)
 
    def __str__(self):
       return f"{self.user.username} - {self.user_type}"  # pylint: disable=no-member
@@ -98,6 +99,27 @@ class ProfileComment(models.Model):
          voter=self.commenter, profile=self.profile).exists():
          raise ValidationError("Must vote before commenting")
 
+# Through model for user-added tags
+class ProfileTagging(models.Model):
+   profile = models.ForeignKey('Profile', on_delete=models.CASCADE,
+   related_name='profile_taggings')
+   tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
+   added_by = models.ForeignKey(User, on_delete=models.SET_NULL,
+   null=True, related_name='tags_added')
+   added_at = models.DateTimeField(auto_now_add=True)
+   is_self_added = models.BooleanField(default=False)
+
+   def save(self, *args, **kwargs):
+      # Set is_self_added if the user is adding a tag to their own profile
+      if self.added_by and self.profile:
+         self.is_self_added = self.added_by == self.profile.user # pylint: disable=no-member
+      super().save(*args, **kwargs)
+
+   class Meta:
+      unique_together = ['profile', 'tag', 'added_by']
+      verbose_name = "Profile Tagging"
+      verbose_name_plural = "Profile Taggings"
+
 class Notification(models.Model):
    NOTIFICATION_TYPES = [
       ('friend_request', 'Friend Request'),
@@ -117,5 +139,4 @@ class Notification(models.Model):
       ordering = ['-created_at']
 
    def __str__(self):
-      return f"{
-         self.notification_type} notification for {self.recipient.username}" # pylint: disable=no-member
+      return f"{ self.notification_type} notification for {self.recipient.username}" # pylint: disable=no-member

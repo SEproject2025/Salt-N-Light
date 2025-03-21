@@ -1,16 +1,31 @@
+# Standard library imports
+import logging
+
+# Third-party imports
+# pylint: disable=C0412
 from rest_framework import generics, filters, views, response, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.decorators import action
+from rest_framework.response import Response
+# pylint: enable=C0412
 
+# Django imports
 from django.db.models import Q
+from django.core.exceptions import ValidationError, ObjectDoesNotExist, \
+                                   PermissionDenied
 from .models import Tag, SearchHistory, \
-    ExternalMedia, Profile, ProfileVote, ProfileComment, Notification
+    ExternalMedia, Profile, ProfileVote, ProfileComment, \
+    ProfileTagging, Notification
 from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
     ProfileSerializer, ProfileVoteSerializer,\
     ProfileCommentSerializer, NotificationSerializer
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 class ProfileListCreateView(generics.ListCreateAPIView):
    queryset = Profile.objects.select_related(
@@ -24,10 +39,19 @@ class ProfileListCreateView(generics.ListCreateAPIView):
 
 
 class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
-   queryset = Profile.objects.select_related('user').all()
+   queryset = (
+      Profile.objects
+      .select_related('user')
+      .prefetch_related('tags')
+      .all()
+   )
    serializer_class = ProfileSerializer
    permission_classes = [AllowAny]  # Public access for testing
 
+   def get_serializer_context(self):
+      context = super().get_serializer_context()
+      context['profile_id'] = self.kwargs.get('pk')
+      return context
 
 class MatchmakingResultsView(generics.ListAPIView):
    serializer_class = ProfileSerializer
@@ -61,7 +85,157 @@ class TagViewSet(ModelViewSet):
    filterset_fields = ['tag_name', 'tag_description', 'tag_is_predefined']
    queryset = Tag.objects.all()
    serializer_class = TagSerializer
-   permission_classes = [AllowAny]
+   permission_classes = [AllowAny]  # Allow public access
+
+   def get_permissions(self):
+      if self.action in ['create', 'update', 'partial_update', 'destroy']:
+         return [IsAuthenticated()]
+      return [AllowAny()]
+
+   @action(detail=False, methods=['post'], url_path='add-to-profile',
+   url_name='add_to_profile')
+   def add_to_profile(self, request):
+      profile_id = request.data.get('profile_id')
+      tag_id = request.data.get('tag_id')
+      if not profile_id or not tag_id:
+         return Response(
+            {'error': 'Both profile_id and tag_id are required'},
+            status=status.HTTP_400_BAD_REQUEST
+         )
+
+      try:
+         profile = Profile.objects.get(user_id=profile_id)
+         tag = Tag.objects.get(id=tag_id)
+
+         # Check if the tag already exists on the profile
+         existing_tag = ProfileTagging.objects.filter(
+            profile=profile,
+            tag=tag
+         ).first()
+
+         if existing_tag:
+            return Response(
+               {'error': 'This tag is already added to the profile'},
+               status=status.HTTP_400_BAD_REQUEST
+            )
+
+         # A tag is self-added if the user is adding it to their own profile
+         is_self_added = request.user.id == profile.user.id
+
+         # Create the ProfileTagging instance
+         ProfileTagging.objects.create(
+            profile=profile,
+            tag=tag,
+            added_by=request.user,
+            is_self_added=is_self_added
+         )
+
+         return Response({
+            'message': f'Tag "{tag.tag_name}" added to profile successfully',
+            'tag_id': tag.id,
+            'profile_id': profile_id,
+            'is_self_added': is_self_added,
+            'added_by': request.user.id
+         }, status=status.HTTP_200_OK)
+
+      except ObjectDoesNotExist:
+         return Response( # pylint: disable=eval-used
+            {'error': 'Profile or Tag not found'},
+            status=status.HTTP_404_NOT_FOUND
+         )
+
+      except ValidationError as e:
+         return Response(
+            {'error': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+         )
+
+   @action(detail=False, methods=['post'], url_path='remove-from-profile',
+   url_name='remove_from_profile')
+   # pylint: disable=too-many-return-statements
+   def remove_from_profile(self, request):
+      profile_id = request.data.get('profile_id')
+      tag_id = request.data.get('tag_id')
+
+      if not profile_id or not tag_id:
+         return Response(
+            {'error': 'Both profile_id and tag_id are required'},
+            status=status.HTTP_400_BAD_REQUEST
+         )
+
+      try:
+         profile = Profile.objects.get(user_id=profile_id)
+         tag = Tag.objects.get(id=tag_id)
+
+         # Get the tagging instance
+         tagging = ProfileTagging.objects.filter(
+            profile=profile,
+            tag=tag
+         ).first()
+
+         if not tagging:
+            return Response(
+               {'error': 'Tag not found on this profile'},
+               status=status.HTTP_404_NOT_FOUND
+            )
+
+         # Safely check if it's a self-added tag
+         try:
+            is_self_added = tagging.is_self_added
+         except AttributeError:
+            is_self_added = False
+
+         # Safely get the user who added the tag
+         try:
+            added_by_id = tagging.added_by.id if tagging.added_by else None
+         except AttributeError:
+            added_by_id = None
+
+         # First check if it's a self-added tag
+         if is_self_added and request.user.id != profile.user.id:
+            return Response(
+               {'error':
+               'Cannot remove tags that users added to their own profile'},
+               status=status.HTTP_403_FORBIDDEN
+            )
+
+         # Then check if the user has permission to remove the tag
+         if (
+            not is_self_added
+            and added_by_id != request.user.id
+            and request.user.id != profile.user.id
+         ):
+            return Response(
+               {'error': 'You can only remove tags you added'},
+               status=status.HTTP_403_FORBIDDEN
+            )
+
+         tagging.delete()
+
+         return Response({
+            'message': f'Tag "{tag.tag_name}" removed from profile.',
+            'tag_id': tag.id,
+            'profile_id': profile_id
+         }, status=status.HTTP_200_OK)
+
+      except ObjectDoesNotExist as e:
+         logger.error("Profile not found: %s", e)
+         return Response(
+            {'error': 'Profile or Tag not found'},
+            status=status.HTTP_404_NOT_FOUND
+         )
+
+      except ValidationError as e:
+         return Response(
+            {'error': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+         )
+      except PermissionDenied as e:
+         print(f"Error in remove_from_profile: {str(e)}")
+         return Response(
+            {'error': 'Cannot remove this tag'},
+            status=status.HTTP_403_FORBIDDEN
+         )
 
 # Search history viewset that performs CRUD operations
 
@@ -97,7 +271,6 @@ class CurrentUserView(views.APIView):
          return response.Response(serializer.data)
 
       return response.Response({"error": "Profile not found"}, status=404)
-
 
 class ProfileVoteView(generics.CreateAPIView, generics.UpdateAPIView):
    serializer_class = ProfileVoteSerializer
@@ -181,10 +354,6 @@ class ProfileCommentView(generics.CreateAPIView, generics.UpdateAPIView):
       self.perform_update(serializer)
 
       return response.Response(serializer.data)
-
-   def perform_create(self, serializer):
-      serializer.save(commenter=self.request.user)
-
 
 class ProfileVoteStatusView(views.APIView):
    authentication_classes = [JWTAuthentication]

@@ -4,26 +4,31 @@
       <div class="spinner"></div>
     </div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else-if="!redirecting" class="profile-layout">
-      <div class="content-wrapper">
-        <PublicProfileView :profile="profile" />
-        <ProfileVotingSection
-          :profile="profile"
-          @vote-updated="fetchProfile"
-          @comment-added="fetchProfile"
-        />
+    <div v-else>
+      <div class="profile-layout">
+        <div class="content-wrapper">
+          <PublicProfileView
+            :profile="profile"
+            :is-own-profile="isOwnProfile"
+            @tag-added="handleTagAdded"
+            @tag-removed="handleTagRemoved"
+          />
+          <ProfileVotingSection
+            :profile="profile"
+            @vote-updated="fetchProfile"
+            @comment-added="fetchProfile"
+          />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
 import PublicProfileView from "@/components/profile/PublicProfileView.vue";
 import ProfileVotingSection from "@/components/profile/ProfileVotingSection.vue";
 import { jwtDecode } from "jwt-decode";
-
-const API_BASE_URL = "http://127.0.0.1:8000";
 
 export default {
   name: "PublicProfile",
@@ -78,6 +83,10 @@ export default {
         const id = profileId || this.$route.params.id;
         const currentUserId = this.getCurrentUserId();
 
+        // Check if this is the user's own profile
+        this.isOwnProfile =
+          currentUserId && parseInt(profileId) === currentUserId;
+
         // If the profile being viewed belongs to the current user, redirect to UserProfile
         if (currentUserId && parseInt(id) === currentUserId) {
           this.redirecting = true; // Set redirecting flag
@@ -109,7 +118,7 @@ export default {
       // First try to get the current user's profile
       const token = localStorage.getItem("access_token");
       if (token) {
-        const response = await axios.get(`${API_BASE_URL}/api/profiles/me/`, {
+        const response = await api.get(`/api/profiles/me/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const currentUserId = response.data.user.id;
@@ -198,11 +207,11 @@ export default {
 }
 
 .error {
-  background: #fee;
-  color: #e74c3c;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.3rem;
   padding: 1rem;
   border-radius: 6px;
-  margin-bottom: 1rem;
 }
 
 @media (max-width: 1200px) {

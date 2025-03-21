@@ -42,7 +42,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
 
 export default {
   data() {
@@ -55,7 +55,7 @@ export default {
   methods: {
     async login() {
       try {
-        const response = await axios.post("http://127.0.0.1:8000/api/token/", {
+        const response = await api.post("api/token/", {
           username: this.username,
           password: this.password,
         });
