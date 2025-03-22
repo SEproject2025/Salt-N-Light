@@ -5,12 +5,11 @@ from .views import TagViewSet, SearchHistoryViewSet, \
     ProfileListCreateView, ProfileDetailView, \
     MatchmakingResultsView, CurrentUserView, \
     ProfileVoteView, ProfileCommentView, \
-    ProfileVoteStatusView, NotificationView, FriendshipViewSet
+    ProfileVoteStatusView, NotificationView
 
 # Automatically generates URLs for all ViewSet classes
 router = routers.DefaultRouter()
 router.register('api/notifications', NotificationView, basename='notification')
-router.register('api/friendships', FriendshipViewSet, basename='friendship')
 router.register('tag', TagViewSet)
 router.register('searchhistory', SearchHistoryViewSet)
 router.register('externalmedia', ExternalMediaViewSet)
