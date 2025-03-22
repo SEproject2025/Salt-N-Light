@@ -378,3 +378,7 @@ class NotificationView(ModelViewSet):
    def get_queryset(self):
       # Only return notifications for the current user
       return Notification.objects.filter(recipient=self.request.user)
+
+   def perform_create(self, serializer):
+      # Set the recipient as the current user when creating a notification
+      serializer.save(recipient=self.request.user)

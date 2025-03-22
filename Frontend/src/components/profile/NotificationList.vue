@@ -42,7 +42,6 @@ export default {
       notifications: [],
       loading: false,
       error: null,
-      actionLoading: false,
     };
   },
   methods: {
