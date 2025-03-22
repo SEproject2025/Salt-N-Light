@@ -15,13 +15,14 @@ from rest_framework.response import Response
 from django.db.models import Q
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, \
                                    PermissionDenied
+from django.contrib.auth.models import User
 from .models import Tag, SearchHistory, \
     ExternalMedia, Profile, ProfileVote, ProfileComment, \
-    ProfileTagging, Notification
+    ProfileTagging, Notification, Friendship
 from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
     ProfileSerializer, ProfileVoteSerializer,\
-    ProfileCommentSerializer, NotificationSerializer
+    ProfileCommentSerializer, NotificationSerializer, FriendshipSerializer
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -382,3 +383,119 @@ class NotificationView(ModelViewSet):
    def perform_create(self, serializer):
       # Set the recipient as the current user when creating a notification
       serializer.save(recipient=self.request.user)
+
+class FriendshipViewSet(ModelViewSet):
+   serializer_class = FriendshipSerializer
+   authentication_classes = [JWTAuthentication]
+   permission_classes = [IsAuthenticated]
+
+   def get_queryset(self):
+      # Return friendships where the current user is either sender or receiver
+      return Friendship.objects.filter(
+         Q(sender=self.request.user) | Q(receiver=self.request.user)
+      )
+
+   def perform_create(self, serializer):
+      # Set the sender as current user and validate
+      if serializer.validated_data.get('receiver') == self.request.user:
+         raise ValidationError("Cannot send friend request to yourself")
+
+      # Check if a friendship already exists
+      existing = Friendship.objects.filter(
+         (Q(sender=self.request.user) &
+          Q(receiver=serializer.validated_data.get('receiver'))) |
+         (Q(sender=serializer.validated_data.get('receiver')) & Q(receiver=self.request.user))
+      ).first()
+      
+      if existing:
+         raise ValidationError("A friendship already exists between these users")
+         
+      friendship = serializer.save(sender=self.request.user)
+      
+      # Create notification for the receiver
+      Notification.objects.create(
+         recipient=friendship.receiver,
+         notification_type='friend_request',
+         message=f"{self.request.user.username} sent you a friend request",
+         related_object_id=friendship.id
+      )
+      
+      return friendship
+      
+   @action(detail=True, methods=['post'])
+   def accept(self, request, pk=None):
+      friendship = self.get_object()
+      
+      # Only the receiver can accept a request
+      if friendship.receiver != request.user:
+         raise PermissionDenied("Only the recipient can accept a friend request")
+         
+      # Can only accept pending requests
+      if friendship.status != 'pending':
+         return Response(
+            {"error": f"Cannot accept a {friendship.status} friend request"},
+            status=status.HTTP_400_BAD_REQUEST
+         )
+         
+      friendship.status = 'accepted'
+      friendship.save()
+      
+      # Create notification for the sender
+      Notification.objects.create(
+         recipient=friendship.sender,
+         notification_type='general',
+         message=f"{request.user.username} accepted your friend request",
+         related_object_id=friendship.id
+      )
+      
+      return Response(FriendshipSerializer(friendship).data)
+      
+   @action(detail=True, methods=['post'])
+   def reject(self, request, pk=None):
+      friendship = self.get_object()
+      
+      # Only the receiver can reject a request
+      if friendship.receiver != request.user:
+         raise PermissionDenied("Only the recipient can reject a friend request")
+         
+      # Can only reject pending requests
+      if friendship.status != 'pending':
+         return Response(
+            {"error": f"Cannot reject a {friendship.status} friend request"},
+            status=status.HTTP_400_BAD_REQUEST
+         )
+         
+      friendship.status = 'rejected'
+      friendship.save()
+      
+      return Response(FriendshipSerializer(friendship).data)
+      
+   @action(detail=False, methods=['get'])
+   def status(self, request):
+      user_id = request.query_params.get('user_id')
+      if not user_id:
+         return Response({"error": "user_id parameter is required"}, 
+                         status=status.HTTP_400_BAD_REQUEST)
+      
+      try:
+         other_user = User.objects.get(pk=user_id)
+      except User.DoesNotExist:  # pylint: disable=no-member
+         return Response({"error": "User not found"}, 
+                         status=status.HTTP_404_NOT_FOUND)
+      
+      # Check if a friendship exists
+      friendship = Friendship.objects.filter(
+         (Q(sender=request.user) & Q(receiver=other_user)) |
+         (Q(sender=other_user) & Q(receiver=request.user))
+      ).first()
+      
+      if not friendship:
+         return Response({"status": "none"})
+      
+      result = {
+         "status": friendship.status,
+         "is_sender": friendship.sender == request.user,
+         "friendship_id": friendship.id
+      }
+      
+      return Response(result)
