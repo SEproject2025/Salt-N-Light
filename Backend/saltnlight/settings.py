@@ -76,16 +76,6 @@ SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_HTTPONLY = False
 SESSION_SAVE_EVERY_REQUEST = True
 
-# CSRF configurations
-CSRF_COOKIE_NAME = 'csrftoken'  
-CSRF_COOKIE_SECURE = False  
-CSRF_COOKIE_HTTPONLY = False  
-CSRF_TRUSTED_ORIGINS = [
-   'http://localhost:8080',
-   "https://www.evangelium.app",
-   "https://evangelium.app" 
-]
-
 # Session Authentication Configurations
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -94,6 +84,9 @@ REST_FRAMEWORK = {
 }
 
 ALLOWED_HOSTS = [
+   '127.0.0.1',
+   'localhost:8000',
+   'localhost:8080',
    "evangelium.app",
    "www.evangelium.app",
    "baptist.coffee",
@@ -101,6 +94,8 @@ ALLOWED_HOSTS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
+   'http://127.0.0.1',
+   'http://localhost:8000',
    'http://localhost:8080',
    "https://www.evangelium.app",
    "https://evangelium.app"
