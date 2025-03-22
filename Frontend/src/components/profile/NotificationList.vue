@@ -26,31 +26,6 @@
             }}</span>
           </div>
           <div class="notification-message">{{ notification.message }}</div>
-
-          <!-- Friend request action buttons -->
-          <div
-            v-if="notification.notification_type === 'friend_request'"
-            class="notification-actions"
-          >
-            <button
-              class="action-button accept"
-              @click="
-                handleFriendRequest(notification.related_object_id, 'accept')
-              "
-              :disabled="actionLoading"
-            >
-              Accept
-            </button>
-            <button
-              class="action-button reject"
-              @click="
-                handleFriendRequest(notification.related_object_id, 'reject')
-              "
-              :disabled="actionLoading"
-            >
-              Reject
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -139,32 +114,6 @@ export default {
         this.loading = false;
       }
     },
-    async handleFriendRequest(friendshipId, action) {
-      if (!friendshipId) {
-        console.error("No friendship ID provided");
-        return;
-      }
-
-      this.actionLoading = true;
-
-      try {
-        await api.post(
-          `api/friendships/${friendshipId}/${action}/`,
-          {},
-          {
-            headers: this.getAuthHeader(),
-          }
-        );
-
-        // Refresh notifications after action
-        await this.fetchNotifications();
-      } catch (error) {
-        console.error(`Error ${action}ing friend request:`, error);
-        this.error = `Failed to ${action} friend request`;
-      } finally {
-        this.actionLoading = false;
-      }
-    },
   },
   mounted() {
     console.log("NotificationList component mounted");
@@ -245,43 +194,5 @@ export default {
   color: #666;
   padding: 20px;
   font-style: italic;
-}
-
-.notification-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.action-button {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.9em;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.action-button.accept {
-  background-color: #4caf50;
-  color: white;
-}
-
-.action-button.accept:hover {
-  background-color: #388e3c;
-}
-
-.action-button.reject {
-  background-color: #f44336;
-  color: white;
-}
-
-.action-button.reject:hover {
-  background-color: #d32f2f;
-}
-
-.action-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
 }
 </style>

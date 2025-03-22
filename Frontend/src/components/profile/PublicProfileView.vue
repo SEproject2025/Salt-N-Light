@@ -2,50 +2,6 @@
   <div class="profile-card">
     <div class="profile-header">
       <h1>{{ profile.first_name }} {{ profile.last_name }}</h1>
-      <div v-if="!isOwnProfile" class="connect-button-container">
-        <button
-          v-if="friendshipLoading"
-          class="connect-button loading"
-          disabled
-        >
-          Loading...
-        </button>
-        <button
-          v-else-if="friendshipStatus === 'none'"
-          class="connect-button"
-          @click="sendFriendRequest"
-        >
-          Connect
-        </button>
-        <button
-          v-else-if="friendshipStatus === 'pending' && !isSender"
-          class="connect-button pending"
-          disabled
-        >
-          Pending Approval
-        </button>
-        <button
-          v-else-if="friendshipStatus === 'pending' && isSender"
-          class="connect-button pending"
-          disabled
-        >
-          Request Sent
-        </button>
-        <button
-          v-else-if="friendshipStatus === 'accepted'"
-          class="connect-button connected"
-          @click="unfollowFriend"
-        >
-          Unfollow
-        </button>
-        <button
-          v-else-if="friendshipStatus === 'rejected'"
-          class="connect-button"
-          @click="sendFriendRequest"
-        >
-          Connect
-        </button>
-      </div>
     </div>
 
     <div class="profile-content">
@@ -203,10 +159,6 @@ export default {
       error: null,
       localTags: [],
       showTagDropdown: false,
-      friendshipStatus: "none",
-      friendshipId: null,
-      isSender: false,
-      friendshipLoading: false,
     };
   },
   computed: {
@@ -413,78 +365,9 @@ export default {
       }
       return "This tag was added by another user";
     },
-
-    async checkFriendshipStatus() {
-      if (this.isOwnProfile) return;
-      this.friendshipLoading = true;
-
-      try {
-        const response = await api.get("api/friendships/status/", {
-          headers: this.getAuthHeader(),
-          params: {
-            user_id: this.profile.user.id,
-          },
-        });
-
-        this.friendshipStatus = response.data.status;
-        this.friendshipId = response.data.friendship_id;
-        this.isSender = response.data.is_sender;
-      } catch (error) {
-        console.error("Error checking friendship status:", error);
-        this.friendshipStatus = "none";
-      } finally {
-        this.friendshipLoading = false;
-      }
-    },
-
-    async sendFriendRequest() {
-      try {
-        this.friendshipLoading = true;
-        const response = await api.post(
-          "api/friendships/",
-          {
-            receiver: this.profile.user.id,
-          },
-          {
-            headers: this.getAuthHeader(),
-          }
-        );
-
-        // Update local state
-        this.friendshipStatus = "pending";
-        this.friendshipId = response.data.id;
-        this.isSender = true;
-      } catch (error) {
-        console.error("Error sending friend request:", error);
-        this.error = "Failed to send friend request";
-      } finally {
-        this.friendshipLoading = false;
-      }
-    },
-
-    async unfollowFriend() {
-      if (!this.friendshipId) return;
-
-      try {
-        this.friendshipLoading = true;
-        await api.delete(`api/friendships/${this.friendshipId}/`, {
-          headers: this.getAuthHeader(),
-        });
-
-        // Reset friendship status
-        this.friendshipStatus = "none";
-        this.friendshipId = null;
-      } catch (error) {
-        console.error("Error unfollowing:", error);
-        this.error = "Failed to unfollow";
-      } finally {
-        this.friendshipLoading = false;
-      }
-    },
   },
   mounted() {
     this.fetchAvailableTags();
-    this.checkFriendshipStatus();
   },
 };
 </script>
@@ -502,9 +385,11 @@ export default {
 
 .profile-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
 }
 
 .profile-header h1 {
@@ -811,43 +696,5 @@ export default {
 
   opacity: 5;
   transition: opacity 0.5s;
-}
-
-.connect-button-container {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.connect-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 20px;
-  font-weight: bold;
-  cursor: pointer;
-  background-color: #3498db;
-  color: white;
-  transition: background-color 0.3s;
-}
-
-.connect-button:hover {
-  background-color: #2980b9;
-}
-
-.connect-button.connected {
-  background-color: #e74c3c;
-}
-
-.connect-button.connected:hover {
-  background-color: #c0392b;
-}
-
-.connect-button.pending {
-  background-color: #f39c12;
-  cursor: default;
-}
-
-.connect-button.loading {
-  background-color: #95a5a6;
-  cursor: wait;
 }
 </style>
