@@ -154,8 +154,9 @@ class Friendship(models.Model):
    created_at = models.DateTimeField(auto_now_add=True)
 
    def __str__(self):
-      return f"{
-         self.sender.username} -> {self.receiver.username} ({self.status})" # pylint: disable=no-member
+      return (f"{self.sender.username} ->"                # pylint: disable=no-member
+              f"{self.receiver.username} ({self.status})" # pylint: disable=no-member
+      )
 
    class Meta:
       ordering = ['-created_at']
