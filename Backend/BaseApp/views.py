@@ -21,7 +21,7 @@ from .models import Tag, SearchHistory, \
 from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
     ProfileSerializer, ProfileVoteSerializer,\
-    ProfileCommentSerializer, NotificationSerializer
+    ProfileCommentSerializer, NotificationSerializer, FriendshipSerializer
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -382,3 +382,38 @@ class NotificationView(ModelViewSet):
    def perform_create(self, serializer):
       # Set the recipient as the current user when creating a notification
       serializer.save(recipient=self.request.user)
+
+class FriendshipViewSet(ModelViewSet):
+   serializer_class = FriendshipSerializer
+   authentication_classes = [JWTAuthentication]
+   permission_classes = [AllowAny]
+
+   def perform_create(self, serializer):
+      # Set the sender as the current user
+      serializer.save(sender=self.request.user)
+
+      # Create a notification for the receiver
+      Notification.objects.create(
+         recipient=serializer.validated_data['receiver'],
+         notification_type='friend_request',
+         message=f"{self.request.user.username} sent you a friend request",
+         related_object_id=serializer.instance.id
+      )
+
+   @action(detail=True, methods=['post'])
+   def respond(self, request):
+      friendship = self.get_object()
+      response_action = request.data.get('action')
+
+      if response_action == 'accept':
+         friendship.status = 'accepted'
+      elif response_action == 'reject':
+         friendship.status = 'rejected'
+      else:
+         return Response({"error": "Invalid action"}, 
+                         status=status.HTTP_400_BAD_REQUEST)
+
+      friendship.save()
+      return Response({
+         "message": f"Friend request {response_action}ed successfully"},
+         status=status.HTTP_200_OK)

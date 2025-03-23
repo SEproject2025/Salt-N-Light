@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Tag, SearchHistory, \
-    ExternalMedia, Profile, ProfileVote, ProfileComment, Notification
+    ExternalMedia, Profile, ProfileVote, ProfileComment, Notification, Friendship
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -146,3 +146,20 @@ class NotificationSerializer(serializers.ModelSerializer):
       model = Notification
       fields = '__all__'
       read_only_fields = ['created_at']
+
+class FriendshipSerializer(serializers.ModelSerializer):
+   sender_username = serializers.CharField(source='sender.username',
+                                            read_only=True)
+   receiver_username = serializers.CharField(source='receiver.username',
+                                              read_only=True)
+   class Meta:
+      model = Friendship
+      fields = ['id', 'sender', 'receiver',
+                'status', 'created_at', 'sender_username', 'receiver_username']
+      read_only_fields = ['id', 'created_at',
+                          'sender_username', 'receiver_username']
+
+   def create(self, validated_data):
+      # Automatically set the sender to the current user
+      validated_data['sender'] = self.context['request'].user
+      return super().create(validated_data)
