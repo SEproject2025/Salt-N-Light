@@ -90,11 +90,10 @@ class ProfileSerializer(serializers.ModelSerializer):
                'phone_number', 'years_of_experience', 'description',
                'profile_picture']
 
-   def get_serializer_context(self):
-      context = super().get_serializer_context()
-      if 'profile_id' not in context and self.instance:
-         context['profile_id'] = self.instance.user.id
-      return context
+   def to_representation(self, instance):
+      # Add profile_id to context for TagSerializer
+      self.context['profile_id'] = instance.user.id
+      return super().to_representation(instance)
 
    def create(self, validated_data):
       user_data = validated_data.pop('user')

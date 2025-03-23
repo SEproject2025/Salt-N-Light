@@ -272,10 +272,12 @@ class CurrentUserView(views.APIView):
          .first())
 
       if user_profile:
-         # Create context with request and profile_id, matching ProfileDetailView
+         # Create context with request and profile_id,
+         # matching ProfileDetailView
          context = {
             'request': request,
-            'profile_id': user_profile.user.id  # This is crucial for TagSerializer
+            'profile_id': user_profile.user.id  
+            # This is crucial for TagSerializer
          }
          serializer = ProfileSerializer(user_profile, context=context)
          return response.Response(serializer.data)
