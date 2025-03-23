@@ -84,15 +84,22 @@ class ProfileSerializer(serializers.ModelSerializer):
 
    class Meta:
       model = Profile
-      fields = ['user', 'tags', 'tags_ids', 'vote_count', 'comments', 
+      fields = ['user', 'tags', 'tags_ids', 'vote_count', 'comments',
                'current_user_vote', 'user_type', 'first_name', 'last_name',
                'denomination', 'street_address', 'city', 'state', 'country',
                'phone_number', 'years_of_experience', 'description',
                'profile_picture']
 
+   def get_serializer_context(self):
+      context = super().get_serializer_context()
+      if 'profile_id' not in context and self.instance:
+         context['profile_id'] = self.instance.user.id
+      return context
+
    def create(self, validated_data):
       user_data = validated_data.pop('user')
-      tags = validated_data.pop('tags', [])  # This will contain the tag objects due to source='tags'
+      # This will contain the tag objects due to source='tags'
+      tags = validated_data.pop('tags', [])
       user = User.objects.create_user(**user_data)
       profile = Profile.objects.create(user=user, **validated_data)
       if tags:
@@ -101,7 +108,8 @@ class ProfileSerializer(serializers.ModelSerializer):
 
    def update(self, instance, validated_data):
       user_data = validated_data.pop('user', None)
-      tags = validated_data.pop('tags', None)  # This will contain the tag objects due to source='tags'
+      # This will contain the tag objects due to source='tags'
+      tags = validated_data.pop('tags', None)
 
       # Update user fields if provided
       if user_data:

@@ -63,7 +63,7 @@
                   class="tag-dropdown-item"
                   @click="handleAddTag(tag.id)"
                 >
-                  {{ tag.name }}
+                  {{ tag.tag_name }}
                 </div>
               </div>
             </div>
@@ -77,7 +77,7 @@
             :class="{ 'self-added': tag.is_self_added }"
             :title="getTagTitle(tag)"
           >
-            {{ tag.name }}
+            {{ tag.tag_name }}
             <button
               v-if="canRemoveTag(tag)"
               class="remove-tag-btn"
@@ -111,7 +111,7 @@
                 :key="tag.id"
                 :value="tag.id"
               >
-                {{ tag.name }}
+                {{ tag.tag_name }}
               </option>
             </select>
             <div v-if="error" class="error">{{ error }}</div>
@@ -188,6 +188,12 @@ export default {
 
     async fetchAvailableTags() {
       try {
+        // Check if profile and profile.user exist
+        if (!this.profile?.user?.id) {
+          console.warn("Profile or user ID not available");
+          return;
+        }
+
         const response = await api.get("tag/", {
           headers: this.getAuthHeader(),
           params: {
@@ -196,12 +202,14 @@ export default {
         });
 
         // Filter out tags that are already added to the profile
-        const existingTagIds = new Set(this.profile.tags.map((tag) => tag.id));
+        const existingTagIds = new Set(
+          (this.profile.tags || []).map((tag) => tag.id)
+        );
         this.availableTags = response.data
           .filter((tag) => !existingTagIds.has(tag.id))
           .map((tag) => ({
             id: tag.id,
-            name: tag.tag_name,
+            tag_name: tag.tag_name,
             is_self_added: tag.is_self_added,
             added_by: tag.added_by,
           }));
@@ -332,7 +340,7 @@ export default {
         // Add the removed tag back to available tags
         this.availableTags.push({
           id: tag.id,
-          name: tag.name,
+          tag_name: tag.tag_name,
           is_self_added: false,
           added_by: this.currentUserId,
         });

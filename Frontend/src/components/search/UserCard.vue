@@ -283,6 +283,7 @@ body {
 .description {
   display: -webkit-box;
   -webkit-line-clamp: 3; /* Limit to 3 lines */
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -294,6 +295,7 @@ body {
 /* Add hover state to show full description */
 .description:hover {
   -webkit-line-clamp: unset;
+  line-clamp: 3;
   max-height: none;
   cursor: pointer;
 }

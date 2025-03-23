@@ -69,7 +69,7 @@ export default {
     /* Fetches predefined tags from the backend API */
     async fetchTags() {
       try {
-        const response = await axios.get(
+        const response = await api.get(
           "http://127.0.0.1:8000/tag/?tag_is_predefined=true"
         );
         console.log("Raw response:", response);

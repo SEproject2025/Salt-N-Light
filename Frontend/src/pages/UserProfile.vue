@@ -13,25 +13,7 @@
               :profile="profile"
               @edit="editing = true"
               key="view"
-            >
-              <div class="tag-section">
-                <div class="tag-header">
-                  <h3>Tags</h3>
-                  <button class="plus-button" @click="showTagDialog = true">
-                    <span class="plus-icon">+</span>
-                  </button>
-                </div>
-                <div class="tags-list">
-                  <div
-                    v-for="tag in profile.tags"
-                    :key="tag.id"
-                    class="tag-chip"
-                  >
-                    {{ tag.name }}
-                  </div>
-                </div>
-              </div>
-            </ProfileView>
+            />
             <ProfileEdit
               v-else
               :profile="profile"
@@ -211,11 +193,32 @@
 }
 
 .tag-chip {
-  background-color: #3498db;
-  color: white;
+  background: #e3f2fd;
+  color: #1976d2;
   padding: 4px 12px;
-  border-radius: 16px;
+  border-radius: 100px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.more-tags {
+  color: #666;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 100px;
+  background: #f5f5f5;
+  transition: background-color 0.2s;
+}
+
+.more-tags:hover {
+  background: #e0e0e0;
+}
+
+.no-tags {
+  color: #666;
   font-size: 14px;
+  font-style: italic;
 }
 
 .dialog-overlay {
@@ -338,7 +341,27 @@ export default {
       selectedTags: [],
       availableTags: [],
       showTagDialog: false,
+      showAllTags: false,
+      maxVisibleTags: 3,
     };
+  },
+  computed: {
+    displayedTags() {
+      if (!this.profile.tags) return [];
+      return this.showAllTags
+        ? this.profile.tags
+        : this.profile.tags.slice(0, this.maxVisibleTags);
+    },
+    hasMoreTags() {
+      return (
+        this.profile.tags && this.profile.tags.length > this.maxVisibleTags
+      );
+    },
+    hiddenTagsCount() {
+      return this.profile.tags
+        ? this.profile.tags.length - this.maxVisibleTags
+        : 0;
+    },
   },
   watch: {
     loading(newVal) {
@@ -378,29 +401,39 @@ export default {
           return;
         }
 
-        const [profileResponse, tagResponse] = await Promise.all([
-          api.get(`api/profiles/me/`, {
-            headers: this.getAuthHeader(),
-          }),
-          api.get(`tag/`),
-        ]);
+        console.log("Fetching profile data...");
+        const profileResponse = await api.get(`api/profiles/me/`, {
+          headers: this.getAuthHeader(),
+        });
 
         if (!profileResponse.data || !profileResponse.data.user) {
           throw new Error("Invalid profile data received");
         }
 
+        // Add detailed logging
+        console.log("Raw Profile Response:", profileResponse.data);
+        console.log("Profile Tags Array:", profileResponse.data.tags);
+        if (profileResponse.data.tags && profileResponse.data.tags.length > 0) {
+          console.log("First Tag Object:", profileResponse.data.tags[0]);
+          console.log("First Tag Properties:", {
+            id: profileResponse.data.tags[0].id,
+            tag_name: profileResponse.data.tags[0].tag_name,
+            tag_description: profileResponse.data.tags[0].tag_description,
+            is_self_added: profileResponse.data.tags[0].is_self_added,
+          });
+        }
+
         this.profile = profileResponse.data;
         this.originalProfile = JSON.parse(JSON.stringify(profileResponse.data));
         this.selectedTags = profileResponse.data.tags.map((tag) => tag.id);
+        this.availableTags = profileResponse.data.tags;
 
-        this.availableTags = tagResponse.data.map((tag) => ({
-          id: tag.id,
-          tag_name: tag.tag_name,
-          tag_description: tag.tag_description,
-        }));
-
-        // No need to remap the tags as they come correctly formatted from the backend
-        // this.profile.tags = profileResponse.data.tags;
+        // Log final state
+        console.log("Final Profile State:", {
+          profileTags: this.profile.tags,
+          selectedTags: this.selectedTags,
+          availableTags: this.availableTags,
+        });
       } catch (err) {
         console.error("Profile fetch error:", err);
         if (err.response?.status === 401 && retry) {

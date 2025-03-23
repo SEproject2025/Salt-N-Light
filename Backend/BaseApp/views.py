@@ -261,13 +261,23 @@ class CurrentUserView(views.APIView):
    permission_classes = [IsAuthenticated]
 
    def get(self, request):
-      # Fetch the user's profile in the same way as MatchmakingResultsView
-      user_profile = Profile.objects.filter(
-         user=request.user
-      ).select_related('user').prefetch_related('tags').first()
+      # Fetch the user's profile with prefetched tags
+      user_profile = (Profile.objects
+         .filter(user=request.user)
+         .select_related('user')
+         .prefetch_related(
+            'tags',
+            'profile_taggings'  # Need this for is_self_added info
+         )
+         .first())
 
       if user_profile:
-         serializer = ProfileSerializer(user_profile)
+         # Create context with request and profile_id, matching ProfileDetailView
+         context = {
+            'request': request,
+            'profile_id': user_profile.user.id  # This is crucial for TagSerializer
+         }
+         serializer = ProfileSerializer(user_profile, context=context)
          return response.Response(serializer.data)
 
       return response.Response({"error": "Profile not found"}, status=404)

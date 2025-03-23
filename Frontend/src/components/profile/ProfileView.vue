@@ -50,9 +50,12 @@
       <div class="profile-section">
         <h3>Tags</h3>
         <div class="tags">
-          <span v-for="tag in profile.tags" :key="tag.id" class="tag">
+          <span v-for="tag in displayTags" :key="tag.id" class="tag">
             {{ tag.tag_name }}
           </span>
+          <span v-if="!displayTags.length" class="no-tags"
+            >No tags added yet</span
+          >
         </div>
       </div>
 
@@ -74,6 +77,33 @@ export default {
     },
   },
   emits: ["edit"],
+  data() {
+    return {
+      localTags: [],
+    };
+  },
+  computed: {
+    displayTags() {
+      return this.localTags.length > 0
+        ? this.localTags
+        : this.profile.tags || [];
+    },
+  },
+  watch: {
+    "profile.tags": {
+      immediate: true,
+      handler(newTags) {
+        this.localTags = [...(newTags || [])];
+      },
+    },
+  },
+  created() {
+    console.log("ProfileView - Profile data:", this.profile);
+    console.log("ProfileView - Tags:", this.profile.tags);
+    if (this.profile.tags && this.profile.tags.length > 0) {
+      console.log("ProfileView - First tag:", this.profile.tags[0]);
+    }
+  },
 };
 </script>
 
@@ -186,5 +216,10 @@ export default {
   .profile-card {
     max-width: 100%;
   }
+}
+
+.no-tags {
+  color: #666;
+  font-style: italic;
 }
 </style>

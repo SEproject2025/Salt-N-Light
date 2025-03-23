@@ -30,7 +30,15 @@ SECRET_KEY = 'django-insecure-!p&g+1@)_e&nh4-0xt88n&j6kr*v+a!g=+xh!+a6=(cvvrc31+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+   "evangelium.app",
+   "www.evangelium.app",
+   "baptist.coffee",
+   "www.baptist.coffee",
+   "localhost",
+   "127.0.0.1",
+   "0.0.0.0"
+]
 
 
 # Application definition
@@ -97,7 +105,10 @@ ALLOWED_HOSTS = [
    "evangelium.app",
    "www.evangelium.app",
    "baptist.coffee",
-   "www.baptist.coffee"
+   "www.baptist.coffee",
+   "localhost",
+   "127.0.0.1",
+   "0.0.0.0"
 ]
 
 CORS_ALLOWED_ORIGINS = [

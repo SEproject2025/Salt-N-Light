@@ -29,6 +29,7 @@ import api from "@/api/axios.js";
 import PublicProfileView from "@/components/profile/PublicProfileView.vue";
 import ProfileVotingSection from "@/components/profile/ProfileVotingSection.vue";
 import { jwtDecode } from "jwt-decode";
+const API_BASE_URL = process.env.VUE_APP_API_URL || "http://localhost:8000";
 
 export default {
   name: "PublicProfile",
@@ -95,7 +96,7 @@ export default {
           return;
         }
 
-        const response = await axios.get(`${API_BASE_URL}/api/profiles/${id}/`);
+        const response = await api.get(`${API_BASE_URL}/api/profiles/${id}/`);
         this.profile = response.data;
         this.loading = false;
       } catch (error) {
