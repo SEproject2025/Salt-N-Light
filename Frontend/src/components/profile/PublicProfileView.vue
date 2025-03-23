@@ -2,6 +2,7 @@
   <div class="profile-card">
     <div class="profile-header">
       <h1>{{ profile.first_name }} {{ profile.last_name }}</h1>
+      <button v-if="!isOwnProfile" @click="sendFriendRequest">Connect</button>
     </div>
 
     <div class="profile-content">
@@ -364,6 +365,26 @@ export default {
         return "Remove tag you added";
       }
       return "This tag was added by another user";
+    },
+    async sendFriendRequest() {
+      try {
+        const requestData = {
+          sender: this.currentUserId,
+          receiver: this.profile.user.id,
+        };
+
+        // Log the request data to the console
+        console.log("Sending friend request with data:", requestData);
+
+        await api.post("api/friendships/", requestData, {
+          headers: this.getAuthHeader(),
+        });
+
+        alert("Friend request sent!");
+      } catch (error) {
+        console.error("Error sending friend request:", error);
+        alert("Failed to send friend request.");
+      }
     },
   },
   mounted() {

@@ -26,6 +26,14 @@
             }}</span>
           </div>
           <div class="notification-message">{{ notification.message }}</div>
+          <div v-if="notification.notification_type === 'friend_request'">
+            <button @click="respondToFriendRequest(notification.id, 'accept')">
+              Accept
+            </button>
+            <button @click="respondToFriendRequest(notification.id, 'reject')">
+              Reject
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -64,58 +72,30 @@ export default {
       this.error = null;
 
       try {
-        const token = localStorage.getItem("access_token");
-        if (!token) {
-          this.error = "Please log in to view notifications";
-          return;
-        }
-
         const response = await api.get("api/notifications", {
           headers: this.getAuthHeader(),
         });
-
-        console.log("Notifications response:", response.data);
         this.notifications = response.data;
       } catch (error) {
         console.error("Error fetching notifications:", error);
-        if (error.response?.status === 401) {
-          // Try to refresh the token
-          try {
-            const refreshToken = localStorage.getItem("refresh_token");
-            if (!refreshToken) {
-              throw new Error("No refresh token");
-            }
-
-            const refreshResponse = await api.post("api/token/refresh/", {
-              refresh: refreshToken,
-            });
-
-            localStorage.setItem("access_token", refreshResponse.data.access);
-
-            // Retry the original request with new token
-            const response = await api.get("api/notifications/", {
-              headers: {
-                Authorization: `Bearer ${refreshResponse.data.access}`,
-              },
-            });
-
-            this.notifications = response.data;
-          } catch (refreshError) {
-            console.error("Token refresh failed:", refreshError);
-            this.error = "Session expired. Please log in again.";
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
-          }
-        } else {
-          this.error = "Failed to load notifications";
-        }
+        this.error = "Failed to load notifications";
       } finally {
         this.loading = false;
       }
     },
+    async respondToFriendRequest(notificationId, action) {
+      try {
+        await api.post(`api/friendships/${notificationId}/respond/`, {
+          action: action,
+        });
+        this.fetchNotifications(); // Refresh notifications after action
+      } catch (error) {
+        console.error("Error responding to friend request:", error);
+        this.error = "Failed to respond to friend request.";
+      }
+    },
   },
   mounted() {
-    console.log("NotificationList component mounted");
     this.fetchNotifications();
   },
 };
