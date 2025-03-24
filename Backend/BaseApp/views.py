@@ -36,6 +36,59 @@ class ProfileListCreateView(generics.ListCreateAPIView):
    filterset_fields = ['user_type', 'city', 'state', 'country',
                        'denomination', 'tags']
 
+class ProfileSearchView(generics.ListAPIView):
+    serializer_class = ProfileSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = Profile.objects.select_related('user').prefetch_related('tags').all()
+        
+        # Get search parameters
+        query = self.request.query_params.get('q', '')
+        user_type = self.request.query_params.get('user_type', '')
+        location = self.request.query_params.get('location', '')
+        tags = self.request.query_params.getlist('tags', [])
+        page_size = int(self.request.query_params.get('page_size', 10))
+        page = int(self.request.query_params.get('page', 1))
+        
+        # Build the query
+        if query:
+            queryset = queryset.filter(
+                Q(user__username__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query) |
+                Q(description__icontains=query)
+            )
+        
+        if user_type:
+            queryset = queryset.filter(user_type=user_type)
+            
+        if location:
+            queryset = queryset.filter(
+                Q(city__icontains=location) |
+                Q(state__icontains=location) |
+                Q(country__icontains=location)
+            )
+            
+        if tags:
+            queryset = queryset.filter(tags__tag_name__in=tags).distinct()
+            
+        # Log search history
+        if query or user_type or location or tags:
+            SearchHistory.objects.create(
+                user=self.request.user,
+                search_text=query,
+                search_parameters={
+                    'user_type': user_type,
+                    'location': location,
+                    'tags': tags,
+                    'page': page,
+                    'page_size': page_size
+                }
+            )
+            
+        return queryset
 
 class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
    queryset = (

@@ -11,6 +11,11 @@
       </a>
     </div>
 
+    <!-- Quick Search for logged in users -->
+    <div v-if="isLoggedIn" class="quick-search-container">
+      <QuickSearch />
+    </div>
+
     <!-- Navigation Links -->
     <nav class="nav-links">
       <a href="/SearchPage" class="nav-link">Explore</a>
@@ -26,8 +31,22 @@
 </template>
 
 <script>
+import QuickSearch from "@/search/QuickSearch.vue";
+
 export default {
   name: "HeaderComponent",
+  components: {
+    QuickSearch,
+  },
+  data() {
+    return {
+      isLoggedIn: false,
+    };
+  },
+  created() {
+    // Check if user is logged in
+    this.isLoggedIn = !!localStorage.getItem("access_token");
+  },
   methods: {
     logout() {
       // Clear tokens from localStorage
@@ -70,10 +89,19 @@ export default {
   object-fit: cover;
 }
 
+/* Quick Search Container */
+.quick-search-container {
+  flex: 1;
+  max-width: 600px;
+  margin: 0 20px;
+  position: relative;
+}
+
 /* Navigation Links */
 .nav-links {
   display: flex;
   gap: 20px;
+  align-items: center;
 }
 
 .nav-link {
