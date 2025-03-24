@@ -408,24 +408,36 @@ class FriendshipViewSet(ModelViewSet):
       )
 
    @action(detail=True, methods=['post'])
-   def respond(self, request, pk=None):
-      friendship = self.get_object()
+   def respond(self, request, pk=None): # pylint: disable=unused-argument
 
-      # Explicitly reference pk to suppress warning
-      assert pk == str(friendship.pk), "pk mismatch"
+      try:
+         friendship = self.get_object()
+         print(f"Found friendship: {friendship}")
 
-      response_action = request.data.get('action')
+         response_action = request.data.get('action')
+         print(f"Action received: {response_action}")
 
+         if response_action == 'accept':
+            friendship.status = 'accepted'
+         elif response_action == 'reject':
+            friendship.status = 'rejected'
+         else:
+            return Response(
+               {"error": "Invalid action"},
+               status=status.HTTP_400_BAD_REQUEST
+            )
 
-      if response_action == 'accept':
-         friendship.status = 'accepted'
-      elif response_action == 'reject':
-         friendship.status = 'rejected'
-      else:
-         return Response({"error": "Invalid action"}, 
-                         status=status.HTTP_400_BAD_REQUEST)
-
-      friendship.save()
-      return Response({
-         "message": f"Friend request {response_action}ed successfully"},
-         status=status.HTTP_200_OK)
+         friendship.save()
+         return Response({
+            "message": f"Friend request {response_action}ed successfully"
+         }, status=status.HTTP_200_OK)
+      except ObjectDoesNotExist:
+         return Response(
+            {"error": "Friendship not found"},
+            status=status.HTTP_404_NOT_FOUND
+         )
+      except ValidationError as e:
+         return Response(
+            {"error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+         )

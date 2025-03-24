@@ -27,10 +27,10 @@
           </div>
           <div class="notification-message">{{ notification.message }}</div>
           <div v-if="notification.notification_type === 'friend_request'">
-            <button @click="respondToFriendRequest(notification.id, 'accept')">
+            <button @click="respondToFriendRequest(notification, 'accept')">
               Accept
             </button>
-            <button @click="respondToFriendRequest(notification.id, 'reject')">
+            <button @click="respondToFriendRequest(notification, 'reject')">
               Reject
             </button>
           </div>
@@ -83,11 +83,13 @@ export default {
         this.loading = false;
       }
     },
-    async respondToFriendRequest(notificationId, action) {
+    async respondToFriendRequest(notification, action) {
       try {
-        await api.post(`api/friendships/${notificationId}/respond/`, {
-          action: action,
-        });
+        await api.post(
+          `api/friendships/${notification.related_object_id}/respond/`,
+          { action: action },
+          { headers: this.getAuthHeader() }
+        );
         this.fetchNotifications(); // Refresh notifications after action
       } catch (error) {
         console.error("Error responding to friend request:", error);
