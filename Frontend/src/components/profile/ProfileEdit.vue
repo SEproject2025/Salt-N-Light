@@ -67,7 +67,7 @@
         <label>Tags</label>
         <select v-model="formData.selectedTags" multiple class="tag-select">
           <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">
-            {{ tag.tag_name }}
+            {{ tag.name }}
           </option>
         </select>
       </div>
@@ -152,9 +152,8 @@ export default {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   padding: 2rem;
   width: 100%;
-  max-width: 700px;
+  max-width: 900px;
   margin: 0 auto;
-  box-sizing: border-box;
 }
 
 .profile-header {
@@ -177,7 +176,6 @@ export default {
   grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
   margin-bottom: 1.5rem;
-  max-width: 100%;
 }
 
 .form-group {
@@ -260,15 +258,7 @@ export default {
   }
 
   .profile-card {
-    max-width: 95%;
-    padding: 1.5rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .profile-card {
     max-width: 100%;
-    padding: 1rem;
   }
 }
 </style>

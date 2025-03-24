@@ -1,7 +1,8 @@
 <template>
   <div class="profile-container">
-    <div v-if="showSpinner" class="loading-spinner">
+    <div v-if="loading" class="loading-spinner">
       <div class="spinner"></div>
+      <p>Loading...</p>
     </div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="profile-layout">
@@ -13,7 +14,25 @@
               :profile="profile"
               @edit="editing = true"
               key="view"
-            />
+            >
+              <div class="tag-section">
+                <div class="tag-header">
+                  <h3>Tags</h3>
+                  <button class="plus-button" @click="showTagDialog = true">
+                    <span class="plus-icon">+</span>
+                  </button>
+                </div>
+                <div class="tags-list">
+                  <div
+                    v-for="tag in profile.tags"
+                    :key="tag.id"
+                    class="tag-chip"
+                  >
+                    {{ tag.name }}
+                  </div>
+                </div>
+              </div>
+            </ProfileView>
             <ProfileEdit
               v-else
               :profile="profile"
@@ -72,18 +91,19 @@
 
 .loading-spinner {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
 }
 
 .spinner {
-  width: 30px;
-  height: 30px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #3498db;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
@@ -193,32 +213,11 @@
 }
 
 .tag-chip {
-  background: #e3f2fd;
-  color: #1976d2;
+  background-color: #3498db;
+  color: white;
   padding: 4px 12px;
-  border-radius: 100px;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.more-tags {
-  color: #666;
-  font-size: 12px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 100px;
-  background: #f5f5f5;
-  transition: background-color 0.2s;
-}
-
-.more-tags:hover {
-  background: #e0e0e0;
-}
-
-.no-tags {
-  color: #666;
+  border-radius: 16px;
   font-size: 14px;
-  font-style: italic;
 }
 
 .dialog-overlay {
@@ -334,56 +333,12 @@ export default {
       profile: {},
       originalProfile: {},
       loading: true,
-      showSpinner: false,
-      spinnerTimeout: null,
       error: null,
       editing: false,
       selectedTags: [],
       availableTags: [],
       showTagDialog: false,
-      showAllTags: false,
-      maxVisibleTags: 3,
     };
-  },
-  computed: {
-    displayedTags() {
-      if (!this.profile.tags) return [];
-      return this.showAllTags
-        ? this.profile.tags
-        : this.profile.tags.slice(0, this.maxVisibleTags);
-    },
-    hasMoreTags() {
-      return (
-        this.profile.tags && this.profile.tags.length > this.maxVisibleTags
-      );
-    },
-    hiddenTagsCount() {
-      return this.profile.tags
-        ? this.profile.tags.length - this.maxVisibleTags
-        : 0;
-    },
-  },
-  watch: {
-    loading(newVal) {
-      if (newVal) {
-        // Clear any existing timeout
-        if (this.spinnerTimeout) {
-          clearTimeout(this.spinnerTimeout);
-        }
-        // Set a new timeout to show spinner after 300ms
-        this.spinnerTimeout = setTimeout(() => {
-          if (this.loading) {
-            this.showSpinner = true;
-          }
-        }, 300);
-      } else {
-        // Clear timeout and hide spinner when loading is done
-        if (this.spinnerTimeout) {
-          clearTimeout(this.spinnerTimeout);
-        }
-        this.showSpinner = false;
-      }
-    },
   },
   methods: {
     getAuthHeader() {
@@ -401,39 +356,33 @@ export default {
           return;
         }
 
-        console.log("Fetching profile data...");
-        const profileResponse = await api.get(`api/profiles/me/`, {
-          headers: this.getAuthHeader(),
-        });
+        const [profileResponse, tagResponse] = await Promise.all([
+          api.get(`api/profiles/me/`, {
+            headers: this.getAuthHeader(),
+          }),
+          api.get(`tag/`),
+        ]);
 
         if (!profileResponse.data || !profileResponse.data.user) {
           throw new Error("Invalid profile data received");
         }
 
-        // Add detailed logging
-        console.log("Raw Profile Response:", profileResponse.data);
-        console.log("Profile Tags Array:", profileResponse.data.tags);
-        if (profileResponse.data.tags && profileResponse.data.tags.length > 0) {
-          console.log("First Tag Object:", profileResponse.data.tags[0]);
-          console.log("First Tag Properties:", {
-            id: profileResponse.data.tags[0].id,
-            tag_name: profileResponse.data.tags[0].tag_name,
-            tag_description: profileResponse.data.tags[0].tag_description,
-            is_self_added: profileResponse.data.tags[0].is_self_added,
-          });
-        }
-
         this.profile = profileResponse.data;
         this.originalProfile = JSON.parse(JSON.stringify(profileResponse.data));
         this.selectedTags = profileResponse.data.tags.map((tag) => tag.id);
-        this.availableTags = profileResponse.data.tags;
 
-        // Log final state
-        console.log("Final Profile State:", {
-          profileTags: this.profile.tags,
-          selectedTags: this.selectedTags,
-          availableTags: this.availableTags,
-        });
+        this.availableTags = tagResponse.data.map((tag) => ({
+          id: tag.id,
+          name: tag.tag_name,
+        }));
+
+        this.profile.tags = profileResponse.data.tags.map(
+          (tagId) =>
+            this.availableTags.find((tag) => tag.id === tagId) || {
+              id: tagId,
+              name: "Unknown Tag",
+            }
+        );
       } catch (err) {
         console.error("Profile fetch error:", err);
         if (err.response?.status === 401 && retry) {

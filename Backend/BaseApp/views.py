@@ -42,7 +42,7 @@ class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
    queryset = (
       Profile.objects
       .select_related('user')
-      .prefetch_related('tags')
+      .prefetch_related('tags', 'profile_taggings')  # Added profile_taggings for is_self_added info
       .all()
    )
    serializer_class = ProfileSerializer
@@ -51,7 +51,30 @@ class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
    def get_serializer_context(self):
       context = super().get_serializer_context()
       context['profile_id'] = self.kwargs.get('pk')
+      context['request'] = self.request  # Add request to context for is_self_added
       return context
+
+   def retrieve(self, request, *args, **kwargs):
+      instance = self.get_object()
+      serializer = self.get_serializer(instance)
+      data = serializer.data
+      
+      # Ensure tags are in the format expected by the frontend
+      if 'tags' in data:
+         # Each tag should have id, tag_name, and is_self_added
+         data['tags'] = [
+            {
+               'id': tag['id'],
+               'tag_name': tag['tag_name'],
+               'is_self_added': tag.get('is_self_added', False)
+            }
+            for tag in data['tags']
+         ]
+      
+      # Add tag_ids for backward compatibility and frontend editing
+      data['tag_ids'] = [tag['id'] for tag in data.get('tags', [])]
+      
+      return Response(data)
 
 class MatchmakingResultsView(generics.ListAPIView):
    serializer_class = ProfileSerializer

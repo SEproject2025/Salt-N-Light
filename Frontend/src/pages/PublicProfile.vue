@@ -1,7 +1,8 @@
 <template>
   <div class="profile-container">
-    <div v-if="showSpinner" class="loading-spinner">
+    <div v-if="loading" class="loading-spinner">
       <div class="spinner"></div>
+      <p>Loading...</p>
     </div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else>
@@ -29,7 +30,6 @@ import api from "@/api/axios.js";
 import PublicProfileView from "@/components/profile/PublicProfileView.vue";
 import ProfileVotingSection from "@/components/profile/ProfileVotingSection.vue";
 import { jwtDecode } from "jwt-decode";
-const API_BASE_URL = process.env.VUE_APP_API_URL || "http://localhost:8000";
 
 export default {
   name: "PublicProfile",
@@ -41,33 +41,9 @@ export default {
     return {
       profile: {},
       loading: true,
-      showSpinner: false,
-      spinnerTimeout: null,
       error: null,
-      redirecting: false,
+      isOwnProfile: false,
     };
-  },
-  watch: {
-    loading(newVal) {
-      if (newVal) {
-        // Clear any existing timeout
-        if (this.spinnerTimeout) {
-          clearTimeout(this.spinnerTimeout);
-        }
-        // Set a new timeout to show spinner after 300ms
-        this.spinnerTimeout = setTimeout(() => {
-          if (this.loading) {
-            this.showSpinner = true;
-          }
-        }, 300);
-      } else {
-        // Clear timeout and hide spinner when loading is done
-        if (this.spinnerTimeout) {
-          clearTimeout(this.spinnerTimeout);
-        }
-        this.showSpinner = false;
-      }
-    },
   },
   methods: {
     getCurrentUserId() {
@@ -78,10 +54,9 @@ export default {
       }
       return null;
     },
-    async fetchProfile(profileId = null) {
+    async fetchProfile() {
       try {
-        // Use provided profileId or get from current route
-        const id = profileId || this.$route.params.id;
+        const profileId = this.$route.params.id;
         const currentUserId = this.getCurrentUserId();
 
         // Check if this is the user's own profile
@@ -89,51 +64,97 @@ export default {
           currentUserId && parseInt(profileId) === currentUserId;
 
         // If the profile being viewed belongs to the current user, redirect to UserProfile
-        if (currentUserId && parseInt(id) === currentUserId) {
-          this.redirecting = true; // Set redirecting flag
-          this.loading = false; // Stop loading
-          await this.$router.push("/UserProfile");
+        if (this.isOwnProfile) {
+          this.$router.push("/UserProfile");
           return;
         }
 
-        const response = await api.get(`${API_BASE_URL}/api/profiles/${id}/`);
-        this.profile = response.data;
-        this.loading = false;
+        const [profileResponse, tagResponse] = await Promise.all([
+          api.get(`api/profiles/${profileId}/`, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          }),
+          api.get(`tag/`, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          }),
+        ]);
+
+        // Get the profile data
+        const profileData = profileResponse.data;
+
+        // Map the tags using the tag response data
+        const availableTags = tagResponse.data.map((tag) => ({
+          id: tag.id,
+          name: tag.tag_name,
+          description: tag.tag_description,
+        }));
+
+        // Map the profile tags to include the full tag information
+        if (Array.isArray(profileData.tags)) {
+          profileData.tags = profileData.tags.map(
+            (tagId) =>
+              availableTags.find((tag) => tag.id === tagId) || {
+                id: tagId,
+                name: "Unknown Tag",
+              }
+          );
+        } else {
+          profileData.tags = [];
+        }
+
+        this.profile = profileData;
+      } catch (err) {
+        console.error("Failed to load profile:", err);
+        this.error = "Failed to load profile data.";
+      } finally {
+        if (!this.redirecting) {
+          this.loading = false;
+        }
+      }
+    },
+    async handleTagAdded() {
+      try {
+        // Refresh the profile data to show the new tag
+        await this.fetchProfile();
       } catch (error) {
-        console.error("Error fetching profile:", error);
-        this.error = "Failed to load profile. Please try again.";
-        this.loading = false;
+        console.error("Error refreshing profile after tag addition:", error);
+      }
+    },
+    async handleTagRemoved() {
+      try {
+        // Refresh the profile data to show the removed tag
+        await this.fetchProfile();
+      } catch (error) {
+        console.error("Error refreshing profile after tag removal:", error);
       }
     },
   },
-  beforeRouteUpdate(to, from, next) {
-    // Reset loading state and fetch new profile data using the new route parameters
-    this.loading = true;
-    this.error = null;
-    this.profile = {};
-    this.fetchProfile(to.params.id);
+  beforeRouteEnter(to, from, next) {
+    // Always call next() once and handle the redirect in the component
     next();
   },
   async created() {
     try {
-      // First try to get the current user's profile
+      // Try to get the current user's profile first
       const token = localStorage.getItem("access_token");
       if (token) {
         const response = await api.get(`/api/profiles/me/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const currentUserId = response.data.user.id;
-        const profileId = this.$route.params.id;
 
-        // If the profile being viewed belongs to the current user, redirect to UserProfile
-        if (currentUserId === parseInt(profileId)) {
+        // If the profile ID matches the route param, redirect
+        if (response.data.user.id === parseInt(this.$route.params.id)) {
           this.redirecting = true;
           this.loading = false;
-          await this.$router.push("/UserProfile");
+          this.$router.push("/UserProfile");
           return;
         }
       }
-      // If the /me/ endpoint fails, just try to fetch the profile
+
+      // If we get here, either there's no token or it's not the user's profile
       await this.fetchProfile();
     } catch (error) {
       // If the /me/ endpoint fails, just try to fetch the profile
@@ -184,18 +205,19 @@ export default {
 
 .loading-spinner {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
 }
 
 .spinner {
-  width: 30px;
-  height: 30px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #3498db;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
