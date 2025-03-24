@@ -97,7 +97,9 @@ ALLOWED_HOSTS = [
    "evangelium.app",
    "www.evangelium.app",
    "baptist.coffee",
-   "www.baptist.coffee"
+   "www.baptist.coffee",
+   "127.0.0.1",
+   "localhost"
 ]
 
 CORS_ALLOWED_ORIGINS = [

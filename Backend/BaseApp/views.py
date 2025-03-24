@@ -382,3 +382,60 @@ class NotificationView(ModelViewSet):
    def perform_create(self, serializer):
       # Set the recipient as the current user when creating a notification
       serializer.save(recipient=self.request.user)
+
+class ProfileSearchView(generics.ListAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['created_at', 'vote_count']
+
+    def get_queryset(self):
+        queryset = Profile.objects.select_related('user').prefetch_related('tags')
+        
+        # Get search parameters
+        search_query = self.request.query_params.get('q', '')
+        user_type = self.request.query_params.get('user_type', '')
+        location = self.request.query_params.get('location', '')
+        tags = self.request.query_params.getlist('tags', [])
+        
+        # Apply filters
+        if search_query:
+            queryset = queryset.filter(
+                Q(user__username__icontains=search_query) |
+                Q(denomination__icontains=search_query) |
+                Q(bio__icontains=search_query)
+            )
+        
+        if user_type:
+            queryset = queryset.filter(user_type__iexact=user_type)
+        
+        if location:
+            queryset = queryset.filter(
+                Q(city__icontains=location) |
+                Q(state__icontains=location) |
+                Q(country__icontains=location)
+            )
+        
+        if tags:
+            queryset = queryset.filter(tags__id__in=tags).distinct()
+        
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+            
+        except Exception as e:
+            logger.error(f"Error in profile search: {str(e)}")
+            return Response(
+                {"error": "An error occurred while searching profiles"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

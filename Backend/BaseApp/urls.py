@@ -5,7 +5,8 @@ from .views import TagViewSet, SearchHistoryViewSet, \
     ProfileListCreateView, ProfileDetailView, \
     MatchmakingResultsView, CurrentUserView, \
     ProfileVoteView, ProfileCommentView, \
-    ProfileVoteStatusView, NotificationView
+    ProfileVoteStatusView, NotificationView, \
+    ProfileSearchView
 
 # Automatically generates URLs for all ViewSet classes
 router = routers.DefaultRouter()
@@ -18,6 +19,8 @@ urlpatterns = [
    path('', include(router.urls)),
    path('api/profiles/', ProfileListCreateView.as_view(),
         name='profile-list-create'),
+   path('api/profiles/search/', ProfileSearchView.as_view(),
+        name='profile-search'),
    path('api/profiles/<int:pk>/', ProfileDetailView.as_view(),
         name='profile-detail'),
    path('api/profiles/match', MatchmakingResultsView.as_view()),

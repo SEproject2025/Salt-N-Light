@@ -7,7 +7,7 @@
       :style="{ backgroundColor: '#f55d25', color: 'black' }"
       :title="tag.description || 'No description available'"
     >
-      <div class="chip-label">{{ tag.name }}</div>
+      <div class="chip-label">{{ tag.tag_name }}</div>
     </div>
   </div>
 </template>
