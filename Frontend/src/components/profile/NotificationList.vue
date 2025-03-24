@@ -26,11 +26,20 @@
             }}</span>
           </div>
           <div class="notification-message">{{ notification.message }}</div>
-          <div v-if="notification.notification_type === 'friend_request'">
-            <button @click="respondToFriendRequest(notification, 'accept')">
+          <div
+            v-if="notification.notification_type === 'friend_request'"
+            class="friend-request-actions"
+          >
+            <button
+              class="accept-btn"
+              @click="respondToFriendRequest(notification, 'accept')"
+            >
               Accept
             </button>
-            <button @click="respondToFriendRequest(notification, 'reject')">
+            <button
+              class="reject-btn"
+              @click="respondToFriendRequest(notification, 'reject')"
+            >
               Reject
             </button>
           </div>
@@ -116,37 +125,27 @@ export default {
   margin-top: 15px;
 }
 
-.loading,
-.error-message {
-  text-align: center;
-  padding: 20px;
-  color: #666;
-}
-
-.error-message {
-  color: #dc3545;
-}
-
 .notification-item {
   border: 1px solid #e0e0e0;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 15px;
-  margin-bottom: 10px;
-  background-color: #f9f9f9;
-  transition: background-color 0.2s;
+  margin-bottom: 12px;
+  background-color: #ffffff;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .notification-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .notification-type {
-  font-weight: bold;
+  font-weight: 599;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 20px;
   font-size: 0.9em;
 }
 
@@ -162,18 +161,72 @@ export default {
 
 .notification-date {
   color: #666;
-  font-size: 0.9em;
+  font-size: 0.85em;
 }
 
 .notification-message {
   color: #333;
-  margin-top: 5px;
+  margin: 10px 0;
+  font-size: 1em;
+  line-height: 1.4;
+}
+
+.friend-request-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.accept-btn,
+.reject-btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9em;
+}
+
+.accept-btn {
+  background-color: #ffffff;
+  color: #43a047;
+  border: 1px solid #43a047;
+}
+
+.accept-btn:hover {
+  background-color: #43a047;
+  color: white;
+}
+
+.reject-btn {
+  background-color: #ffffff;
+  color: #f44336;
+  border: 1px solid #f44336;
+}
+
+.reject-btn:hover {
+  background-color: #f44336;
+  color: white;
+}
+
+.loading,
+.error-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.error-message {
+  color: #f44336;
 }
 
 .no-notifications {
   text-align: center;
   color: #666;
-  padding: 20px;
+  padding: 30px;
   font-style: italic;
+  background-color: #f5f5f5;
+  border-radius: 8px;
 }
 </style>
