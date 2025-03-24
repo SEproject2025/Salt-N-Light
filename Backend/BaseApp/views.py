@@ -17,7 +17,7 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist, \
                                    PermissionDenied
 from .models import Tag, SearchHistory, \
     ExternalMedia, Profile, ProfileVote, ProfileComment, \
-    ProfileTagging, Notification
+    ProfileTagging, Notification, Friendship
 from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
     ProfileSerializer, ProfileVoteSerializer,\
@@ -388,7 +388,14 @@ class FriendshipViewSet(ModelViewSet):
    authentication_classes = [JWTAuthentication]
    permission_classes = [AllowAny]
 
+   # Define the queryset
+   queryset = Friendship.objects.all()
+
    def perform_create(self, serializer):
+      # Check if the user is authenticated
+      if not self.request.user.is_authenticated:
+         raise PermissionDenied("You must log in to send a friend request.")
+
       # Set the sender as the current user
       serializer.save(sender=self.request.user)
 
@@ -401,9 +408,14 @@ class FriendshipViewSet(ModelViewSet):
       )
 
    @action(detail=True, methods=['post'])
-   def respond(self, request):
+   def respond(self, request, pk=None):
       friendship = self.get_object()
+
+      # Explicitly reference pk to suppress warning
+      assert pk == str(friendship.pk), "pk mismatch"
+
       response_action = request.data.get('action')
+
 
       if response_action == 'accept':
          friendship.status = 'accepted'

@@ -139,8 +139,9 @@ class Notification(models.Model):
       ordering = ['-created_at']
 
    def __str__(self):
-      return f"{
-         self.notification_type} notification for {self.recipient.username}" # pylint: disable=no-member
+      return (f"{self.notification_type} notification for" # pylint:disable=no-member
+              f"{self.recipient.username}" # pylint: disable=no-member
+      )
 
 class Friendship(models.Model):
    sender = models.ForeignKey(User, on_delete=models.CASCADE,
@@ -154,7 +155,7 @@ class Friendship(models.Model):
    created_at = models.DateTimeField(auto_now_add=True)
 
    def __str__(self):
-      return (f"{self.sender.username} ->"                # pylint: disable=no-member
+      return (f"{self.sender.username} ->" # pylint: disable=no-member
               f"{self.receiver.username} ({self.status})" # pylint: disable=no-member
       )
 
