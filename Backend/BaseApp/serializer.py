@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.db.utils import OperationalError
 from .models import Tag, SearchHistory, \
-    ExternalMedia, Profile, ProfileVote, ProfileComment, Notification
+    ExternalMedia, Profile, ProfileVote, ProfileComment, Notification, ProfileTagging
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -68,15 +68,28 @@ class ProfileCommentSerializer(serializers.ModelSerializer):
       return super().create(validated_data)
 
 
+class FullTagSerializer(serializers.ModelSerializer):
+    is_self_added = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Tag
+        fields = ['id', 'tag_name', 'tag_description', 'tag_is_predefined', 'is_self_added']
+
+    def get_is_self_added(self, obj):
+        profile_id = self.context.get('profile_id')
+        if not profile_id:
+            return False
+        try:
+            tagging = ProfileTagging.objects.get(profile_id=profile_id, tag=obj)
+            return tagging.is_self_added
+        except ProfileTagging.DoesNotExist:
+            return False
+
 class ProfileSerializer(serializers.ModelSerializer):
    user = UserSerializer()  # Nested User serializer
-   tags = TagSerializer(many=True, read_only=True)  # For reading tags
-   tags_ids = serializers.PrimaryKeyRelatedField(
-      queryset=Tag.objects.all(),
-      many=True,
-      write_only=True,
-      source='tags'
-   )  # For writing tags
+   tags = serializers.PrimaryKeyRelatedField(
+      queryset=Tag.objects.all(), many=True, required=False)
+   full_tags = FullTagSerializer(source='tags', many=True, read_only=True)
    vote_count = serializers.SerializerMethodField()
    comments = ProfileCommentSerializer(
       source='comments_received', many=True, read_only=True)
@@ -84,16 +97,13 @@ class ProfileSerializer(serializers.ModelSerializer):
 
    class Meta:
       model = Profile
-      fields = ['user', 'tags', 'tags_ids', 'vote_count', 'comments',
-               'current_user_vote', 'user_type', 'first_name', 'last_name',
-               'denomination', 'street_address', 'city', 'state', 'country',
-               'phone_number', 'years_of_experience', 'description',
-               'profile_picture']
+      fields = '__all__'
 
-   def to_representation(self, instance):
-      # Add profile_id to context for TagSerializer
-      self.context['profile_id'] = instance.user.id
-      return super().to_representation(instance)
+   def get_serializer_context(self):
+      context = super().get_serializer_context()
+      if hasattr(self, 'instance'):
+         context['profile_id'] = self.instance.id
+      return context
 
    def create(self, validated_data):
       user_data = validated_data.pop('user')

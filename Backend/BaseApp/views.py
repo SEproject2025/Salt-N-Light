@@ -384,95 +384,112 @@ class ProfileVoteStatusView(views.APIView):
 
 
 class ProfileSearchView(generics.ListAPIView):
-   serializer_class = ProfileSerializer
-   authentication_classes = [JWTAuthentication]
-   permission_classes = [IsAuthenticated]
-   pagination_class = PageNumberPagination
+    serializer_class = ProfileSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['created_at', 'vote_count']
 
-   def get_queryset(self):
-      # Start with base queryset and
-      # exclude profiles without a user_type or anonymous profiles
-      queryset = (Profile.objects
-                 .select_related('user')
-                 .prefetch_related('tags')
-                 .exclude(user_type__isnull=True)
-                 .exclude(user_type='')
-                 .exclude(user_type='anonymous'))
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        if hasattr(self, 'request'):
+            context['request'] = self.request
+        return context
 
-      # Get search parameters from query string
-      search_query = self.request.query_params.get('q', '')
-      user_type = self.request.query_params.get('user_type', '')
-      tags = self.request.query_params.getlist('tags', [])
-      location = self.request.query_params.get('location', '')
-      sort = self.request.query_params.get('sort', 'recent')
-
-      # Apply sorting
-      if sort == 'recent':
-         queryset = queryset.order_by('-user_id')  # Most recent users first
-      elif sort == 'name':
-         queryset = queryset.order_by('first_name', 'last_name')
-      elif sort == 'location':
-         queryset = queryset.order_by('country', 'state', 'city')
-
-      # Only apply filters if search parameters are provided
-      if any([search_query, user_type, tags, location]):
-         if search_query:
+    def get_queryset(self):
+        queryset = Profile.objects.select_related('user').prefetch_related('tags')
+        
+        # Get search parameters
+        search_query = self.request.query_params.get('q', '')
+        user_type = self.request.query_params.get('user_type', '')
+        location = self.request.query_params.get('location', '')
+        tags = self.request.query_params.getlist('tags', [])
+        sort = self.request.query_params.get('sort', 'recent')
+        
+        # Apply sorting
+        if sort == 'recent':
+            queryset = queryset.order_by('-user_id')
+        elif sort == 'name':
+            queryset = queryset.order_by('first_name', 'last_name')
+        elif sort == 'location':
+            queryset = queryset.order_by('country', 'state', 'city')
+        
+        # Apply filters
+        if search_query:
             queryset = queryset.filter(
-               Q(first_name__icontains=search_query) |
-               Q(last_name__icontains=search_query) |
-               Q(description__icontains=search_query) |
-               Q(street_address__icontains=search_query) |
-               Q(city__icontains=search_query) |
-               Q(state__icontains=search_query) |
-               Q(country__icontains=search_query)
+                Q(user__username__icontains=search_query) |
+                Q(denomination__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query)
             )
-
-         if user_type:
-            queryset = queryset.filter(user_type=user_type)
-
-         if tags:
-            queryset = queryset.filter(tags__tag_name__in=tags).distinct()
-
-         if location:
+        
+        if user_type:
+            queryset = queryset.filter(user_type__iexact=user_type)
+        
+        if location:
             queryset = queryset.filter(
-               Q(street_address__icontains=location) |
-               Q(city__icontains=location) |
-               Q(state__icontains=location) |
-               Q(country__icontains=location)
+                Q(city__icontains=location) |
+                Q(state__icontains=location) |
+                Q(country__icontains=location)
             )
+        
+        if tags:
+            # Handle both tag IDs and tag names
+            tag_queryset = Tag.objects.filter(
+                Q(id__in=tags) | Q(tag_name__in=tags)
+            )
+            queryset = queryset.filter(tags__in=tag_queryset).distinct()
+        
+        return queryset
 
-      return queryset
-
-   def list(self, request, *args, **kwargs):
-      # Get the page size from query params, default to 'all'
-      page_size = request.query_params.get('page_size', 'all')
-
-      # Handle 'all' option (now the default)
-      if page_size == 'all':
-         queryset = self.get_queryset()
-         serializer = self.get_serializer(queryset, many=True)
-         return response.Response({
-            'count': len(serializer.data),
-            'next': None,
-            'previous': None,
-            'results': serializer.data
-         })
-
-      # Set the page size for pagination if a specific size is requested
-      try:
-         self.pagination_class.page_size = int(page_size)
-      except ValueError:
-         # If invalid page size, default to showing all
-         queryset = self.get_queryset()
-         serializer = self.get_serializer(queryset, many=True)
-         return response.Response({
-            'count': len(serializer.data),
-            'next': None,
-            'previous': None,
-            'results': serializer.data
-         })
-
-      return super().list(request, *args, **kwargs)
+    def list(self, request, *args, **kwargs):
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            page_size = request.query_params.get('page_size', 'all')
+            
+            # Handle 'all' option
+            if page_size == 'all':
+                serializer = self.get_serializer(queryset, many=True)
+                return Response({
+                    'count': len(serializer.data),
+                    'next': None,
+                    'previous': None,
+                    'results': serializer.data
+                })
+            
+            # Set pagination
+            try:
+                self.pagination_class.page_size = int(page_size)
+            except ValueError:
+                # If invalid page size, default to showing all
+                serializer = self.get_serializer(queryset, many=True)
+                return Response({
+                    'count': len(serializer.data),
+                    'next': None,
+                    'previous': None,
+                    'results': serializer.data
+                })
+            
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({
+                'count': len(serializer.data),
+                'next': None,
+                'previous': None,
+                'results': serializer.data
+            })
+            
+        except Exception as e:
+            logger.error(f"Error in profile search: {str(e)}")
+            return Response(
+                {"error": "An error occurred while searching profiles"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class NotificationView(ModelViewSet):
