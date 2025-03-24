@@ -2,7 +2,17 @@
   <div class="profile-card">
     <div class="profile-header">
       <h1>{{ profile.first_name }} {{ profile.last_name }}</h1>
-      <button v-if="!isOwnProfile" @click="sendFriendRequest">Connect</button>
+      <button
+        v-if="!isOwnProfile"
+        @click="sendFriendRequest"
+        :class="[
+          'connect-button',
+          { pending: pendingFriendRequests.has(profile.user.id) },
+        ]"
+        :disabled="pendingFriendRequests.has(profile.user.id)"
+      >
+        {{ pendingFriendRequests.has(profile.user.id) ? "Pending" : "Connect" }}
+      </button>
     </div>
 
     <div class="profile-content">
@@ -160,6 +170,7 @@ export default {
       error: null,
       localTags: [],
       showTagDropdown: false,
+      pendingFriendRequests: new Set(),
     };
   },
   computed: {
@@ -368,25 +379,31 @@ export default {
     },
     async sendFriendRequest() {
       try {
-        const headers = this.getAuthHeader();
-        console.log("Headers:", headers);
+        // Check if request is already pending
+        if (this.pendingFriendRequests.has(this.profile.user.id)) {
+          return;
+        }
 
+        const headers = this.getAuthHeader();
         const payload = {
           receiver: this.profile.user.id,
         };
-        console.log("Payload:", payload);
 
-        const response = await api.post("api/friendships/", payload, {
+        // Add to pending requests
+        this.pendingFriendRequests.add(this.profile.user.id);
+
+        await api.post("api/friendships/", payload, {
           headers,
         });
 
-        console.log("Friend request response:", response);
         alert("Friend request sent!");
       } catch (error) {
         console.error("Error sending friend request:", error.response || error);
         alert(
           `Failed to send friend request. ${error.response?.data?.detail || ""}`
         );
+        // Remove from pending if request failed
+        this.pendingFriendRequests.delete(this.profile.user.id);
       }
     },
   },
@@ -720,5 +737,30 @@ export default {
 
   opacity: 5;
   transition: opacity 0.5s;
+}
+
+.connect-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.connect-button:hover:not(:disabled) {
+  background-color: #2980b9;
+}
+
+.connect-button.pending {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+.connect-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 </style>
