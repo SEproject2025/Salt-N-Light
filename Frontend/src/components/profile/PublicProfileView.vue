@@ -1,146 +1,151 @@
 <template>
-  <div class="profile-card">
-    <div class="profile-header">
-      <h1>{{ profile.first_name }} {{ profile.last_name }}</h1>
-      <button
-        v-if="!isOwnProfile"
-        @click="sendFriendRequest"
-        :class="[
-          'connect-button',
-          { pending: pendingFriendRequests.has(profile.user.id) },
-        ]"
-        :disabled="pendingFriendRequests.has(profile.user.id)"
-      >
-        {{ pendingFriendRequests.has(profile.user.id) ? "Pending" : "Connect" }}
-      </button>
-    </div>
-
-    <div class="profile-content">
-      <div class="profile-section">
-        <h3>Personal Information</h3>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label">Username</span>
-            <span class="value">{{ profile.user?.username }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Email</span>
-            <span class="value">{{ profile.user?.email }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">User Type</span>
-            <span class="value">{{ profile.user_type }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Denomination</span>
-            <span class="value">{{ profile.denomination }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Phone</span>
-            <span class="value">{{ profile.phone_number }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Years of Experience</span>
-            <span class="value">{{ profile.years_of_experience }}</span>
-          </div>
-        </div>
+  <div v-if="profile">
+    <div class="profile-card">
+      <div class="profile-header">
+        <h1>{{ profile?.first_name }} {{ profile?.last_name }}</h1>
+        <button
+          v-if="!isOwnProfile && profile?.user?.id"
+          @click="sendFriendRequest"
+          :class="[
+            'connect-button',
+            { pending: pendingFriendRequests.has(profile.user.id) },
+          ]"
+          :disabled="pendingFriendRequests.has(profile.user.id)"
+        >
+          {{
+            pendingFriendRequests.has(profile.user.id) ? "Pending" : "Connect"
+          }}
+        </button>
       </div>
 
-      <div class="profile-section">
-        <h3>Location</h3>
-        <div class="address">
-          <p>{{ profile.street_address }}</p>
-          <p>{{ profile.city }}, {{ profile.state }}</p>
-          <p>{{ profile.country }}</p>
+      <div class="profile-content">
+        <div class="profile-section">
+          <h3>Personal Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Username</span>
+              <span class="value">{{ profile?.user?.username }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Email</span>
+              <span class="value">{{ profile?.user?.email }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">User Type</span>
+              <span class="value">{{ profile?.user_type }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Denomination</span>
+              <span class="value">{{ profile?.denomination }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Phone</span>
+              <span class="value">{{ profile?.phone_number }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Years of Experience</span>
+              <span class="value">{{ profile?.years_of_experience }}</span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div class="profile-section">
-        <div class="tag-header">
-          <h3>Tags</h3>
-          <div class="tag-controls">
-            <div class="tag-dropdown">
-              <button
-                v-if="!isOwnProfile"
-                class="add-tag-btn"
-                @click="toggleTagDropdown"
-              >
-                <span class="plus-icon">+</span>
-              </button>
-              <div v-if="showTagDropdown" class="tag-dropdown-menu">
-                <div
-                  v-for="tag in availableTags"
-                  :key="tag.id"
-                  class="tag-dropdown-item"
-                  @click="handleAddTag(tag.id)"
+        <div class="profile-section">
+          <h3>Location</h3>
+          <div class="address">
+            <p>{{ profile?.street_address }}</p>
+            <p>{{ profile?.city }}, {{ profile?.state }}</p>
+            <p>{{ profile?.country }}</p>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="tag-header">
+            <h3>Tags</h3>
+            <div class="tag-controls">
+              <div class="tag-dropdown">
+                <button
+                  v-if="!isOwnProfile"
+                  class="add-tag-btn"
+                  @click="toggleTagDropdown"
                 >
-                  {{ tag.name }}
+                  <span class="plus-icon">+</span>
+                </button>
+                <div v-if="showTagDropdown" class="tag-dropdown-menu">
+                  <div
+                    v-for="tag in availableTags"
+                    :key="tag.id"
+                    class="tag-dropdown-item"
+                    @click="handleAddTag(tag.id)"
+                  >
+                    {{ tag.name }}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="tags">
-          <span
-            v-for="tag in displayTags"
-            :key="tag.id"
-            class="tag"
-            :class="{ 'self-added': tag.is_self_added }"
-            :title="getTagTitle(tag)"
-          >
-            {{ tag.name }}
-            <button
-              v-if="canRemoveTag(tag)"
-              class="remove-tag-btn"
-              @click="handleRemoveTag(tag.id)"
+          <div class="tags">
+            <span
+              v-for="tag in displayTags"
+              :key="tag.id"
+              class="tag"
+              :class="{ 'self-added': tag.is_self_added }"
               :title="getTagTitle(tag)"
             >
-              ×
-            </button>
-          </span>
-        </div>
-        <div v-if="error" class="error" role="alert">{{ error }}</div>
-      </div>
-
-      <div class="profile-section">
-        <h3>Description</h3>
-        <p class="description">{{ profile.description }}</p>
-      </div>
-    </div>
-
-    <!-- Tag Dialog -->
-    <div v-if="showTagDialog" class="dialog-overlay" @click="closeTagDialog">
-      <div class="dialog" @click.stop>
-        <h3>Add Tag</h3>
-        <div class="dialog-content">
-          <div class="form-group">
-            <label>Select Tag:</label>
-            <select v-model="selectedTag" class="tag-select">
-              <option value="">Choose a tag...</option>
-              <option
-                v-for="tag in availableTags"
-                :key="tag.id"
-                :value="tag.id"
+              {{ tag.name }}
+              <button
+                v-if="canRemoveTag(tag)"
+                class="remove-tag-btn"
+                @click="handleRemoveTag(tag.id)"
+                :title="getTagTitle(tag)"
               >
-                {{ tag.name }}
-              </option>
-            </select>
-            <div v-if="error" class="error">{{ error }}</div>
+                ×
+              </button>
+            </span>
           </div>
-          <div class="dialog-actions">
-            <button class="cancel-btn" @click="closeTagDialog">Cancel</button>
-            <button
-              class="add-btn"
-              @click="handleAddTag"
-              :disabled="!selectedTag"
-            >
-              Add Tag
-            </button>
+          <div v-if="error" class="error" role="alert">{{ error }}</div>
+        </div>
+
+        <div class="profile-section">
+          <h3>Description</h3>
+          <p class="description">{{ profile?.description }}</p>
+        </div>
+      </div>
+
+      <!-- Tag Dialog -->
+      <div v-if="showTagDialog" class="dialog-overlay" @click="closeTagDialog">
+        <div class="dialog" @click.stop>
+          <h3>Add Tag</h3>
+          <div class="dialog-content">
+            <div class="form-group">
+              <label>Select Tag:</label>
+              <select v-model="selectedTag" class="tag-select">
+                <option value="">Choose a tag...</option>
+                <option
+                  v-for="tag in availableTags"
+                  :key="tag.id"
+                  :value="tag.id"
+                >
+                  {{ tag.name }}
+                </option>
+              </select>
+              <div v-if="error" class="error">{{ error }}</div>
+            </div>
+            <div class="dialog-actions">
+              <button class="cancel-btn" @click="closeTagDialog">Cancel</button>
+              <button
+                class="add-btn"
+                @click="handleAddTag"
+                :disabled="!selectedTag"
+              >
+                Add Tag
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+  <div v-else>Loading...</div>
 </template>
 
 <script>
@@ -152,6 +157,7 @@ export default {
     profile: {
       type: Object,
       required: true,
+      default: () => ({}),
     },
     isOwnProfile: {
       type: Boolean,

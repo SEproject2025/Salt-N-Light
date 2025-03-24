@@ -144,7 +144,8 @@ class NotificationSerializer(serializers.ModelSerializer):
                                           read_only=True)
    class Meta:
       model = Notification
-      fields = '__all__'
+      fields = ['id', 'recipient', 'recipient_username', 'notification_type',
+                'message', 'created_at', 'is_read', 'related_object_id']
       read_only_fields = ['created_at']
 
 class FriendshipSerializer(serializers.ModelSerializer):
