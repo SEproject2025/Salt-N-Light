@@ -87,18 +87,18 @@ ALLOWED_HOSTS = [
    '127.0.0.1',
    'localhost:8000',
    'localhost:8080',
+   "api.evangelium.app"
    "evangelium.app",
-   "www.evangelium.app",
-   "baptist.coffee",
-   "www.baptist.coffee"
+   "www.evangelium.app"
 ]
 
 CORS_ALLOWED_ORIGINS = [
    'http://127.0.0.1',
    'http://localhost:8000',
    'http://localhost:8080',
-   "https://www.evangelium.app",
-   "https://evangelium.app"
+   "https://api.evangelium.app",
+   "https://evangelium.app",
+   "https://www.evangelium.app"
 ]
 CORS_ALLOW_CREDENTIALS = True
 
