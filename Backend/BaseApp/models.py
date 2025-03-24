@@ -139,23 +139,24 @@ class Notification(models.Model):
       ordering = ['-created_at']
 
    def __str__(self):
-      return f"{ self.notification_type} notification for {self.recipient.username}" # pylint: disable=no-member
+      return f"{
+         self.notification_type} notification for {self.recipient.username}" # pylint: disable=no-member
 
 class Friendship(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('accepted', 'Accepted'),
-        ('rejected', 'Rejected'),
-    ]
-    
-    sender = models.ForeignKey(User, related_name='sent_friendships', on_delete=models.CASCADE)
-    receiver = models.ForeignKey(User, related_name='received_friendships', on_delete=models.CASCADE)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+   sender = models.ForeignKey(User, on_delete=models.CASCADE,
+                              related_name='friendship_sent')
+   receiver = models.ForeignKey(User, on_delete=models.CASCADE,
+                                related_name='friendship_received')
+   status = models.CharField(max_length=10, choices=[('pending', 'Pending'),
+                                                     ('accepted', 'Accepted'),
+                                                     ('rejected', 'Rejected')],
+                                                     default='pending')
+   created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        unique_together = ('sender', 'receiver')
-    
-    def __str__(self):
-        return f"{self.sender.username} -> {self.receiver.username} ({self.status})"  # pylint: disable=no-member
+   def __str__(self):
+      return (f"{self.sender.username} ->"                # pylint: disable=no-member
+              f"{self.receiver.username} ({self.status})" # pylint: disable=no-member
+      )
+
+   class Meta:
+      ordering = ['-created_at']
