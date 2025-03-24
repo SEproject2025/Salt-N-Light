@@ -12,7 +12,7 @@
       <div
         v-for="notification in notifications"
         :key="notification.id"
-        :class="['notification-item', { unread: !notification.is_read }]"
+        class="notification-item"
       >
         <div class="notification-content">
           <div class="notification-header">
@@ -30,18 +30,27 @@
             v-if="notification.notification_type === 'friend_request'"
             class="friend-request-actions"
           >
-            <button
-              class="accept-btn"
-              @click="respondToFriendRequest(notification, 'accept')"
+            <template v-if="!respondedRequests.has(notification.id)">
+              <button
+                class="accept-btn"
+                @click="respondToFriendRequest(notification, 'accept')"
+              >
+                Accept
+              </button>
+              <button
+                class="reject-btn"
+                @click="respondToFriendRequest(notification, 'reject')"
+              >
+                Reject
+              </button>
+            </template>
+            <div
+              v-else
+              class="expanded-button"
+              :class="getResponseClass(notification)"
             >
-              Accept
-            </button>
-            <button
-              class="reject-btn"
-              @click="respondToFriendRequest(notification, 'reject')"
-            >
-              Reject
-            </button>
+              {{ getResponseText(notification) }}
+            </div>
           </div>
         </div>
       </div>
@@ -59,6 +68,7 @@ export default {
       notifications: [],
       loading: false,
       error: null,
+      respondedRequests: new Map(),
     };
   },
   methods: {
@@ -99,11 +109,20 @@ export default {
           { action: action },
           { headers: this.getAuthHeader() }
         );
-        this.fetchNotifications(); // Refresh notifications after action
+        this.respondedRequests.set(notification.id, action);
+        this.fetchNotifications();
       } catch (error) {
         console.error("Error responding to friend request:", error);
         this.error = "Failed to respond to friend request.";
       }
+    },
+    getResponseClass(notification) {
+      const action = this.respondedRequests.get(notification.id);
+      return action === "reject" ? "reject" : "accept";
+    },
+    getResponseText(notification) {
+      const action = this.respondedRequests.get(notification.id);
+      return action === "reject" ? "Rejected" : "Accepted";
     },
   },
   mounted() {
@@ -131,7 +150,6 @@ export default {
   padding: 15px;
   margin-bottom: 12px;
   background-color: #ffffff;
-  transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -146,7 +164,7 @@ export default {
   font-weight: 599;
   padding: 4px 8px;
   border-radius: 20px;
-  font-size: 0.9em;
+  font-size: 1em;
 }
 
 .notification-type.friend_request {
@@ -179,6 +197,7 @@ export default {
 
 .accept-btn,
 .reject-btn {
+  flex: 1;
   padding: 8px 20px;
   border: none;
   border-radius: 6px;
@@ -206,6 +225,26 @@ export default {
 }
 
 .reject-btn:hover {
+  background-color: #f44336;
+  color: white;
+}
+
+.expanded-button {
+  width: 100%;
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.expanded-button.accept {
+  background-color: #43a047;
+  color: white;
+}
+
+.expanded-button.reject {
   background-color: #f44336;
   color: white;
 }

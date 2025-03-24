@@ -565,7 +565,6 @@ export default {
   padding: 0.5rem;
 }
 
-/* For Webkit browsers like Chrome/Safari */
 .tag-select::-webkit-scrollbar {
   width: 8px;
 }
@@ -584,7 +583,6 @@ export default {
   background: #555;
 }
 
-/* For Firefox */
 .tag-select {
   scrollbar-width: thin;
   scrollbar-color: #888 #f1f1f1;
@@ -740,7 +738,6 @@ export default {
   color: #666;
   margin-bottom: 0.3rem;
   margin-top: 0.5rem;
-
   opacity: 5;
   transition: opacity 0.5s;
 }
