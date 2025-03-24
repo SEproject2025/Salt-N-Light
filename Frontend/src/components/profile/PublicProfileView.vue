@@ -368,20 +368,25 @@ export default {
     },
     async sendFriendRequest() {
       try {
-        const response = await api.post(
-          "api/friendships/",
-          {
-            receiver: this.profile.user.id,
-          },
-          {
-            headers: this.getAuthHeader(),
-          }
-        );
-        console.log("Friend request response:", response); // Use the response variable
+        const headers = this.getAuthHeader();
+        console.log("Headers:", headers);
+
+        const payload = {
+          receiver: this.profile.user.id,
+        };
+        console.log("Payload:", payload);
+
+        const response = await api.post("api/friendships/", payload, {
+          headers,
+        });
+
+        console.log("Friend request response:", response);
         alert("Friend request sent!");
       } catch (error) {
         console.error("Error sending friend request:", error.response || error);
-        alert("Failed to send friend request.");
+        alert(
+          `Failed to send friend request. ${error.response?.data?.detail || ""}`
+        );
       }
     },
   },

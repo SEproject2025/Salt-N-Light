@@ -157,7 +157,7 @@ class FriendshipSerializer(serializers.ModelSerializer):
       fields = ['id', 'sender', 'receiver',
                 'status', 'created_at', 'sender_username', 'receiver_username']
       read_only_fields = ['id', 'created_at',
-                          'sender_username', 'receiver_username']
+                          'sender_username', 'receiver_username', 'sender']
 
    def create(self, validated_data):
       # Automatically set the sender to the current user

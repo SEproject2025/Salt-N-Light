@@ -386,7 +386,7 @@ class NotificationView(ModelViewSet):
 class FriendshipViewSet(ModelViewSet):
    serializer_class = FriendshipSerializer
    authentication_classes = [JWTAuthentication]
-   permission_classes = [AllowAny]
+   permission_classes = [IsAuthenticated]
 
    # Define the queryset
    queryset = Friendship.objects.all()
