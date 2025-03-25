@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.db.utils import OperationalError
+from django.core.exceptions import ObjectDoesNotExist
 from .models import Tag, SearchHistory, \
     ExternalMedia, Profile, ProfileVote, ProfileComment, Notification
 
@@ -31,10 +32,13 @@ class TagSerializer(serializers.ModelSerializer):
       profile_id = self.context.get('profile_id')
       if not request or not profile_id:
          return False
-      tagging = obj.profiletagging_set.filter(
-         profile_id=profile_id
-               ).first()
-      return tagging.is_self_added if tagging else False
+      try:
+         tagging = obj.profiletagging_set.filter(
+            profile_id=profile_id
+         ).first()
+         return tagging.is_self_added if tagging else False
+      except ObjectDoesNotExist:
+         return False
 
 class ProfileVoteSerializer(serializers.ModelSerializer):
    voter_username = serializers.CharField(
@@ -97,7 +101,6 @@ class ProfileSerializer(serializers.ModelSerializer):
 
    def create(self, validated_data):
       user_data = validated_data.pop('user')
-      # This will contain the tag objects due to source='tags'
       tags = validated_data.pop('tags', [])
       user = User.objects.create_user(**user_data)
       profile = Profile.objects.create(user=user, **validated_data)
@@ -107,20 +110,17 @@ class ProfileSerializer(serializers.ModelSerializer):
 
    def update(self, instance, validated_data):
       user_data = validated_data.pop('user', None)
-      # This will contain the tag objects due to source='tags'
       tags = validated_data.pop('tags', None)
 
-      # Update user fields if provided
       if user_data:
          user_instance = instance.user
          for key, value in user_data.items():
-            if key != 'password':  # Don't update password through this method
+            if key != 'password':
                setattr(user_instance, key, value)
          user_instance.save()
 
-      # Update all profile fields
       for key, value in validated_data.items():
-         if hasattr(instance, key):  # Only set if the field exists
+         if hasattr(instance, key):
             setattr(instance, key, value)
       instance.save()
 
@@ -162,10 +162,11 @@ class ExternalMediaSerializer(serializers.ModelSerializer):
       fields = '__all__'
 
 class NotificationSerializer(serializers.ModelSerializer):
-   recipient_username = serializers.CharField(source='recipient.username',
-                                              read_only=True)
-   created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S",
-                                          read_only=True)
+   recipient_username = serializers.CharField(
+      source='recipient.username', read_only=True)
+   created_at = serializers.DateTimeField(
+      format="%Y-%m-%d %H:%M:%S", read_only=True)
+
    class Meta:
       model = Notification
       fields = '__all__'
