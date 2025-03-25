@@ -64,8 +64,8 @@ export default {
         localStorage.setItem("access_token", response.data.access);
         localStorage.setItem("refresh_token", response.data.refresh);
 
-        // Redirect to dashboard or another page
-        this.$router.push("/SearchPage");
+        // Redirect to HomePage
+        this.$router.push("/HomePage");
       } catch (error) {
         this.errorMessage = "Invalid credentials. Please try again.";
       }
