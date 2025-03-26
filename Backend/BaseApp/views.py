@@ -445,13 +445,22 @@ class FriendshipViewSet(ModelViewSet):
    @action(detail=False, methods=['get'])
    def status(self, request, profile_id=None):
       try:
+         if not profile_id:
+            return Response({'error': 'Profile ID is required'},
+                          status=status.HTTP_400_BAD_REQUEST)
+
+         # Get the friendship between the current user and the specified profile
          friendship = Friendship.objects.filter(
              Q(sender=request.user, receiver_id=profile_id) |
              Q(sender_id=profile_id, receiver=request.user)
          ).first()
 
          if friendship:
-            return Response({'status': friendship.status})
+            return Response({
+                'status': friendship.status,
+                'friendship_id': friendship.id,
+                'is_sender': friendship.sender == request.user
+            })
          return Response({'status': None})
       except (ObjectDoesNotExist, ValidationError) as e:
          return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
