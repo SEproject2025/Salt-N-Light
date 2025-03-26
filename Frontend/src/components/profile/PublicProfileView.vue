@@ -8,12 +8,26 @@
           @click="sendFriendRequest"
           :class="[
             'connect-button',
-            { pending: pendingFriendRequests.has(profile.user.id) },
+            {
+              pending: friendshipStatus === 'pending',
+              connected: friendshipStatus === 'accepted',
+              rejected: friendshipStatus === 'rejected',
+            },
           ]"
-          :disabled="pendingFriendRequests.has(profile.user.id)"
+          :disabled="
+            friendshipStatus === 'pending' ||
+            friendshipStatus === 'accepted' ||
+            friendshipStatus === 'rejected'
+          "
         >
           {{
-            pendingFriendRequests.has(profile.user.id) ? "Pending" : "Connect"
+            friendshipStatus === "accepted"
+              ? "Connected"
+              : friendshipStatus === "pending"
+              ? "Pending"
+              : friendshipStatus === "rejected"
+              ? "Rejected"
+              : "Connect"
           }}
         </button>
       </div>
@@ -167,6 +181,12 @@ export default {
       type: Number,
       required: true,
     },
+    friendshipStatus: {
+      type: String,
+      default: null,
+      validator: (value) =>
+        ["pending", "accepted", "rejected", null].includes(value),
+    },
   },
   data() {
     return {
@@ -189,6 +209,26 @@ export default {
       immediate: true,
       handler(newTags) {
         this.localTags = [...(newTags || [])];
+      },
+    },
+    "profile.user.id": {
+      immediate: true,
+      handler(newId) {
+        if (newId && !this.isOwnProfile && this.profile?.user?.id) {
+          this.fetchFriendshipStatus();
+        }
+      },
+    },
+    friendshipStatus: {
+      immediate: true,
+      handler(newStatus) {
+        if (this.profile?.user?.id) {
+          if (newStatus === "pending") {
+            this.pendingFriendRequests.add(this.profile.user.id);
+          } else {
+            this.pendingFriendRequests.delete(this.profile.user.id);
+          }
+        }
       },
     },
   },
@@ -385,8 +425,12 @@ export default {
     },
     async sendFriendRequest() {
       try {
-        // Check if request is already pending
-        if (this.pendingFriendRequests.has(this.profile.user.id)) {
+        if (!this.profile?.user?.id) {
+          return;
+        }
+
+        // Check if request is already pending or if there's any existing friendship status
+        if (this.friendshipStatus) {
           return;
         }
 
@@ -395,12 +439,22 @@ export default {
           receiver: this.profile.user.id,
         };
 
-        // Add to pending requests
-        this.pendingFriendRequests.add(this.profile.user.id);
+        // Update status to pending immediately
+        this.$emit("update:friendshipStatus", "pending");
 
         await api.post("api/friendships/", payload, {
           headers,
         });
+
+        // Store the friendship status in localStorage
+        const friendshipStatuses = JSON.parse(
+          localStorage.getItem("friendshipStatuses") || "{}"
+        );
+        friendshipStatuses[this.profile.user.id] = "pending";
+        localStorage.setItem(
+          "friendshipStatuses",
+          JSON.stringify(friendshipStatuses)
+        );
 
         alert("Friend request sent!");
       } catch (error) {
@@ -408,13 +462,68 @@ export default {
         alert(
           `Failed to send friend request. ${error.response?.data?.detail || ""}`
         );
-        // Remove from pending if request failed
-        this.pendingFriendRequests.delete(this.profile.user.id);
+        // Reset status if request failed
+        this.$emit("update:friendshipStatus", null);
       }
+    },
+    async fetchFriendshipStatus() {
+      try {
+        if (!this.profile?.user?.id) {
+          return;
+        }
+
+        // Always fetch from API first to get the most up-to-date status
+        const response = await api.get(`api/friendships/status/`, {
+          headers: this.getAuthHeader(),
+          params: {
+            profile_id: this.profile.user.id,
+          },
+        });
+
+        if (response.data && response.data.status) {
+          // Update the status from the backend
+          this.$emit("update:friendshipStatus", response.data.status);
+
+          // Update localStorage with the latest status
+          const friendshipStatuses = JSON.parse(
+            localStorage.getItem("friendshipStatuses") || "{}"
+          );
+          friendshipStatuses[this.profile.user.id] = response.data.status;
+          localStorage.setItem(
+            "friendshipStatuses",
+            JSON.stringify(friendshipStatuses)
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching friendship status:", error);
+        // Only use localStorage as a fallback if the API call fails
+        const friendshipStatuses = JSON.parse(
+          localStorage.getItem("friendshipStatuses") || "{}"
+        );
+        const storedStatus = friendshipStatuses[this.profile.user.id];
+        if (storedStatus) {
+          this.$emit("update:friendshipStatus", storedStatus);
+        }
+      }
+    },
+    updateFriendshipStatus(status) {
+      this.$emit("update:friendshipStatus", status);
+      // Update localStorage
+      const friendshipStatuses = JSON.parse(
+        localStorage.getItem("friendshipStatuses") || "{}"
+      );
+      friendshipStatuses[this.profile.user.id] = status;
+      localStorage.setItem(
+        "friendshipStatuses",
+        JSON.stringify(friendshipStatuses)
+      );
     },
   },
   mounted() {
-    this.fetchAvailableTags();
+    if (this.profile?.user?.id) {
+      this.fetchAvailableTags();
+      this.fetchFriendshipStatus();
+    }
   },
 };
 </script>
@@ -759,6 +868,16 @@ export default {
 
 .connect-button.pending {
   background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+.connect-button.connected {
+  background-color: #2ecc71;
+  cursor: default;
+}
+
+.connect-button.rejected {
+  background-color: #e74c3c;
   cursor: not-allowed;
 }
 

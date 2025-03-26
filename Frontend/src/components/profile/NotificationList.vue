@@ -94,7 +94,24 @@ export default {
         const response = await api.get("api/notifications", {
           headers: this.getAuthHeader(),
         });
-        this.notifications = response.data;
+
+        // Load stored responses first
+        const responses = JSON.parse(
+          localStorage.getItem("notificationResponses") || "{}"
+        );
+
+        // Filter out notifications that have been responded to
+        this.notifications = response.data.filter((notification) => {
+          if (notification.notification_type === "friend_request") {
+            const hasResponded = responses[notification.id];
+            if (hasResponded) {
+              // Don't show notifications that have been responded to
+              this.respondedRequests.set(notification.id, hasResponded);
+              return false;
+            }
+          }
+          return true;
+        });
       } catch (error) {
         console.error("Error fetching notifications:", error);
         this.error = "Failed to load notifications";
@@ -109,8 +126,16 @@ export default {
           { action: action },
           { headers: this.getAuthHeader() }
         );
+        // Store the response in localStorage
+        const responses = JSON.parse(
+          localStorage.getItem("notificationResponses") || "{}"
+        );
+        responses[notification.id] = action;
+        localStorage.setItem(
+          "notificationResponses",
+          JSON.stringify(responses)
+        );
         this.respondedRequests.set(notification.id, action);
-        this.fetchNotifications();
       } catch (error) {
         console.error("Error responding to friend request:", error);
         this.error = "Failed to respond to friend request.";
@@ -127,6 +152,13 @@ export default {
   },
   mounted() {
     this.fetchNotifications();
+    // Load stored responses
+    const responses = JSON.parse(
+      localStorage.getItem("notificationResponses") || "{}"
+    );
+    Object.entries(responses).forEach(([id, action]) => {
+      this.respondedRequests.set(parseInt(id), action);
+    });
   },
 };
 </script>

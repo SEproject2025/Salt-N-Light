@@ -441,3 +441,17 @@ class FriendshipViewSet(ModelViewSet):
             {"error": str(e)},
             status=status.HTTP_400_BAD_REQUEST
          )
+
+   @action(detail=False, methods=['get'])
+   def status(self, request, profile_id=None):
+      try:
+         friendship = Friendship.objects.filter(
+             Q(sender=request.user, receiver_id=profile_id) |
+             Q(sender_id=profile_id, receiver=request.user)
+         ).first()
+
+         if friendship:
+            return Response({'status': friendship.status})
+         return Response({'status': None})
+      except (ObjectDoesNotExist, ValidationError) as e:
+         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
