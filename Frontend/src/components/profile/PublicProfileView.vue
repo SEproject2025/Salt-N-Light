@@ -203,20 +203,15 @@ export default {
     "profile.user.id": {
       immediate: true,
       handler(newId) {
-        console.log("Profile user ID changed:", newId);
         if (newId && !this.isOwnProfile && this.profile?.user?.id) {
-          console.log(
-            "Fetching friendship status for profile:",
-            this.profile.user.id
-          );
           this.fetchFriendshipStatus();
         }
       },
     },
     friendshipStatus: {
       immediate: true,
-      handler(newStatus) {
-        console.log("Friendship status changed:", newStatus);
+      handler() {
+        // Keep this watcher for future debugging if needed
       },
     },
   },
@@ -439,14 +434,9 @@ export default {
     async fetchFriendshipStatus() {
       try {
         if (!this.profile?.user?.id) {
-          console.log("No profile user ID available");
           return;
         }
 
-        console.log(
-          "Fetching friendship status for profile:",
-          this.profile.user.id
-        );
         const response = await api.get(
           `api/friendships/status/${this.profile.user.id}/`,
           {
@@ -454,20 +444,12 @@ export default {
           }
         );
 
-        console.log("Friendship status response:", response.data);
-
         if (response.data && response.data.status) {
-          console.log("Setting friendship status to:", response.data.status);
           this.$emit("update:friendshipStatus", response.data.status);
         } else {
-          console.log("No friendship status found, setting to null");
           this.$emit("update:friendshipStatus", null);
         }
       } catch (error) {
-        console.error("Error fetching friendship status:", error);
-        if (error.response) {
-          console.error("Error response data:", error.response.data);
-        }
         this.$emit("update:friendshipStatus", null);
       }
     },
