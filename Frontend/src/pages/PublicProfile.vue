@@ -11,6 +11,8 @@
           <PublicProfileView
             :profile="profile"
             :is-own-profile="isOwnProfile"
+            :current-user-id="getCurrentUserId()"
+            v-model:friendshipStatus="friendshipStatus"
             @tag-added="handleTagAdded"
             @tag-removed="handleTagRemoved"
           />
@@ -43,6 +45,7 @@ export default {
       loading: true,
       error: null,
       isOwnProfile: false,
+      friendshipStatus: null,
     };
   },
   methods: {

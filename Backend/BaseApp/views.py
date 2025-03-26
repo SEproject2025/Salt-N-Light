@@ -455,12 +455,18 @@ class FriendshipViewSet(ModelViewSet):
              Q(sender_id=profile_id, receiver=request.user)
          ).first()
 
+         print(f"Found friendship: {friendship}")  # Debug log
+
          if friendship:
-            return Response({
+            response_data = {
                 'status': friendship.status,
                 'friendship_id': friendship.id,
                 'is_sender': friendship.sender == request.user
-            })
+            }
+            print(f"Returning response: {response_data}")  # Debug log
+            return Response(response_data)
+         print("No friendship found")  # Debug log
          return Response({'status': None})
       except (ObjectDoesNotExist, ValidationError) as e:
+         print(f"Error in status method: {str(e)}")  # Debug log
          return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
