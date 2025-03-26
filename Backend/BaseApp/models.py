@@ -139,4 +139,5 @@ class Notification(models.Model):
       ordering = ['-created_at']
 
    def __str__(self):
-      return f"{ self.notification_type} notification for {self.recipient.username}" # pylint: disable=no-member
+      return f"{
+         self.notification_type} notification for {self.recipient.username}" # pylint: disable=no-member
