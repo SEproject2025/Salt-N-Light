@@ -15,6 +15,7 @@
         <AccountInfoStep
           v-show="currentStep === 0"
           v-model:userData="form.user"
+          @update:userData="updateUserData"
           @password-validation="handlePasswordValidation"
         />
 
@@ -64,7 +65,7 @@
 </template>
 
 <script>
-import api from "@/api/axios.js";
+import axios from "axios";
 import ProgressBar from "@/components/registration/ProgressBar.vue";
 import AccountInfoStep from "@/components/registration/AccountInfoStep.vue";
 import PersonalInfoStep from "@/components/registration/PersonalInfoStep.vue";
@@ -134,17 +135,38 @@ export default {
         email.trim() &&
         password.trim() &&
         !this.passwordsDoNotMatch;
-      console.log("isFormValid computed property:", {
+      /*console.log("isFormValid computed property:", {
         username: username.trim(),
         email: email.trim(),
         password: password.trim(),
         passwordsDoNotMatch: this.passwordsDoNotMatch,
         isValid,
-      });
+      });*/
       return isValid;
     },
   },
   methods: {
+    updateUserData(updatedUserData) {
+      this.form.user = { ...this.form.user, ...updatedUserData };
+    },
+    handlePasswordValidation(isValid) {
+      this.passwordsDoNotMatch = !isValid;
+    },
+    isStepOneValid() {
+      const { username, email, password } = this.form.user;
+      const isValid =
+        username.trim() &&
+        email.trim() &&
+        password.trim() &&
+        !this.passwordsDoNotMatch;
+
+      if (!isValid) {
+        this.message = "Please complete all required fields before proceeding.";
+        this.isSuccess = false;
+      }
+
+      return isValid;
+    },
     // Navigation methods
     async nextStep() {
       if (this.currentStep === 0) {
@@ -155,11 +177,13 @@ export default {
 
         try {
           // Clear any existing messages
-          this.message = "";
-          this.isSuccess = false;
+          /*this.message = "";
+          this.isSuccess = false;*/
 
           // Fetch all profiles
-          const response = await api.get("api/profiles/");
+          const response = await axios.get(
+            "http://127.0.0.1:8000/api/profiles/"
+          );
           const existingUsernames = response.data.map((profile) =>
             profile.user.username.toLowerCase()
           );
@@ -195,7 +219,7 @@ export default {
         this.currentStep--;
       }
     },
-    goToStep(step) {
+    /*goToStep(step) {
       // Only allow going to completed steps or the next available step
       if (step <= this.currentStep + 1) {
         this.currentStep = step;
@@ -215,12 +239,12 @@ export default {
       }
 
       return isValid;
-    },
+    },*/
 
     // Fetches predefined tags from the backend
     async fetchTags() {
       try {
-        const response = await api.get("tag/");
+        const response = await axios.get("http://127.0.0.1:8000/tag/");
         this.availableTags = response.data.filter(
           (tag) => tag.tag_is_predefined
         );
@@ -229,15 +253,15 @@ export default {
       }
     },
 
-    // Handle password validation from child component
+    /*// Handle password validation from child component
     handlePasswordValidation(isValid) {
       this.passwordsDoNotMatch = !isValid;
-    },
+    },*/
 
     // Calls the profiles endpoint to register the user
     async registerUser() {
-      console.log("registerUser method called");
-      console.log("Current form data:", this.form);
+      //console.log("registerUser method called");
+      //console.log("Current form data:", this.form);
 
       try {
         // Create the data in the nested format expected by the backend
@@ -268,18 +292,21 @@ export default {
         };
 
         // Log the data being sent
-        console.log("Registration data being sent:", formData);
+        //console.log("Registration data being sent:", formData);
 
-        const response = await api.post("api/profiles/", formData);
+        const response = await axios.post(
+          "http://127.0.0.1:8000/api/profiles/",
+          formData
+        );
         console.log("Registration response:", response.data);
 
         this.message = "Registration successful!";
         this.isSuccess = true;
         setTimeout(() => this.$router.push("/AppLogin"), 1000);
       } catch (error) {
-        console.error("Registration failed:", error.response?.data);
-        console.error("Error status:", error.response?.status);
-        console.error("Error details:", error);
+        //console.error("Registration failed:", error.response?.data);
+        //console.error("Error status:", error.response?.status);
+        //console.error("Error details:", error);
         this.message =
           error.response?.data?.detail ||
           error.response?.data?.user?.username?.[0] ||
@@ -296,10 +323,15 @@ export default {
       script.async = true;
       script.defer = true;
       script.onload = () => {
-        this.autocompleteService = new google.maps.places.AutocompleteService();
-        this.placesService = new google.maps.places.PlacesService(
-          document.createElement("div")
-        );
+        if (google && google.maps && google.maps.places) {
+          this.autocompleteService =
+            new google.maps.places.AutocompleteService();
+          this.placesService = new google.maps.places.PlacesService(
+            document.createElement("div")
+          );
+        } else {
+          console.error("Google Places API failed to load.");
+        }
 
         // Add input event listeners
         ["streetAddress", "city", "state"].forEach((field) => {

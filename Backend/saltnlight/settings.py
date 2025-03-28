@@ -76,16 +76,6 @@ SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_HTTPONLY = False
 SESSION_SAVE_EVERY_REQUEST = True
 
-# CSRF configurations
-CSRF_COOKIE_NAME = 'csrftoken'  
-CSRF_COOKIE_SECURE = False  
-CSRF_COOKIE_HTTPONLY = False  
-CSRF_TRUSTED_ORIGINS = [
-   'http://localhost:8080',
-   "https://www.evangelium.app",
-   "https://evangelium.app" 
-]
-
 # Session Authentication Configurations
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -94,16 +84,21 @@ REST_FRAMEWORK = {
 }
 
 ALLOWED_HOSTS = [
+   '127.0.0.1',
+   'localhost:8000',
+   'localhost:8080',
+   "api.evangelium.app"
    "evangelium.app",
-   "www.evangelium.app",
-   "baptist.coffee",
-   "www.baptist.coffee"
+   "www.evangelium.app"
 ]
 
 CORS_ALLOWED_ORIGINS = [
+   'http://127.0.0.1',
+   'http://localhost:8000',
    'http://localhost:8080',
-   "https://www.evangelium.app",
-   "https://evangelium.app"
+   "https://api.evangelium.app",
+   "https://evangelium.app",
+   "https://www.evangelium.app"
 ]
 CORS_ALLOW_CREDENTIALS = True
 
@@ -133,11 +128,11 @@ WSGI_APPLICATION = 'saltnlight.wsgi.application'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
-   'default': dj_database_url.config(default=os.getenv("DATABASE_URL"), conn_max_age=600, ssl_require=True)
-#    'default': {
-#        'ENGINE': 'django.db.backends.sqlite3',
-#        'NAME': BASE_DIR / 'db.sqlite3',
-#    }
+#   'default': dj_database_url.config(default=os.getenv("DATABASE_URL"), conn_max_age=600, ssl_require=True)
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 #if os.getenv('USE_POSTGRES'):
