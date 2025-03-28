@@ -48,6 +48,10 @@
         @input="updateUserData"
       />
 
+      <p v-if="passwordLengthError" class="error-message">
+        {{ passwordLengthError }}
+      </p>
+
       <label for="confirmPassword">
         <span class="required">*</span> Confirm Password:
         <span class="required-text">required</span>
@@ -96,6 +100,8 @@ export default {
       passwordsDoNotMatch: false,
       usernameError: "",
       emailError: "",
+      passwordError: "",
+      passwordLengthError: "",
     };
   },
   methods: {
@@ -128,6 +134,7 @@ export default {
         !this.usernameError &&
         !this.emailError &&
         !this.passwordsDoNotMatch &&
+        !this.passwordLengthError &&
         this.localUserData.username &&
         this.localUserData.email &&
         this.localUserData.password;
@@ -137,6 +144,29 @@ export default {
     validatePassword() {
       this.passwordsDoNotMatch =
         this.localUserData.password !== this.confirmPassword;
+
+      // Enhanced password validation
+      const password = this.localUserData.password;
+      const hasUpperCase = /[A-Z]/.test(password);
+      const hasLowerCase = /[a-z]/.test(password);
+      const hasNumbers = /\d/.test(password);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+      if (password.length < 8) {
+        this.passwordLengthError =
+          "Password must be at least 8 characters long";
+      } else if (
+        !hasUpperCase ||
+        !hasLowerCase ||
+        !hasNumbers ||
+        !hasSpecialChar
+      ) {
+        this.passwordLengthError =
+          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character";
+      } else {
+        this.passwordLengthError = "";
+      }
+
       this.validateAll();
     },
 
