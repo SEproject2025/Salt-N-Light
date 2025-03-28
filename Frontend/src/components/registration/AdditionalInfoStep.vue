@@ -11,21 +11,33 @@
         @input="updateData"
       ></textarea>
 
+      <div class="anonymous-option">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            v-model="localData.is_anonymous"
+            @change="updateData"
+          />
+          <span>Make my profile anonymous</span>
+        </label>
+        <p class="helper-text">
+          Anonymous profiles will not appear in search results or matchmaking
+        </p>
+      </div>
+
       <label for="tags">Select Tags:</label>
       <div class="tags-container">
-        <select
-          id="tags"
-          v-model="localData.tags"
-          multiple
-          @change="updateData"
-        >
-          <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">
+        <div class="tags-grid">
+          <div
+            v-for="tag in availableTags"
+            :key="tag.id"
+            class="tag-option"
+            :class="{ selected: localData.tags.includes(tag.id) }"
+            @click="toggleTag(tag.id)"
+          >
             {{ tag.tag_name }}
-          </option>
-        </select>
-        <p class="helper-text">
-          Hold Ctrl (or Cmd on Mac) to select multiple tags
-        </p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -47,7 +59,7 @@ export default {
     return {
       localData: {
         description: this.additionalData.description || "",
-        profile_picture: null,
+        is_anonymous: this.additionalData.is_anonymous || false,
         tags: this.additionalData.tags || [],
       },
       availableTags: [],
@@ -57,6 +69,15 @@ export default {
     this.fetchTags();
   },
   methods: {
+    toggleTag(tagId) {
+      const index = this.localData.tags.indexOf(tagId);
+      if (index === -1) {
+        this.localData.tags.push(tagId);
+      } else {
+        this.localData.tags.splice(index, 1);
+      }
+      this.updateData();
+    },
     /* Updates parent with current additional information values */
     updateData() {
       this.$emit("update:additionalData", {
@@ -91,7 +112,7 @@ export default {
       handler(newValue) {
         this.localData = {
           description: newValue.description || "",
-          profile_picture: null,
+          is_anonymous: newValue.is_anonymous || false,
           tags: newValue.tags || [],
         };
       },
@@ -100,3 +121,56 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.anonymous-option {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+.tags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.tag-option {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.tag-option:hover {
+  background-color: #f0f0f0;
+}
+
+.tag-option.selected {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+  color: #1976d2;
+}
+
+.helper-text {
+  margin-top: 5px;
+  font-size: 0.9rem;
+  color: #666;
+}
+</style>
