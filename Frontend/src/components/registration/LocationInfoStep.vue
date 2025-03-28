@@ -71,14 +71,18 @@
       </div>
 
       <div class="form-group">
-        <label for="country">Country:</label>
+        <label for="country">
+          <span class="required">*</span> Country:
+          <span class="required-text">required</span>
+        </label>
         <select
           id="country"
           v-model="localData.country"
           class="country-select"
+          required
           @change="updateData"
         >
-          <option value="">Select your country (optional)</option>
+          <option value="">Select your country</option>
           <option value="United States">United States</option>
           <option value="Canada">Canada</option>
           <option value="United Kingdom">United Kingdom</option>
@@ -96,9 +100,19 @@
             v-model="localData.other_country"
             placeholder="Enter your country"
             class="mt-2"
+            required
             @input="updateData"
           />
         </div>
+      </div>
+
+      <!-- Location Visibility Warning -->
+      <div class="location-warning">
+        <span class="warning-icon">⚠️</span>
+        <p>
+          Your location information will be visible to other users. This helps
+          with matchmaking and community features.
+        </p>
       </div>
     </div>
   </div>
@@ -269,3 +283,27 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.location-warning {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #fff3e0;
+  border-left: 4px solid #ff9800;
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.warning-icon {
+  font-size: 1.2rem;
+}
+
+.location-warning p {
+  margin: 0;
+  color: #e65100;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+</style>
