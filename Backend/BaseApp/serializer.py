@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Tag, SearchHistory, \
-    ExternalMedia, Profile, ProfileVote, ProfileComment, Notification, Friendship
+    ExternalMedia, Profile, ProfileVote, ProfileComment, \
+    Notification, Friendship
 
 
 class UserSerializer(serializers.ModelSerializer):
