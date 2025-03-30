@@ -39,8 +39,7 @@ export default {
   methods: {
     logout() {
       // Clear tokens from localStorage
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+      localStorage.clear();
 
       // Redirect to login
       this.$router.push("/");
