@@ -41,7 +41,6 @@ INSTALLED_APPS = [
    'rest_framework_simplejwt',
    'rest_framework',
    'BaseApp',
-   #'bootstrap5',
    'corsheaders'
 ]
 
@@ -74,13 +73,16 @@ CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = False
 CSRF_TRUSTED_ORIGINS = [
-   'http://127.0.0.1',
+   'http://127.0.0.1:8000',
+   'http://127.0.0.1:8080',
+   'http://api.evangelium.app',
+   'https://api.evangelium.app',
    'http://evangelium.app',
    'https://evangelium.app',
+   'http://localhost:8000',
+   'http://localhost:8080',
    'http://www.evangelium.app',
-   'https://www.evangelium.app',
-   'http://localhost',
-   'https://localhost'
+   'https://www.evangelium.app'
 ]
 
 # Session Authentication Configurations
@@ -91,24 +93,26 @@ REST_FRAMEWORK = {
 }
 
 ALLOWED_HOSTS = [
-   'http://127.0.0.1',
-   'http://evangelium.app',
-   'https://evangelium.app',
-   'http://www.evangelium.app',
-   'https://www.evangelium.app',
-   'http://localhost',
-   'https://localhost'
+   '127.0.0.1',
+   'api.evangelium.app',
+   'evangelium.app',
+   'localhost'
+   'www.evangelium.app',
 ]
 
 CORS_ALLOWED_ORIGINS = [
-   'http://127.0.0.1',
+   'http://127.0.0.1:8000',
+   'http://127.0.0.1:8080',
+   'http://api.evangelium.app',
+   'https://api.evangelium.app',
    'http://evangelium.app',
    'https://evangelium.app',
+   'http://localhost:8000',
+   'http://localhost:8080',
    'http://www.evangelium.app',
-   'https://www.evangelium.app',
-   'http://localhost',
-   'https://localhost'
+   'https://www.evangelium.app'
 ]
+
 CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'saltnlight.urls'
