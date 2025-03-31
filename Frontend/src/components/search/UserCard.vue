@@ -1,5 +1,5 @@
 <template>
-  <div class="user-card-row">
+  <div class="user-card-row" :class="$attrs.class">
     <div class="user-card-col">
       <div class="card">
         <div class="card-header">
@@ -9,7 +9,10 @@
             </div>
             <div class="header-content">
               <h2 class="church-name">{{ first_name }} {{ last_name }}</h2>
-              <p class="location">{{ city }}, {{ country }}</p>
+              <p class="location">
+                {{ city }}{{ state ? ", " + state : ""
+                }}{{ country ? ", " + country : "" }}
+              </p>
               <p class="profile-type">{{ user_type }}</p>
             </div>
           </div>
@@ -87,7 +90,12 @@ import userImage from "@/assets/pictures/missionaryprof.jpeg";
 
 export default {
   name: "UserCard",
+  inheritAttrs: false,
   props: {
+    id: {
+      type: Number,
+      required: true,
+    },
     first_name: {
       type: String,
       required: true,
@@ -98,23 +106,19 @@ export default {
     },
     city: {
       type: String,
-      required: true,
+      default: "",
     },
     state: {
       type: String,
-      required: true,
+      default: "",
     },
     country: {
       type: String,
-      required: true,
+      default: "",
     },
     description: {
       type: String,
-      required: true,
-    },
-    id: {
-      type: Number,
-      required: true,
+      default: "",
     },
     tags: {
       type: Array,
@@ -123,6 +127,10 @@ export default {
     user_type: {
       type: String,
       required: true,
+    },
+    profile_picture: {
+      type: String,
+      default: null,
     },
   },
   data() {

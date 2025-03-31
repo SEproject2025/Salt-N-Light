@@ -3,7 +3,8 @@ from django.contrib.auth.models import User
 from django.db.utils import OperationalError
 from django.core.exceptions import ObjectDoesNotExist
 from .models import Tag, SearchHistory, \
-    ExternalMedia, Profile, ProfileVote, ProfileComment, Notification
+    ExternalMedia, Profile, ProfileVote, ProfileComment, Notification, ProfileTagging
+from rest_framework.generics import ListAPIView
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -171,3 +172,44 @@ class NotificationSerializer(serializers.ModelSerializer):
       model = Notification
       fields = '__all__'
       read_only_fields = ['created_at']
+
+# Add this new serializer before ProfileSearchSerializer
+class UserSearchSerializer(serializers.ModelSerializer):
+   class Meta:
+      model = User
+      fields = ['id', 'username']
+
+class TagSearchSerializer(serializers.ModelSerializer):
+   class Meta:
+      model = Tag
+      fields = ['id', 'tag_name']
+
+class ProfileSearchSerializer(serializers.ModelSerializer):
+   user = UserSearchSerializer()
+   tags = TagSearchSerializer(many=True)
+   vote_count = serializers.SerializerMethodField()
+
+   class Meta:
+      model = Profile
+      fields = [
+         'user',
+         'user_type',
+         'first_name',
+         'last_name',
+         'city',
+         'state',
+         'country',
+         'description',
+         'tags',
+         'vote_count'
+      ]
+
+   def get_vote_count(self, obj):
+      try:
+         return obj.votes_received.filter(is_upvote=True).count() - obj.votes_received.filter(is_upvote=False).count()
+      except:
+         return 0
+
+class ProfileSearchView(ListAPIView):
+   serializer_class = ProfileSearchSerializer
+   # ... rest of the class remains the same ...

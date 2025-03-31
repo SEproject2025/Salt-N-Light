@@ -22,7 +22,11 @@ from .models import Tag, SearchHistory, \
 from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
     ProfileSerializer, ProfileVoteSerializer,\
-    ProfileCommentSerializer, NotificationSerializer
+    ProfileCommentSerializer, NotificationSerializer, ProfileSearchSerializer
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+from django.db.models import Count
+from django.core.cache import cache
+from django.conf import settings
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -409,93 +413,120 @@ class ProfileVoteStatusView(views.APIView):
 
 
 class ProfileSearchView(generics.ListAPIView):
-   serializer_class = ProfileSerializer
+   serializer_class = ProfileSearchSerializer
    authentication_classes = [JWTAuthentication]
    permission_classes = [IsAuthenticated]
    pagination_class = PageNumberPagination
 
    def get_queryset(self):
-      # Start with base queryset and
-      # exclude profiles without a user_type or anonymous profiles
-      queryset = (Profile.objects
-                 .select_related('user')
-                 .prefetch_related('tags')
-                 .exclude(user_type__isnull=True)
-                 .exclude(user_type='')
-                 .exclude(user_type='anonymous'))
+      # Try to get cached queryset
+      cache_key = f'profile_search_{hash(str(self.request.query_params))}'
+      queryset = cache.get(cache_key)
 
-      # Get search parameters from query string
-      search_query = self.request.query_params.get('q', '')
-      user_type = self.request.query_params.get('user_type', '')
-      tags = self.request.query_params.getlist('tags', [])
-      location = self.request.query_params.get('location', '')
-      sort = self.request.query_params.get('sort', 'recent')
+      if queryset is None:
+         # Get base queryset with related data
+         queryset = (Profile.objects
+            .select_related('user')
+            .prefetch_related('tags')
+            .all())
 
-      # Apply sorting
-      if sort == 'recent':
-         queryset = queryset.order_by('-user_id')  # Most recent users first
-      elif sort == 'name':
-         queryset = queryset.order_by('first_name', 'last_name')
-      elif sort == 'location':
-         queryset = queryset.order_by('country', 'state', 'city')
+         # Get search parameters
+         search_query = self.request.query_params.get('q', '').strip()
+         user_type = self.request.query_params.get('user_type', '').strip()
+         location = self.request.query_params.get('location', '').strip()
+         tags = self.request.query_params.getlist('tags')
+         tag_match_type = self.request.query_params.get('tag_match_type', 'any')
+         sort = self.request.query_params.get('sort', 'recent')
 
-      # Only apply filters if search parameters are provided
-      if any([search_query, user_type, tags, location]):
-         if search_query:
-            queryset = queryset.filter(
-               Q(first_name__icontains=search_query) |
-               Q(last_name__icontains=search_query) |
-               Q(description__icontains=search_query) |
-               Q(street_address__icontains=search_query) |
-               Q(city__icontains=search_query) |
-               Q(state__icontains=search_query) |
-               Q(country__icontains=search_query)
-            )
-
+         # Apply filters
          if user_type:
             queryset = queryset.filter(user_type=user_type)
 
+         # Apply tag filtering
          if tags:
-            queryset = queryset.filter(tags__tag_name__in=tags).distinct()
+            if tag_match_type == 'all':
+               # Require all tags to be present
+               for tag_name in tags:
+                  queryset = queryset.filter(tags__tag_name=tag_name)
+            else:
+               # Require any of the tags to be present
+               queryset = queryset.filter(tags__tag_name__in=tags)
 
-         if location:
-            queryset = queryset.filter(
-               Q(street_address__icontains=location) |
-               Q(city__icontains=location) |
-               Q(state__icontains=location) |
-               Q(country__icontains=location)
+         # Apply text search last as it's the most expensive operation
+         if search_query:
+            # Split search query into words for better matching
+            search_terms = search_query.split()
+            
+            # Create a combined search vector with higher weights for names
+            search_vector = (
+               SearchVector('first_name', weight='A') +
+               SearchVector('last_name', weight='A') +
+               SearchVector('first_name', weight='A') +  # Double weight for first name
+               SearchVector('last_name', weight='A') +   # Double weight for last name
+               SearchVector('description', weight='B') +
+               SearchVector('city', weight='C') +
+               SearchVector('state', weight='C') +
+               SearchVector('country', weight='C')
             )
+            
+            # Create a combined search query from all terms
+            search_query_obj = SearchQuery(search_terms[0])
+            for term in search_terms[1:]:
+               search_query_obj = search_query_obj & SearchQuery(term)
+            
+            # Apply the search with a lower threshold for better matching
+            queryset = queryset.annotate(
+               rank=SearchRank(search_vector, search_query_obj)
+            ).filter(rank__gte=0.05).order_by('-rank')
+
+         # Apply location search if needed
+         if location:
+            # Split location query into terms for better matching
+            location_terms = location.split()
+            
+            # Create a combined location vector
+            location_vector = (
+               SearchVector('city', weight='A') +
+               SearchVector('state', weight='B') +
+               SearchVector('country', weight='B')
+            )
+            
+            # Create a combined location query from all terms
+            location_query_obj = SearchQuery(location_terms[0])
+            for term in location_terms[1:]:
+               location_query_obj = location_query_obj & SearchQuery(term)
+            
+            # Apply the location search with a lower threshold
+            queryset = queryset.annotate(
+               location_rank=SearchRank(location_vector, location_query_obj)
+            ).filter(location_rank__gte=0.05).order_by('-location_rank')
+
+         # Apply final sorting if no other ordering is applied
+         if not search_query and not location:
+            if sort == 'recent':
+               queryset = queryset.order_by('-user_id')  # Most recent users first
+            elif sort == 'name':
+               queryset = queryset.order_by('first_name', 'last_name')
+            elif sort == 'location':
+               queryset = queryset.order_by('country', 'state', 'city')
+
+         # Cache the queryset for 5 minutes
+         cache.set(cache_key, queryset, timeout=300)
 
       return queryset
 
    def list(self, request, *args, **kwargs):
-      # Get the page size from query params, default to 'all'
-      page_size = request.query_params.get('page_size', 'all')
+      # Get the page size from query params, default to 12
+      page_size = request.query_params.get('page_size', '12')
+      max_page_size = getattr(settings, 'MAX_PAGE_SIZE', 1000)
 
-      # Handle 'all' option (now the default)
-      if page_size == 'all':
-         queryset = self.get_queryset()
-         serializer = self.get_serializer(queryset, many=True)
-         return response.Response({
-            'count': len(serializer.data),
-            'next': None,
-            'previous': None,
-            'results': serializer.data
-         })
-
-      # Set the page size for pagination if a specific size is requested
       try:
-         self.pagination_class.page_size = int(page_size)
+         # Convert page_size to int and limit to max_page_size
+         page_size = min(int(page_size), max_page_size)
+         self.pagination_class.page_size = page_size
       except ValueError:
-         # If invalid page size, default to showing all
-         queryset = self.get_queryset()
-         serializer = self.get_serializer(queryset, many=True)
-         return response.Response({
-            'count': len(serializer.data),
-            'next': None,
-            'previous': None,
-            'results': serializer.data
-         })
+         # If invalid page size, default to 12
+         self.pagination_class.page_size = 12
 
       return super().list(request, *args, **kwargs)
 

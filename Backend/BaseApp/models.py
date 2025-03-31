@@ -38,6 +38,13 @@ class Profile(models.Model):
    def __str__(self):
       return f"{self.user.username} - {self.user_type}"  # pylint: disable=no-member
 
+   class Meta:
+      indexes = [
+         models.Index(fields=['user_type']),
+         models.Index(fields=['first_name', 'last_name']),
+         models.Index(fields=['city', 'state', 'country']),
+      ]
+
 # Defines Search History table
 class SearchHistory(models.Model):
    user = models.ForeignKey(User, on_delete=models.CASCADE)
