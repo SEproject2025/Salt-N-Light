@@ -32,15 +32,6 @@
         </div>
       </div>
 
-      <label for="denomination">Denomination:</label>
-      <input
-        type="text"
-        id="denomination"
-        v-model="localData.denomination"
-        placeholder="Enter your religious denomination"
-        @input="updateData"
-      />
-
       <label for="phoneNumber">Phone Number:</label>
       <input
         type="text"
@@ -55,9 +46,13 @@
         type="number"
         id="yearsOfExperience"
         v-model="localData.years_of_experience"
+        min="0"
         placeholder="Enter your years of experience"
-        @input="updateData"
+        @input="validateYearsOfExperience"
       />
+      <p v-if="yearsError" class="error-message">
+        {{ yearsError }}
+      </p>
     </div>
   </div>
 </template>
@@ -78,13 +73,29 @@ export default {
         user_type: this.personalData.user_type || "",
         first_name: this.personalData.first_name || "",
         last_name: this.personalData.last_name || "",
-        denomination: this.personalData.denomination || "",
         phone_number: this.personalData.phone_number || "",
         years_of_experience: this.personalData.years_of_experience || null,
       },
+      yearsError: "",
     };
   },
   methods: {
+    validateYearsOfExperience() {
+      const years = this.localData.years_of_experience;
+      if (years === null || years === "") {
+        this.yearsError = "";
+        this.updateData();
+        return;
+      }
+
+      if (years < 0) {
+        this.yearsError = "Years of experience cannot be negative";
+        this.localData.years_of_experience = 0;
+      } else {
+        this.yearsError = "";
+      }
+      this.updateData();
+    },
     /* Updates parent with current personal information values */
     updateData() {
       this.$emit("update:personalData", {
@@ -101,7 +112,6 @@ export default {
           user_type: newValue.user_type || "",
           first_name: newValue.first_name || "",
           last_name: newValue.last_name || "",
-          denomination: newValue.denomination || "",
           phone_number: newValue.phone_number || "",
           years_of_experience: newValue.years_of_experience || null,
         };
@@ -111,3 +121,11 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.error-message {
+  color: #d32f2f;
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+</style>

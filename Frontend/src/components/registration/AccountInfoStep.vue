@@ -28,6 +28,7 @@
         v-model="localUserData.email"
         required
         placeholder="Enter your email address"
+        ds
         @input="validateEmail"
       />
       <p v-if="emailError" class="error-message">
