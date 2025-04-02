@@ -1,135 +1,155 @@
 <template>
-  <div class="profile-card">
-    <div class="profile-header">
-      <h1>{{ profile.first_name }} {{ profile.last_name }}</h1>
-    </div>
-
-    <div class="profile-content">
-      <div class="profile-section">
-        <h3>Personal Information</h3>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label">Username</span>
-            <span class="value">{{ profile.user?.username }}</span>
+  <div v-if="profile">
+    <div class="profile-card">
+      <div class="profile-header">
+        <h1>{{ profile?.first_name }} {{ profile?.last_name }}</h1>
+        <div
+          v-if="!isOwnProfile && profile?.user?.id"
+          class="friendship-status"
+        >
+          <div
+            v-if="friendshipStatus"
+            :class="['status-box', friendshipStatus]"
+          >
+            {{
+              friendshipStatus.charAt(0).toUpperCase() +
+              friendshipStatus.slice(1)
+            }}
           </div>
-          <div class="info-item">
-            <span class="label">Email</span>
-            <span class="value">{{ profile.user?.email }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">User Type</span>
-            <span class="value">{{ profile.user_type }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Denomination</span>
-            <span class="value">{{ profile.denomination }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Phone</span>
-            <span class="value">{{ profile.phone_number }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Years of Experience</span>
-            <span class="value">{{ profile.years_of_experience }}</span>
-          </div>
+          <button v-else @click="sendFriendRequest" class="connect-button">
+            Connect
+          </button>
         </div>
       </div>
 
-      <div class="profile-section">
-        <h3>Location</h3>
-        <div class="address">
-          <p>{{ profile.street_address }}</p>
-          <p>{{ profile.city }}, {{ profile.state }}</p>
-          <p>{{ profile.country }}</p>
+      <div class="profile-content">
+        <div class="profile-section">
+          <h3>Personal Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Username</span>
+              <span class="value">{{ profile?.user?.username }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Email</span>
+              <span class="value">{{ profile?.user?.email }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">User Type</span>
+              <span class="value">{{ profile?.user_type }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Denomination</span>
+              <span class="value">{{ profile?.denomination }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Phone</span>
+              <span class="value">{{ profile?.phone_number }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Years of Experience</span>
+              <span class="value">{{ profile?.years_of_experience }}</span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div class="profile-section">
-        <div class="tag-header">
-          <h3>Tags</h3>
-          <div class="tag-controls">
-            <div class="tag-dropdown">
-              <button
-                v-if="!isOwnProfile"
-                class="add-tag-btn"
-                @click="toggleTagDropdown"
-              >
-                <span class="plus-icon">+</span>
-              </button>
-              <div v-if="showTagDropdown" class="tag-dropdown-menu">
-                <div
-                  v-for="tag in availableTags"
-                  :key="tag.id"
-                  class="tag-dropdown-item"
-                  @click="handleAddTag(tag.id)"
+        <div class="profile-section">
+          <h3>Location</h3>
+          <div class="address">
+            <p>{{ profile?.street_address }}</p>
+            <p>{{ profile?.city }}, {{ profile?.state }}</p>
+            <p>{{ profile?.country }}</p>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="tag-header">
+            <h3>Tags</h3>
+            <div class="tag-controls">
+              <div class="tag-dropdown">
+                <button
+                  v-if="!isOwnProfile"
+                  class="add-tag-btn"
+                  @click="toggleTagDropdown"
                 >
-                  {{ tag.name }}
+                  <span class="plus-icon">+</span>
+                </button>
+                <div v-if="showTagDropdown" class="tag-dropdown-menu">
+                  <div
+                    v-for="tag in availableTags"
+                    :key="tag.id"
+                    class="tag-dropdown-item"
+                    @click="handleAddTag(tag.id)"
+                  >
+                    {{ tag.name }}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="tags">
-          <span
-            v-for="tag in displayTags"
-            :key="tag.id"
-            class="tag"
-            :class="{ 'self-added': tag.is_self_added }"
-            :title="getTagTitle(tag)"
-          >
-            {{ tag.name }}
-            <button
-              v-if="canRemoveTag(tag)"
-              class="remove-tag-btn"
-              @click="handleRemoveTag(tag.id)"
+          <div class="tags">
+            <span
+              v-for="tag in displayTags"
+              :key="tag.id"
+              class="tag"
+              :class="{ 'self-added': tag.is_self_added }"
               :title="getTagTitle(tag)"
             >
-              ×
-            </button>
-          </span>
-        </div>
-        <div v-if="error" class="error" role="alert">{{ error }}</div>
-      </div>
-
-      <div class="profile-section">
-        <h3>Description</h3>
-        <p class="description">{{ profile.description }}</p>
-      </div>
-    </div>
-
-    <!-- Tag Dialog -->
-    <div v-if="showTagDialog" class="dialog-overlay" @click="closeTagDialog">
-      <div class="dialog" @click.stop>
-        <h3>Add Tag</h3>
-        <div class="dialog-content">
-          <div class="form-group">
-            <label>Select Tag:</label>
-            <select v-model="selectedTag" class="tag-select">
-              <option value="">Choose a tag...</option>
-              <option
-                v-for="tag in availableTags"
-                :key="tag.id"
-                :value="tag.id"
+              {{ tag.name }}
+              <button
+                v-if="canRemoveTag(tag)"
+                class="remove-tag-btn"
+                @click="handleRemoveTag(tag.id)"
+                :title="getTagTitle(tag)"
               >
-                {{ tag.name }}
-              </option>
-            </select>
-            <div v-if="error" class="error">{{ error }}</div>
+                ×
+              </button>
+            </span>
           </div>
-          <div class="dialog-actions">
-            <button class="cancel-btn" @click="closeTagDialog">Cancel</button>
-            <button
-              class="add-btn"
-              @click="handleAddTag"
-              :disabled="!selectedTag"
-            >
-              Add Tag
-            </button>
+          <div v-if="error" class="error" role="alert">{{ error }}</div>
+        </div>
+
+        <div class="profile-section">
+          <h3>Description</h3>
+          <p class="description">{{ profile?.description }}</p>
+        </div>
+      </div>
+
+      <!-- Tag Dialog -->
+      <div v-if="showTagDialog" class="dialog-overlay" @click="closeTagDialog">
+        <div class="dialog" @click.stop>
+          <h3>Add Tag</h3>
+          <div class="dialog-content">
+            <div class="form-group">
+              <label>Select Tag:</label>
+              <select v-model="selectedTag" class="tag-select">
+                <option value="">Choose a tag...</option>
+                <option
+                  v-for="tag in availableTags"
+                  :key="tag.id"
+                  :value="tag.id"
+                >
+                  {{ tag.name }}
+                </option>
+              </select>
+              <div v-if="error" class="error">{{ error }}</div>
+            </div>
+            <div class="dialog-actions">
+              <button class="cancel-btn" @click="closeTagDialog">Cancel</button>
+              <button
+                class="add-btn"
+                @click="handleAddTag"
+                :disabled="!selectedTag"
+              >
+                Add Tag
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+  <div v-else>Loading...</div>
 </template>
 
 <script>
@@ -141,6 +161,7 @@ export default {
     profile: {
       type: Object,
       required: true,
+      default: () => ({}),
     },
     isOwnProfile: {
       type: Boolean,
@@ -149,6 +170,12 @@ export default {
     currentUserId: {
       type: Number,
       required: true,
+    },
+    friendshipStatus: {
+      type: String,
+      default: null,
+      validator: (value) =>
+        ["pending", "accepted", "rejected", null].includes(value),
     },
   },
   data() {
@@ -171,6 +198,20 @@ export default {
       immediate: true,
       handler(newTags) {
         this.localTags = [...(newTags || [])];
+      },
+    },
+    "profile.user.id": {
+      immediate: true,
+      handler(newId) {
+        if (newId && !this.isOwnProfile && this.profile?.user?.id) {
+          this.fetchFriendshipStatus();
+        }
+      },
+    },
+    friendshipStatus: {
+      immediate: true,
+      handler() {
+        // Keep this watcher for future debugging if needed
       },
     },
   },
@@ -365,9 +406,59 @@ export default {
       }
       return "This tag was added by another user";
     },
+    async sendFriendRequest() {
+      try {
+        if (!this.profile?.user?.id) {
+          return;
+        }
+
+        const headers = this.getAuthHeader();
+        const payload = {
+          receiver: this.profile.user.id,
+        };
+
+        await api.post("api/friendships/", payload, {
+          headers,
+        });
+
+        // Update the friendship status to pending
+        this.$emit("update:friendshipStatus", "pending");
+        alert("Friend request sent!");
+      } catch (error) {
+        console.error("Error sending friend request:", error.response || error);
+        alert(
+          `Failed to send friend request. ${error.response?.data?.detail || ""}`
+        );
+      }
+    },
+    async fetchFriendshipStatus() {
+      try {
+        if (!this.profile?.user?.id) {
+          return;
+        }
+
+        const response = await api.get(
+          `api/friendships/status/${this.profile.user.id}/`,
+          {
+            headers: this.getAuthHeader(),
+          }
+        );
+
+        if (response.data && response.data.status) {
+          this.$emit("update:friendshipStatus", response.data.status);
+        } else {
+          this.$emit("update:friendshipStatus", null);
+        }
+      } catch (error) {
+        this.$emit("update:friendshipStatus", null);
+      }
+    },
   },
   mounted() {
-    this.fetchAvailableTags();
+    if (this.profile?.user?.id) {
+      this.fetchAvailableTags();
+      this.fetchFriendshipStatus();
+    }
   },
 };
 </script>
@@ -518,7 +609,6 @@ export default {
   padding: 0.5rem;
 }
 
-/* For Webkit browsers like Chrome/Safari */
 .tag-select::-webkit-scrollbar {
   width: 8px;
 }
@@ -537,7 +627,6 @@ export default {
   background: #555;
 }
 
-/* For Firefox */
 .tag-select {
   scrollbar-width: thin;
   scrollbar-color: #888 #f1f1f1;
@@ -693,8 +782,49 @@ export default {
   color: #666;
   margin-bottom: 0.3rem;
   margin-top: 0.5rem;
-
   opacity: 5;
   transition: opacity 0.5s;
+}
+
+.friendship-status {
+  display: flex;
+  align-items: center;
+}
+
+.status-box {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-box.pending {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.status-box.accepted {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.status-box.rejected {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.connect-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.connect-button:hover {
+  background-color: #2980b9;
 }
 </style>

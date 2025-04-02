@@ -17,11 +17,11 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist, \
                                    PermissionDenied
 from .models import Tag, SearchHistory, \
     ExternalMedia, Profile, ProfileVote, ProfileComment, \
-    ProfileTagging, Notification
+    ProfileTagging, Notification, Friendship
 from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
     ProfileSerializer, ProfileVoteSerializer,\
-    ProfileCommentSerializer, NotificationSerializer
+    ProfileCommentSerializer, NotificationSerializer, FriendshipSerializer
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -382,3 +382,91 @@ class NotificationView(ModelViewSet):
    def perform_create(self, serializer):
       # Set the recipient as the current user when creating a notification
       serializer.save(recipient=self.request.user)
+
+class FriendshipViewSet(ModelViewSet):
+   serializer_class = FriendshipSerializer
+   authentication_classes = [JWTAuthentication]
+   permission_classes = [IsAuthenticated]
+
+   # Define the queryset
+   queryset = Friendship.objects.all()
+
+   def perform_create(self, serializer):
+      # Check if the user is authenticated
+      if not self.request.user.is_authenticated:
+         raise PermissionDenied("You must log in to send a friend request.")
+
+      # Set the sender as the current user
+      serializer.save(sender=self.request.user)
+
+      # Create a notification for the receiver
+      Notification.objects.create(
+         recipient=serializer.validated_data['receiver'],
+         notification_type='friend_request',
+         message=f"{self.request.user.username} sent you a friend request",
+         related_object_id=serializer.instance.id
+      )
+
+   @action(detail=True, methods=['post'])
+   def respond(self, request, pk=None): # pylint: disable=unused-argument
+
+      try:
+         friendship = self.get_object()
+         print(f"Found friendship: {friendship}")
+
+         response_action = request.data.get('action')
+         print(f"Action received: {response_action}")
+
+         if response_action == 'accept':
+            friendship.status = 'accepted'
+         elif response_action == 'reject':
+            friendship.status = 'rejected'
+         else:
+            return Response(
+               {"error": "Invalid action"},
+               status=status.HTTP_400_BAD_REQUEST
+            )
+
+         friendship.save()
+         return Response({
+            "message": f"Friend request {response_action}ed successfully"
+         }, status=status.HTTP_200_OK)
+      except ObjectDoesNotExist:
+         return Response(
+            {"error": "Friendship not found"},
+            status=status.HTTP_404_NOT_FOUND
+         )
+      except ValidationError as e:
+         return Response(
+            {"error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+         )
+
+   @action(detail=False, methods=['get'])
+   def status(self, request, profile_id=None):
+      try:
+         if not profile_id:
+            return Response({'error': 'Profile ID is required'},
+                          status=status.HTTP_400_BAD_REQUEST)
+
+         # Get the friendship between the current user and the specified profile
+         friendship = Friendship.objects.filter(
+             Q(sender=request.user, receiver_id=profile_id) |
+             Q(sender_id=profile_id, receiver=request.user)
+         ).first()
+
+         print(f"Found friendship: {friendship}")  # Debug log
+
+         if friendship:
+            response_data = {
+                'status': friendship.status,
+                'friendship_id': friendship.id,
+                'is_sender': friendship.sender == request.user
+            }
+            print(f"Returning response: {response_data}")  # Debug log
+            return Response(response_data)
+         print("No friendship found")  # Debug log
+         return Response({'status': None})
+      except (ObjectDoesNotExist, ValidationError) as e:
+         print(f"Error in status method: {str(e)}")  # Debug log
+         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
