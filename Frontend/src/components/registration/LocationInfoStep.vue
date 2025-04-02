@@ -104,6 +104,9 @@
             @input="updateData"
           />
         </div>
+        <p v-if="countryError" class="error-message">
+          {{ countryError }}
+        </p>
       </div>
 
       <!-- Location Visibility Warning -->
@@ -129,7 +132,7 @@ export default {
       required: true,
     },
   },
-  emits: ["update:locationData"],
+  emits: ["update:locationData", "validation"],
   data() {
     return {
       localData: {
@@ -146,7 +149,16 @@ export default {
       },
       autocompleteService: null,
       placesService: null,
+      countryError: "",
     };
+  },
+  computed: {
+    isCountryValid() {
+      if (this.localData.country === "Other") {
+        return this.localData.other_country.trim() !== "";
+      }
+      return this.localData.country.trim() !== "";
+    },
   },
   mounted() {
     this.initGooglePlaces();
@@ -162,10 +174,28 @@ export default {
   methods: {
     /* Updates parent with current location data values */
     updateData() {
+      this.validateCountry();
       this.$emit("update:locationData", {
         ...this.locationData,
         ...this.localData,
       });
+      this.$emit("validation", {
+        isValid: this.isCountryValid,
+        error: this.countryError,
+      });
+    },
+
+    validateCountry() {
+      if (!this.localData.country) {
+        this.countryError = "Please select your country";
+      } else if (
+        this.localData.country === "Other" &&
+        !this.localData.other_country.trim()
+      ) {
+        this.countryError = "Please specify your country";
+      } else {
+        this.countryError = "";
+      }
     },
 
     /* Initializes Google Places API for address autocomplete */
@@ -305,5 +335,41 @@ export default {
   color: #e65100;
   font-size: 0.9rem;
   line-height: 1.4;
+}
+
+.error-message {
+  color: #d32f2f;
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+
+.required {
+  color: #d32f2f;
+  margin-right: 4px;
+}
+
+.required-text {
+  color: #666;
+  font-size: 0.875rem;
+  margin-left: 4px;
+}
+
+.country-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.other-country-input {
+  margin-top: 8px;
+}
+
+.other-country-input input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 </style>

@@ -28,6 +28,7 @@
         <LocationInfoStep
           v-show="currentStep === 2"
           v-model:locationData="form"
+          @validation="handleLocationValidation"
         />
 
         <!-- Step 4: Additional Information -->
@@ -39,10 +40,7 @@
         <!-- Error Message -->
         <div
           v-if="message"
-          :class="[
-            'message-container',
-            { 'error-message': !isSuccess, 'success-message': isSuccess },
-          ]"
+          :class="['message-container', { 'success-message': isSuccess }]"
         >
           <span class="message-icon">{{ !isSuccess ? "⚠️" : "✅" }}</span>
           {{ message }}
@@ -54,6 +52,7 @@
           :steps="steps"
           :isStepOneValid="isStepOneValid()"
           :isFormValid="isFormValid"
+          :isLocationValid="locationValidation.isValid"
           @prev-step="prevStep"
           @next-step="nextStep"
           @submit="registerUser"
@@ -122,6 +121,10 @@ export default {
         { label: "Location" },
         { label: "Additional" },
       ],
+      locationValidation: {
+        isValid: false,
+        error: "",
+      },
     };
   },
   computed: {
@@ -183,6 +186,15 @@ export default {
           this.isSuccess = false;
           return;
         }
+      } else if (this.currentStep === 2) {
+        // Check location validation before proceeding from step 3
+        if (!this.locationValidation.isValid) {
+          this.message = this.locationValidation.error;
+          this.isSuccess = false;
+          return;
+        }
+        this.message = "";
+        this.currentStep++;
       } else if (this.currentStep < this.steps.length - 1) {
         this.message = ""; // Clear message when moving to next step
         this.currentStep++;
@@ -231,6 +243,17 @@ export default {
     // Handle password validation from child component
     handlePasswordValidation(isValid) {
       this.passwordsDoNotMatch = !isValid;
+    },
+
+    // Handle location validation from child component
+    handleLocationValidation(validation) {
+      this.locationValidation = validation;
+      if (!validation.isValid) {
+        this.message = validation.error;
+        this.isSuccess = false;
+      } else {
+        this.message = "";
+      }
     },
 
     // Calls the profiles endpoint to register the user
@@ -454,12 +477,6 @@ h1 {
 
 .message-icon {
   font-size: 1.2rem;
-}
-
-.error-message {
-  background-color: #ffebee;
-  color: #c62828;
-  border-left: 4px solid #f44336;
 }
 
 .success-message {

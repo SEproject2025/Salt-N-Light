@@ -13,6 +13,7 @@
       v-if="currentStep < steps.length - 1"
       type="button"
       class="btn-primary"
+      :disabled="isLocationStep && !isLocationValid"
       @click="$emit('next-step')"
     >
       Next
@@ -49,8 +50,17 @@ export default {
       type: Boolean,
       required: true,
     },
+    isLocationValid: {
+      type: Boolean,
+      default: true,
+    },
   },
   emits: ["prev-step", "next-step", "skip-to-final", "submit"],
+  computed: {
+    isLocationStep() {
+      return this.currentStep === 2;
+    },
+  },
   methods: {
     /* Logs validation status and emits submit event to parent */
     handleSubmit() {
