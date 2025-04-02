@@ -82,7 +82,7 @@ export default {
       required: true,
     },
   },
-  emits: ["update:userData", "password-validation"],
+  emits: ["update:userData", "password-validation", "validation"],
   data() {
     return {
       localUserData: {
@@ -98,16 +98,29 @@ export default {
       passwordLengthError: "",
     };
   },
+  computed: {
+    isStepValid() {
+      return (
+        !this.usernameError &&
+        !this.emailError &&
+        !this.passwordsDoNotMatch &&
+        !this.passwordLengthError &&
+        this.localUserData.username.trim() &&
+        this.localUserData.email.trim() &&
+        this.localUserData.password &&
+        this.confirmPassword
+      );
+    },
+  },
   methods: {
     validateUsername() {
       const alphanumericRegex = /^[a-zA-Z0-9]+$/;
       if (!alphanumericRegex.test(this.localUserData.username)) {
         this.usernameError = "Username can only contain letters and numbers";
-        this.$emit("password-validation", false);
       } else {
         this.usernameError = "";
-        this.validateAll();
       }
+      this.validateAll();
       this.updateUserData();
     },
 
@@ -115,24 +128,19 @@ export default {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(this.localUserData.email)) {
         this.emailError = "Please enter a valid email address";
-        this.$emit("password-validation", false);
       } else {
         this.emailError = "";
-        this.validateAll();
       }
+      this.validateAll();
       this.updateUserData();
     },
 
     validateAll() {
-      const isValid =
-        !this.usernameError &&
-        !this.emailError &&
-        !this.passwordsDoNotMatch &&
-        !this.passwordLengthError &&
-        this.localUserData.username &&
-        this.localUserData.email &&
-        this.localUserData.password;
-      this.$emit("password-validation", isValid);
+      this.$emit("password-validation", this.isStepValid);
+      this.$emit("validation", {
+        isValid: this.isStepValid,
+        error: "",
+      });
     },
 
     validatePassword() {

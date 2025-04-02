@@ -13,7 +13,15 @@
       v-if="currentStep < steps.length - 1"
       type="button"
       class="btn-primary"
-      :disabled="isLocationStep && !isLocationValid"
+      :class="{
+        'btn-disabled':
+          (isLocationStep && !isLocationValid) ||
+          (isAccountStep && !isAccountValid),
+      }"
+      :disabled="
+        (isLocationStep && !isLocationValid) ||
+        (isAccountStep && !isAccountValid)
+      "
       @click="$emit('next-step')"
     >
       Next
@@ -54,11 +62,18 @@ export default {
       type: Boolean,
       default: true,
     },
+    isAccountValid: {
+      type: Boolean,
+      default: true,
+    },
   },
   emits: ["prev-step", "next-step", "skip-to-final", "submit"],
   computed: {
     isLocationStep() {
       return this.currentStep === 2;
+    },
+    isAccountStep() {
+      return this.currentStep === 0;
     },
   },
   methods: {
