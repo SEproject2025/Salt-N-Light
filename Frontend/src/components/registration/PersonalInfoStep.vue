@@ -47,6 +47,7 @@
         id="yearsOfExperience"
         v-model="localData.years_of_experience"
         min="0"
+        max="100"
         placeholder="Enter your years of experience"
         @input="validateYearsOfExperience"
       />
@@ -84,13 +85,16 @@ export default {
       const years = this.localData.years_of_experience;
       if (years === null || years === "") {
         this.yearsError = "";
+        this.localData.years_of_experience = null;
         this.updateData();
         return;
       }
 
-      if (years < 0) {
-        this.yearsError = "Years of experience cannot be negative";
-        this.localData.years_of_experience = 0;
+      const numYears = Number(years);
+      if (isNaN(numYears) || numYears <= 0 || numYears > 100) {
+        this.yearsError =
+          "If you have no years of experience please leave blank.";
+        this.localData.years_of_experience = null;
       } else {
         this.yearsError = "";
       }
