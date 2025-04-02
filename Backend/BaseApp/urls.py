@@ -38,6 +38,7 @@ urlpatterns = [
         name='friendship-respond'),
    path('api/friendships/', FriendshipViewSet.as_view({'post': 'create'}),
         name='friendship-create'),
-   path('api/friendships/status/<int:profile_id>/', FriendshipViewSet.as_view({'get': 'status'}),
+   path('api/friendships/status/<int:profile_id>/',
+        FriendshipViewSet.as_view({'get': 'status'}),
         name='friendship-status'),
 ]

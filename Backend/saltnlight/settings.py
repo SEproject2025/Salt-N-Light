@@ -69,21 +69,21 @@ SESSION_COOKIE_HTTPONLY = False
 SESSION_SAVE_EVERY_REQUEST = True
 
 # CSRF configurations
-CSRF_COOKIE_NAME = 'csrftoken'
-CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY = False
-CSRF_TRUSTED_ORIGINS = [
-   'http://127.0.0.1:8000',
-   'http://127.0.0.1:8080',
-   'http://api.evangelium.app',
-   'https://api.evangelium.app',
-   'http://evangelium.app',
-   'https://evangelium.app',
-   'http://localhost:8000',
-   'http://localhost:8080',
-   'http://www.evangelium.app',
-   'https://www.evangelium.app'
-]
+#CSRF_COOKIE_NAME = 'csrftoken'
+#CSRF_COOKIE_SECURE = True
+#CSRF_COOKIE_HTTPONLY = False
+#CSRF_TRUSTED_ORIGINS = [
+#   'http://127.0.0.1:8000',
+#   'http://127.0.0.1:8080',
+#   'http://api.evangelium.app',
+#   'https://api.evangelium.app',
+#   'http://evangelium.app',
+#   'https://evangelium.app',
+#   'http://localhost:8000',
+#   'http://localhost:8080',
+#   'http://www.evangelium.app',
+#   'https://www.evangelium.app'
+#]
 
 # Session Authentication Configurations
 REST_FRAMEWORK = {
