@@ -42,9 +42,9 @@
       />
 
       <label for="yearsOfExperience"
-        >Years of Experience:
+        >Years in Ministry:
         <span class="required-text"
-          >If you have no years of experience please leave blank</span
+          >If it's less than one year, please leave this field blank</span
         ></label
       >
       <input
@@ -53,13 +53,13 @@
         v-model="localData.years_of_experience"
         min="0"
         max="100"
-        placeholder="Enter your years of experience"
+        placeholder="Enter the # of years in the ministry"
         @input="validateYearsOfExperience"
         @keypress="validateDigits"
       />
-      <p v-if="yearsError" class="error-message">
+      <div v-if="yearsError" :class="['message-container', 'error-message']">
         {{ yearsError }}
-      </p>
+      </div>
     </div>
   </div>
 </template>
@@ -112,8 +112,8 @@ export default {
       if (isNaN(numYears) || numYears < 0) {
         this.yearsError = "Please enter a valid number";
         this.localData.years_of_experience = null;
-      } else if (numYears > 100) {
-        this.yearsError = "Experience cannot exceed 100 years";
+      } else if (numYears > 500) {
+        this.yearsError = "Number cannot exceed 500 years";
         this.localData.years_of_experience = null;
       } else if (!Number.isInteger(numYears)) {
         this.yearsError = "Please enter a whole number";
@@ -150,9 +150,31 @@ export default {
 </script>
 
 <style scoped>
+.message-container {
+  margin: 2px 0;
+  padding: 2px;
+  border-radius: 8px;
+  font-weight: 500;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.95rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .error-message {
-  color: #d32f2f;
-  font-size: 0.875rem;
-  margin-top: 4px;
+  color: #c62828;
 }
 </style>
