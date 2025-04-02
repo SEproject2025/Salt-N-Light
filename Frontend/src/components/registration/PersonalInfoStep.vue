@@ -41,7 +41,12 @@
         @input="updateData"
       />
 
-      <label for="yearsOfExperience">Years of Experience:</label>
+      <label for="yearsOfExperience"
+        >Years of Experience:
+        <span class="required-text"
+          >If you have no years of experience please leave blank</span
+        ></label
+      >
       <input
         type="number"
         id="yearsOfExperience"
@@ -50,6 +55,7 @@
         max="100"
         placeholder="Enter your years of experience"
         @input="validateYearsOfExperience"
+        @keypress="validateDigits"
       />
       <p v-if="yearsError" class="error-message">
         {{ yearsError }}
@@ -81,19 +87,36 @@ export default {
     };
   },
   methods: {
+    validateDigits(event) {
+      // Allow only digits and control keys
+      if (
+        !/[0-9]/.test(event.key) &&
+        event.key !== "Backspace" &&
+        event.key !== "Delete" &&
+        event.key !== "ArrowLeft" &&
+        event.key !== "ArrowRight" &&
+        event.key !== "Tab"
+      ) {
+        event.preventDefault();
+      }
+    },
     validateYearsOfExperience() {
       const years = this.localData.years_of_experience;
       if (years === null || years === "") {
-        this.yearsError = "";
         this.localData.years_of_experience = null;
         this.updateData();
         return;
       }
 
       const numYears = Number(years);
-      if (isNaN(numYears) || numYears <= 0 || numYears > 100) {
-        this.yearsError =
-          "If you have no years of experience please leave blank.";
+      if (isNaN(numYears) || numYears < 0) {
+        this.yearsError = "Please enter a valid number";
+        this.localData.years_of_experience = null;
+      } else if (numYears > 100) {
+        this.yearsError = "Experience cannot exceed 100 years";
+        this.localData.years_of_experience = null;
+      } else if (!Number.isInteger(numYears)) {
+        this.yearsError = "Please enter a whole number";
         this.localData.years_of_experience = null;
       } else {
         this.yearsError = "";
