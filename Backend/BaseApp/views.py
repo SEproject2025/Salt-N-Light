@@ -32,9 +32,9 @@ class ProfileListCreateView(generics.ListCreateAPIView):
    serializer_class = ProfileSerializer
    permission_classes = [AllowAny]  # Public access for testing
    filter_backends = [filters.SearchFilter]
-   search_fields = ['user_type', 'city', 'state', 'country', 'denomination']
+   search_fields = ['user_type', 'city', 'state', 'country']
    filterset_fields = ['user_type', 'city', 'state', 'country',
-                       'denomination', 'tags']
+                       'tags']
 
 
 class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
