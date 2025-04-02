@@ -113,7 +113,7 @@ export default {
       } else if (value.length < 2) {
         this.firstNameError = "First Name must be at least 2 characters";
       } else if (value.length > 35) {
-        this.firstNameError = "First Name must not exceed 25 characters";
+        this.firstNameError = "First Name must not exceed 35 characters";
       } else if (!/^[a-zA-Z\s-']+$/.test(value)) {
         this.firstNameError =
           "First Name can only contain letters, spaces, hyphens, and apostrophes";
@@ -129,7 +129,7 @@ export default {
       } else if (value.length < 2) {
         this.lastNameError = "Last Name must be at least 2 characters";
       } else if (value.length > 35) {
-        this.lastNameError = "Last Name must not exceed 25 characters";
+        this.lastNameError = "Last Name must not exceed 35 characters";
       } else if (!/^[a-zA-Z\s-']+$/.test(value)) {
         this.lastNameError =
           "Last Name can only contain letters, spaces, hyphens, and apostrophes";
