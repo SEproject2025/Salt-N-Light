@@ -1,75 +1,64 @@
 <template>
   <div class="form-step">
     <h2 class="step-title">Account Information</h2>
-    <form @submit.prevent="handleSubmit" class="form-group">
+    <div class="form-group">
       <!-- Username Field -->
       <label for="username">
         <span class="required">*</span> Username:
         <span class="required-text">required</span>
       </label>
-      <Field
+      <input
         type="text"
         id="username"
-        name="username"
-        rules="required|min:3|max:25"
         v-model="localUserData.username"
         placeholder="Choose a unique username"
+        :class="{ error: usernameError }"
       />
-      <!--<p v-if="usernameError" class="error-message">
-        {{ usernameError }}
-      </p>-->
-      <ErrorMessage name="username" class="error-message" />
+      <p v-if="usernameError" class="error-message">{{ usernameError }}</p>
 
       <!-- Email Field -->
       <label for="email">
         <span class="required">*</span> Email:
         <span class="required-text">required</span>
       </label>
-      <Field
+      <input
         type="email"
         id="email"
-        name="email"
-        rules="required|email"
         v-model="localUserData.email"
         placeholder="Enter your email address"
+        :class="{ error: emailError }"
       />
-      <!--<p v-if="emailError" class="error-message">
-        {{ emailError }}
-      </p>-->
-      <ErrorMessage name="email" class="error-message" />
+      <p v-if="emailError" class="error-message">{{ emailError }}</p>
 
       <!-- Password Field -->
       <label for="password">
         <span class="required">*</span> Password:
         <span class="required-text">required</span>
       </label>
-      <Field
+      <input
         type="password"
         id="password"
-        name="password"
-        rules="required|min:6|max:25"
         v-model="localUserData.password"
         placeholder="Create a secure password"
+        :class="{ error: passwordError }"
       />
-      <ErrorMessage name="password" class="error-message" />
+      <p v-if="passwordError" class="error-message">{{ passwordError }}</p>
 
       <!-- Confirm Password Field -->
       <label for="confirmPassword">
         <span class="required">*</span> Confirm Password:
         <span class="required-text">required</span>
       </label>
-      <Field
+      <input
         type="password"
         id="confirmPassword"
-        name="confirmPassword"
         v-model="confirmPassword"
-        rules="required|same:password"
         placeholder="Confirm your password"
+        :class="{ error: confirmPasswordError }"
       />
-      <!--<p v-if="passwordsDoNotMatch" class="error-message">
-        Passwords do not match.
-      </p>-->
-      <ErrorMessage name="confirmPassword" class="error-message" />
+      <p v-if="confirmPasswordError" class="error-message">
+        {{ confirmPasswordError }}
+      </p>
 
       <!-- Add note about required fields -->
       <div class="info-message">
@@ -77,59 +66,20 @@
         These account details are required. The following steps are optional but
         help complete your profile.
       </div>
-
-      <!-- Submit Button -->
-      <div class="form-navigation">
-        <button type="submit" class="btn btn-primary">Next</button>
-      </div>
-    </form>
+    </div>
   </div>
 </template>
 
 <script>
-import { defineRule, configure, Field, ErrorMessage } from "vee-validate";
-import { required, min, max, email } from "@vee-validate/rules";
-
-// Define validation rules
-defineRule("required", required);
-defineRule("min", min);
-defineRule("max", max);
-defineRule("email", email);
-
-// Define a custom 'same' rule
-defineRule("same", (value, [target], ctx) => {
-  if (value === ctx.form[target]) {
-    return true;
-  }
-  return `${ctx.field} must match ${target}`;
-});
-
-// Configure VeeValidate
-configure({
-  generateMessage: (ctx) => {
-    const messages = {
-      required: `${ctx.field} is required.`,
-      min: `${ctx.field} must be at least ${ctx.rule.params[0]} characters.`,
-      max: `${ctx.field} must not exceed ${ctx.rule.params[0]} characters.`,
-      email: `Please enter a valid email address.`,
-    };
-    return messages[ctx.rule.name] || `The ${ctx.field} field is invalid.`;
-  },
-});
-
 export default {
   name: "AccountInfoStep",
-  components: {
-    Field,
-    ErrorMessage,
-  },
   props: {
     userData: {
       type: Object,
       required: true,
     },
   },
-  emits: ["update:userData", "next"],
+  emits: ["update:userData", "password-validation"],
   data() {
     return {
       localUserData: {
@@ -138,107 +88,143 @@ export default {
         password: this.userData.password || "",
       },
       confirmPassword: "",
-      //passwordsDoNotMatch: false,
-      //usernameError: "",
-      //emailError: "",
+      usernameError: "",
+      emailError: "",
+      passwordError: "",
+      confirmPasswordError: "",
     };
   },
-  methods: {
-    async handleSubmit() {
-      try {
-        // Update parent component with form data
-        this.$emit("update:userData", { ...this.localUserData });
-
-        // Emit next event to move to next step
-        this.$emit("next");
-      } catch (error) {
-        console.error("Error submitting form:", error);
-      }
-    },
-  },
   watch: {
+    "localUserData.username": {
+      handler(newVal) {
+        this.validateUsername(newVal);
+        this.$emit("update:userData", { ...this.userData, username: newVal });
+        this.validateForm();
+      },
+    },
+    "localUserData.email": {
+      handler(newVal) {
+        this.validateEmail(newVal);
+        this.$emit("update:userData", { ...this.userData, email: newVal });
+        this.validateForm();
+      },
+    },
+    "localUserData.password": {
+      handler(newVal) {
+        this.validatePassword(newVal);
+        this.$emit("update:userData", { ...this.userData, password: newVal });
+        this.validateForm();
+      },
+    },
+    confirmPassword: {
+      handler(newVal) {
+        this.validateConfirmPassword(newVal);
+        this.validateForm();
+      },
+    },
     userData: {
-      handler(newValue) {
-        this.localUserData = { ...newValue };
+      handler(newVal) {
+        this.localUserData = {
+          username: newVal.username || "",
+          email: newVal.email || "",
+          password: newVal.password || "",
+        };
       },
       deep: true,
     },
   },
-  mounted() {
-    console.log("AccountInfoStep mounted", this.userData);
+  methods: {
+    validateUsername(value) {
+      if (!value) {
+        this.usernameError = "Username is required";
+      } else if (value.length < 3) {
+        this.usernameError = "Username must be at least 3 characters";
+      } else if (value.length > 25) {
+        this.usernameError = "Username must not exceed 25 characters";
+      } else {
+        this.usernameError = "";
+      }
+    },
+    validateEmail(value) {
+      if (!value) {
+        this.emailError = "Email is required";
+      } else {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const ipEmailRegex = /^[^\s@]+@\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+
+        if (!emailRegex.test(value) && !ipEmailRegex.test(value)) {
+          this.emailError = "Please enter a valid email address";
+        } else if (ipEmailRegex.test(value)) {
+          const ipPart = value.split("@")[1];
+          const ipNumbers = ipPart.split(".").map(Number);
+          if (ipNumbers.some((num) => num > 255)) {
+            this.emailError = "Invalid IP address format";
+          } else {
+            this.emailError = "";
+          }
+        } else {
+          this.emailError = "";
+        }
+      }
+    },
+    validatePassword(value) {
+      if (!value) {
+        this.passwordError =
+          "Password must contain at least a number, a letter and a special character and be at least 6 characters long";
+      } else if (value.length < 6) {
+        this.passwordError = "Password must be at least 6 characters";
+      } else if (value.length > 25) {
+        this.passwordError = "Password must not exceed 25 characters";
+      } else {
+        // Check for at least one number
+        const hasNumber = /\d/.test(value);
+        // Check for at least one letter
+        const hasLetter = /[a-zA-Z]/.test(value);
+        // Check for at least one special character
+        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(value);
+
+        if (!hasNumber) {
+          this.passwordError = "Password must contain at least one number";
+        } else if (!hasLetter) {
+          this.passwordError = "Password must contain at least one letter";
+        } else if (!hasSpecial) {
+          this.passwordError =
+            'Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)';
+        } else {
+          this.passwordError = "";
+        }
+      }
+    },
+    validateConfirmPassword(value) {
+      if (!value) {
+        this.confirmPasswordError = "Please confirm your password";
+      } else if (value !== this.localUserData.password) {
+        this.confirmPasswordError = "Passwords do not match";
+      } else {
+        this.confirmPasswordError = "";
+      }
+    },
+    validateForm() {
+      const isValid =
+        !this.usernameError &&
+        !this.emailError &&
+        !this.passwordError &&
+        !this.confirmPasswordError;
+
+      this.$emit("password-validation", isValid);
+    },
   },
 };
 </script>
 
 <style scoped>
-.form-step {
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-
-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+.error {
+  border-color: #f44336;
 }
 
 .error-message {
-  color: #dc3545;
+  color: #f44336;
   font-size: 0.875rem;
   margin-top: 0.25rem;
-  display: block;
-}
-
-.form-navigation {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 2rem;
-}
-
-.btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-primary {
-  background-color: #3498db;
-  color: white;
-}
-
-.info-message {
-  margin-top: 1rem;
-  padding: 1rem;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.required {
-  color: #dc3545;
-  margin-right: 0.25rem;
-}
-
-.required-text {
-  font-size: 0.8rem;
-  color: #666;
-  margin-left: 0.5rem;
 }
 </style>

@@ -17,8 +17,12 @@
             id="firstName"
             v-model="localData.first_name"
             placeholder="Enter your first name"
-            @input="updateData"
+            @input="validateFirstName"
+            :class="{ error: firstNameError }"
           />
+          <p v-if="firstNameError" class="error-message">
+            {{ firstNameError }}
+          </p>
         </div>
         <div class="form-col">
           <label for="lastName">Last Name:</label>
@@ -27,8 +31,10 @@
             id="lastName"
             v-model="localData.last_name"
             placeholder="Enter your last name"
-            @input="updateData"
+            @input="validateLastName"
+            :class="{ error: lastNameError }"
           />
+          <p v-if="lastNameError" class="error-message">{{ lastNameError }}</p>
         </div>
       </div>
 
@@ -43,12 +49,17 @@
 
       <label for="phoneNumber">Phone Number:</label>
       <input
-        type="text"
+        type="tel"
         id="phoneNumber"
         v-model="localData.phone_number"
         placeholder="Enter your phone number"
-        @input="updateData"
+        @input="validatePhoneNumber"
+        pattern="[0-9+\s()-]*"
+        :class="{ error: phoneNumberError }"
       />
+      <p v-if="phoneNumberError" class="error-message">
+        {{ phoneNumberError }}
+      </p>
 
       <label for="yearsOfExperience">Years of Experience:</label>
       <input
@@ -82,6 +93,9 @@ export default {
         phone_number: this.personalData.phone_number || "",
         years_of_experience: this.personalData.years_of_experience || null,
       },
+      firstNameError: "",
+      lastNameError: "",
+      phoneNumberError: "",
     };
   },
   methods: {
@@ -91,6 +105,57 @@ export default {
         ...this.personalData,
         ...this.localData,
       });
+    },
+    validateFirstName() {
+      const value = this.localData.first_name;
+      if (!value) {
+        this.firstNameError = "First Name is required";
+      } else if (value.length < 2) {
+        this.firstNameError = "First Name must be at least 2 characters";
+      } else if (value.length > 25) {
+        this.firstNameError = "First Name must not exceed 25 characters";
+      } else if (!/^[a-zA-Z\s-']+$/.test(value)) {
+        this.firstNameError =
+          "First Name can only contain letters, spaces, hyphens, and apostrophes";
+      } else {
+        this.firstNameError = "";
+      }
+      this.updateData();
+    },
+    validateLastName() {
+      const value = this.localData.last_name;
+      if (!value) {
+        this.lastNameError = "Last Name is required";
+      } else if (value.length < 2) {
+        this.lastNameError = "Last Name must be at least 2 characters";
+      } else if (value.length > 25) {
+        this.lastNameError = "Last Name must not exceed 25 characters";
+      } else if (!/^[a-zA-Z\s-']+$/.test(value)) {
+        this.lastNameError =
+          "Last Name can only contain letters, spaces, hyphens, and apostrophes";
+      } else {
+        this.lastNameError = "";
+      }
+      this.updateData();
+    },
+    validatePhoneNumber() {
+      const value = this.localData.phone_number;
+      // Remove any non-digit characters for validation
+      const digitsOnly = value.replace(/\D/g, "");
+
+      // Remove any non-allowed characters
+      this.localData.phone_number = value.replace(/[^0-9+\s()-]/g, "");
+
+      if (!value) {
+        this.phoneNumberError = "Phone number is required";
+      } else if (digitsOnly.length < 10) {
+        this.phoneNumberError = "Phone number must be at least 10 digits";
+      } else if (digitsOnly.length > 15) {
+        this.phoneNumberError = "Phone number must not exceed 15 digits";
+      } else {
+        this.phoneNumberError = "";
+      }
+      this.updateData();
     },
   },
   watch: {
@@ -111,3 +176,15 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.error {
+  border-color: #f44336;
+}
+
+.error-message {
+  color: #f44336;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+</style>

@@ -129,19 +129,15 @@ export default {
   computed: {
     // Ensures that only required fields must be filled
     isFormValid() {
-      const { username, email, password } = this.form.user;
+      const username = this.form?.user?.username || "";
+      const email = this.form?.user?.email || "";
+      const password = this.form?.user?.password || "";
+
       const isValid =
         username.trim() &&
         email.trim() &&
         password.trim() &&
         !this.passwordsDoNotMatch;
-      /*console.log("isFormValid computed property:", {
-        username: username.trim(),
-        email: email.trim(),
-        password: password.trim(),
-        passwordsDoNotMatch: this.passwordsDoNotMatch,
-        isValid,
-      });*/
       return isValid;
     },
   },
@@ -153,7 +149,10 @@ export default {
       this.passwordsDoNotMatch = !isValid;
     },
     isStepOneValid() {
-      const { username, email, password } = this.form.user;
+      const username = this.form?.user?.username || "";
+      const email = this.form?.user?.email || "";
+      const password = this.form?.user?.password || "";
+
       const isValid =
         username.trim() &&
         email.trim() &&
@@ -177,8 +176,8 @@ export default {
 
         try {
           // Clear any existing messages
-          /*this.message = "";
-          this.isSuccess = false;*/
+          this.message = "";
+          this.isSuccess = false;
 
           // Fetch all profiles
           const response = await axios.get(
@@ -186,6 +185,9 @@ export default {
           );
           const existingUsernames = response.data.map((profile) =>
             profile.user.username.toLowerCase()
+          );
+          const existingEmails = response.data.map((profile) =>
+            profile.user.email.toLowerCase()
           );
 
           // Check if username exists (case-insensitive comparison)
@@ -198,13 +200,21 @@ export default {
             return;
           }
 
-          // Username is available, proceed to next step
+          // Check if email exists (case-insensitive comparison)
+          if (existingEmails.includes(this.form.user.email.toLowerCase())) {
+            this.message =
+              "This email is already registered. Please use a different email address.";
+            this.isSuccess = false;
+            return;
+          }
+
+          // Username and email are available, proceed to next step
           this.message = "";
           this.currentStep++;
         } catch (error) {
-          console.error("Username check error:", error);
+          console.error("Validation error:", error);
           this.message =
-            "Error checking username availability. Please try again.";
+            "Error checking username and email availability. Please try again.";
           this.isSuccess = false;
           return;
         }
@@ -219,27 +229,12 @@ export default {
         this.currentStep--;
       }
     },
-    /*goToStep(step) {
+    goToStep(step) {
       // Only allow going to completed steps or the next available step
       if (step <= this.currentStep + 1) {
         this.currentStep = step;
       }
     },
-    isStepOneValid() {
-      const { username, email, password } = this.form.user;
-      const isValid =
-        username.trim() &&
-        email.trim() &&
-        password.trim() &&
-        !this.passwordsDoNotMatch;
-
-      if (!isValid) {
-        this.message = "Please complete all required fields before proceeding.";
-        this.isSuccess = false;
-      }
-
-      return isValid;
-    },*/
 
     // Fetches predefined tags from the backend
     async fetchTags() {
@@ -252,11 +247,6 @@ export default {
         console.error("Failed to fetch tags:", error.response?.data);
       }
     },
-
-    /*// Handle password validation from child component
-    handlePasswordValidation(isValid) {
-      this.passwordsDoNotMatch = !isValid;
-    },*/
 
     // Calls the profiles endpoint to register the user
     async registerUser() {

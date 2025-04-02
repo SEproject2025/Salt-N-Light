@@ -60,14 +60,25 @@ export default {
           password: this.password,
         });
 
-        // Store tokens in local storage or Vuex
-        localStorage.setItem("access_token", response.data.access);
-        localStorage.setItem("refresh_token", response.data.refresh);
+        if (response.data.access && response.data.refresh) {
+          // Store tokens in local storage
+          localStorage.setItem("access_token", response.data.access);
+          localStorage.setItem("refresh_token", response.data.refresh);
 
-        // Redirect to dashboard or another page
-        this.$router.push("/SearchPage");
+          // Redirect to dashboard
+          this.$router.push("/SearchPage");
+        } else {
+          this.errorMessage = "Invalid response from server. Please try again.";
+        }
       } catch (error) {
-        this.errorMessage = "Invalid credentials. Please try again.";
+        console.error("Login error:", error);
+        if (error.response?.status === 401) {
+          this.errorMessage = "Invalid username or password. Please try again.";
+        } else if (error.response?.status === 400) {
+          this.errorMessage = "Please enter both username and password.";
+        } else {
+          this.errorMessage = "An error occurred. Please try again later.";
+        }
       }
     },
   },
