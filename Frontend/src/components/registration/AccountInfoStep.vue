@@ -79,7 +79,7 @@ export default {
       required: true,
     },
   },
-  emits: ["update:userData", "password-validation"],
+  emits: ["update:userData", "password-validation", "validation-status"],
   data() {
     return {
       localUserData: {
@@ -92,46 +92,11 @@ export default {
       emailError: "",
       passwordError: "",
       confirmPasswordError: "",
+      validationCache: {
+        username: null,
+        email: null,
+      },
     };
-  },
-  watch: {
-    "localUserData.username": {
-      handler(newVal) {
-        this.validateUsername(newVal);
-        this.$emit("update:userData", { ...this.userData, username: newVal });
-        this.validateForm();
-      },
-    },
-    "localUserData.email": {
-      handler(newVal) {
-        this.validateEmail(newVal);
-        this.$emit("update:userData", { ...this.userData, email: newVal });
-        this.validateForm();
-      },
-    },
-    "localUserData.password": {
-      handler(newVal) {
-        this.validatePassword(newVal);
-        this.$emit("update:userData", { ...this.userData, password: newVal });
-        this.validateForm();
-      },
-    },
-    confirmPassword: {
-      handler(newVal) {
-        this.validateConfirmPassword(newVal);
-        this.validateForm();
-      },
-    },
-    userData: {
-      handler(newVal) {
-        this.localUserData = {
-          username: newVal.username || "",
-          email: newVal.email || "",
-          password: newVal.password || "",
-        };
-      },
-      deep: true,
-    },
   },
   methods: {
     validateUsername(value) {
@@ -144,6 +109,7 @@ export default {
       } else {
         this.usernameError = "";
       }
+      this.validateForm();
     },
     validateEmail(value) {
       if (!value) {
@@ -166,6 +132,7 @@ export default {
           this.emailError = "";
         }
       }
+      this.validateForm();
     },
     validatePassword(value) {
       if (!value) {
@@ -194,6 +161,7 @@ export default {
           this.passwordError = "";
         }
       }
+      this.validateForm();
     },
     validateConfirmPassword(value) {
       if (!value) {
@@ -203,6 +171,7 @@ export default {
       } else {
         this.confirmPasswordError = "";
       }
+      this.validateForm();
     },
     validateForm() {
       const isValid =
@@ -212,6 +181,53 @@ export default {
         !this.confirmPasswordError;
 
       this.$emit("password-validation", isValid);
+      this.$emit("validation-status", {
+        isValid,
+        errors: {
+          username: this.usernameError,
+          email: this.emailError,
+          password: this.passwordError,
+          confirmPassword: this.confirmPasswordError,
+        },
+      });
+    },
+    updateUserData() {
+      this.$emit("update:userData", { ...this.localUserData });
+    },
+  },
+  watch: {
+    "localUserData.username": {
+      handler(newVal) {
+        this.validateUsername(newVal);
+        this.updateUserData();
+      },
+    },
+    "localUserData.email": {
+      handler(newVal) {
+        this.validateEmail(newVal);
+        this.updateUserData();
+      },
+    },
+    "localUserData.password": {
+      handler(newVal) {
+        this.validatePassword(newVal);
+        this.updateUserData();
+      },
+    },
+    confirmPassword: {
+      handler(newVal) {
+        this.validateConfirmPassword(newVal);
+      },
+    },
+    userData: {
+      handler(newVal) {
+        this.localUserData = {
+          username: newVal.username || "",
+          email: newVal.email || "",
+          password: newVal.password || "",
+        };
+      },
+      deep: true,
     },
   },
 };

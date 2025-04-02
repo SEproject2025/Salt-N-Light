@@ -17,6 +17,7 @@
           v-model:userData="form.user"
           @update:userData="updateUserData"
           @password-validation="handlePasswordValidation"
+          @validation-status="handleValidationStatus"
         />
 
         <!-- Step 2: Personal Information -->
@@ -124,6 +125,12 @@ export default {
         { label: "Location" },
         { label: "Additional" },
       ],
+      validationStatus: {
+        isValid: false,
+        errors: {},
+      },
+      existingUsernames: new Set(),
+      existingEmails: new Set(),
     };
   },
   computed: {
@@ -148,6 +155,22 @@ export default {
     handlePasswordValidation(isValid) {
       this.passwordsDoNotMatch = !isValid;
     },
+    handleValidationStatus(status) {
+      this.validationStatus = status;
+    },
+    async fetchExistingUsers() {
+      try {
+        const response = await axios.get("http://127.0.0.1:8000/api/profiles/");
+        this.existingUsernames = new Set(
+          response.data.map((profile) => profile.user.username.toLowerCase())
+        );
+        this.existingEmails = new Set(
+          response.data.map((profile) => profile.user.email.toLowerCase())
+        );
+      } catch (error) {
+        console.error("Error fetching existing users:", error);
+      }
+    },
     isStepOneValid() {
       const username = this.form?.user?.username || "";
       const email = this.form?.user?.email || "";
@@ -157,7 +180,8 @@ export default {
         username.trim() &&
         email.trim() &&
         password.trim() &&
-        !this.passwordsDoNotMatch;
+        !this.passwordsDoNotMatch &&
+        this.validationStatus.isValid;
 
       if (!isValid) {
         this.message = "Please complete all required fields before proceeding.";
@@ -169,7 +193,6 @@ export default {
     // Navigation methods
     async nextStep() {
       if (this.currentStep === 0) {
-        // Check uniqueness before proceeding from step 1
         if (!this.isStepOneValid()) {
           return;
         }
@@ -179,20 +202,9 @@ export default {
           this.message = "";
           this.isSuccess = false;
 
-          // Fetch all profiles
-          const response = await axios.get(
-            "http://127.0.0.1:8000/api/profiles/"
-          );
-          const existingUsernames = response.data.map((profile) =>
-            profile.user.username.toLowerCase()
-          );
-          const existingEmails = response.data.map((profile) =>
-            profile.user.email.toLowerCase()
-          );
-
           // Check if username exists (case-insensitive comparison)
           if (
-            existingUsernames.includes(this.form.user.username.toLowerCase())
+            this.existingUsernames.has(this.form.user.username.toLowerCase())
           ) {
             this.message =
               "This username is already taken. Please choose another one.";
@@ -201,7 +213,7 @@ export default {
           }
 
           // Check if email exists (case-insensitive comparison)
-          if (existingEmails.includes(this.form.user.email.toLowerCase())) {
+          if (this.existingEmails.has(this.form.user.email.toLowerCase())) {
             this.message =
               "This email is already registered. Please use a different email address.";
             this.isSuccess = false;
@@ -394,6 +406,7 @@ export default {
   mounted() {
     this.fetchTags();
     this.initGooglePlaces();
+    this.fetchExistingUsers();
     console.log("RegistrationPage component mounted");
   },
   watch: {
