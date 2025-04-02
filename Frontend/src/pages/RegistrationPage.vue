@@ -16,6 +16,7 @@
           v-show="currentStep === 0"
           v-model:userData="form.user"
           @password-validation="handlePasswordValidation"
+          @validation="handleAccountValidation"
         />
 
         <!-- Step 2: Personal Information -->
@@ -55,6 +56,7 @@
           :isStepOneValid="isStepOneValid()"
           :isFormValid="isFormValid"
           :isLocationValid="locationValidation.isValid"
+          :isAccountValid="accountValidation.isValid"
           @prev-step="prevStep"
           @next-step="nextStep"
           @submit="registerUser"
@@ -124,6 +126,10 @@ export default {
         { label: "Additional" },
       ],
       locationValidation: {
+        isValid: false,
+        error: "",
+      },
+      accountValidation: {
         isValid: false,
         error: "",
       },
@@ -246,6 +252,18 @@ export default {
     handleLocationValidation(validation) {
       this.locationValidation = validation;
       if (!validation.isValid) {
+        this.message = validation.error;
+        this.isSuccess = false;
+      } else {
+        this.message = "";
+      }
+    },
+
+    // Handle account validation from child component
+    handleAccountValidation(validation) {
+      this.accountValidation = validation;
+      // Only show error message if we're not on the account step
+      if (!validation.isValid && this.currentStep !== 0) {
         this.message = validation.error;
         this.isSuccess = false;
       } else {
@@ -469,10 +487,6 @@ h1 {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.message-icon {
-  font-size: 1.2rem;
 }
 
 .error-message {
