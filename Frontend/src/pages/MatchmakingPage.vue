@@ -14,7 +14,6 @@
         <h2>{{ user.first_name }} {{ user.last_name }}</h2>
         <p>Username: {{ user.user.username }}</p>
         <p>User Type: {{ user.user_type }}</p>
-        <p>Denomination: {{ user.denomination }}</p>
         <div v-if="user.tags.length">
           <p><strong>Tags:</strong></p>
           <ul class="tags-list">
