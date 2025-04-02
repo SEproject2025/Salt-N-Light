@@ -28,7 +28,6 @@ class Profile(models.Model):
    phone_number = models.CharField(max_length=100, blank=True, null=True)
    years_of_experience = models.IntegerField(blank=True, null=True)
    description = models.TextField(blank=True, null=True)
-   profile_picture = models.URLField(max_length=225, null=True, blank=True)
 
    # Tags with additional metadata through the intermediate model
    tags = models.ManyToManyField(Tag, through='ProfileTagging',
