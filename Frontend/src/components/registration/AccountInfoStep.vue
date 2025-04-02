@@ -100,15 +100,26 @@ export default {
   },
   computed: {
     isStepValid() {
-      return (
+      // Check if all required fields are filled out
+      const hasUsername = this.localUserData.username.trim() !== "";
+      const hasEmail = this.localUserData.email.trim() !== "";
+      const hasPassword = this.localUserData.password !== "";
+      const hasConfirmPassword = this.confirmPassword !== "";
+
+      // Check if there are any validation errors
+      const hasNoErrors =
         !this.usernameError &&
         !this.emailError &&
         !this.passwordsDoNotMatch &&
-        !this.passwordLengthError &&
-        this.localUserData.username.trim() &&
-        this.localUserData.email.trim() &&
-        this.localUserData.password &&
-        this.confirmPassword
+        !this.passwordLengthError;
+
+      // Only return true if all fields are filled AND there are no errors
+      return (
+        hasUsername &&
+        hasEmail &&
+        hasPassword &&
+        hasConfirmPassword &&
+        hasNoErrors
       );
     },
   },
