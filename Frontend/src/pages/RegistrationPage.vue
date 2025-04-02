@@ -173,6 +173,9 @@ export default {
           const existingUsernames = response.data.map((profile) =>
             profile.user.username.toLowerCase()
           );
+          const existingEmails = response.data.map((profile) =>
+            profile.user.email.toLowerCase()
+          );
 
           // Check if username exists (case-insensitive comparison)
           if (
@@ -184,13 +187,21 @@ export default {
             return;
           }
 
-          // Username is available, proceed to next step
+          // Check if email exists (case-insensitive comparison)
+          if (existingEmails.includes(this.form.user.email.toLowerCase())) {
+            this.message =
+              "This email address is already registered. Please use a different email.";
+            this.isSuccess = false;
+            return;
+          }
+
+          // Both username and email are available, proceed to next step
           this.message = "";
           this.currentStep++;
         } catch (error) {
-          console.error("Username check error:", error);
+          console.error("Username/Email check error:", error);
           this.message =
-            "Error checking username availability. Please try again.";
+            "Error checking username and email availability. Please try again.";
           this.isSuccess = false;
           return;
         }
