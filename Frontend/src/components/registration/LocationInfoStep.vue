@@ -104,14 +104,10 @@
             @input="updateData"
           />
         </div>
-        <p v-if="countryError" class="error-message">
-          {{ countryError }}
-        </p>
       </div>
 
       <!-- Location Visibility Warning -->
       <div class="location-warning">
-        <span class="warning-icon">⚠️</span>
         <p>
           Your location information will be visible to other users. This helps
           with matchmaking and community features.
@@ -316,13 +312,12 @@ export default {
 
 <style scoped>
 .location-warning {
-  margin-top: 20px;
-  padding: 15px;
+  margin-top: 2px;
+  padding: 2px;
   background-color: #fff3e0;
-  border-left: 4px solid #ff9800;
   border-radius: 4px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
 }
 
