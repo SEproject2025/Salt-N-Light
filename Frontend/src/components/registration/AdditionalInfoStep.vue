@@ -25,7 +25,7 @@
         </p>
       </div>
 
-      <label for="tags">Select Tags:</label>
+      <label for="tags">Select some tags that describe your ministry:</label>
       <div class="tags-container">
         <div class="tags-grid">
           <div
