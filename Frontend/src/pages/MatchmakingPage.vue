@@ -5,12 +5,6 @@
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="profiles">
       <div v-for="user in users" :key="user.user" class="profile-card">
-        <img
-          v-if="user.profile_picture"
-          :src="user.profile_picture"
-          alt="Profile Picture"
-          class="profile-picture"
-        />
         <h2>{{ user.first_name }} {{ user.last_name }}</h2>
         <p>Username: {{ user.user.username }}</p>
         <p>User Type: {{ user.user_type }}</p>

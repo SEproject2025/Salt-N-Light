@@ -83,7 +83,6 @@ export default {
       this.$emit("update:additionalData", {
         ...this.additionalData,
         ...this.localData,
-        profile_picture: null,
       });
     },
 
