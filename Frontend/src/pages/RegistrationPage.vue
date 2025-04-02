@@ -40,9 +40,11 @@
         <!-- Error Message -->
         <div
           v-if="message"
-          :class="['message-container', { 'success-message': isSuccess }]"
+          :class="[
+            'message-container',
+            { 'error-message': !isSuccess, 'success-message': isSuccess },
+          ]"
         >
-          <span class="message-icon">{{ !isSuccess ? "⚠️" : "✅" }}</span>
           {{ message }}
         </div>
 
@@ -219,11 +221,6 @@ export default {
         email.trim() &&
         password.trim() &&
         !this.passwordsDoNotMatch;
-
-      if (!isValid) {
-        this.message = "Please complete all required fields before proceeding.";
-        this.isSuccess = false;
-      }
 
       return isValid;
     },
@@ -450,16 +447,15 @@ h1 {
     padding: 25px;
   }
 }
-
 .message-container {
-  margin: 15px 0;
-  padding: 15px;
+  margin: 2px 0;
+  padding: 2px;
   border-radius: 8px;
   font-weight: 500;
   text-align: left;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 2px;
   font-size: 0.95rem;
   animation: fadeIn 0.3s ease-in-out;
 }
@@ -479,9 +475,11 @@ h1 {
   font-size: 1.2rem;
 }
 
+.error-message {
+  color: #c62828;
+}
+
 .success-message {
-  background-color: #e8f5e9;
   color: #2e7d32;
-  border-left: 4px solid #4caf50;
 }
 </style>

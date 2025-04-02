@@ -69,13 +69,6 @@
       <p v-if="passwordsDoNotMatch" class="error-message">
         Passwords do not match.
       </p>
-
-      <!-- Add note about required fields -->
-      <div class="info-message">
-        <span class="info-icon">ℹ️</span>
-        These account details are required. The following steps are optional but
-        help complete your profile.
-      </div>
     </div>
   </div>
 </template>
