@@ -25,7 +25,7 @@ load_dotenv()
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = []
 
@@ -64,26 +64,29 @@ AUTHENTICATION_BACKENDS = [
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_NAME = 'sessionid'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-SESSION_COOKIE_SECURE = False
-SESSION_COOKIE_HTTPONLY = False
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
 SESSION_SAVE_EVERY_REQUEST = True
+SECURE_SSL_REDIRECT = True
 
 # CSRF configurations
-CSRF_COOKIE_NAME = 'csrftoken'
+#CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY = False
-CSRF_TRUSTED_ORIGINS = [
-   'http://127.0.0.1:8000',
-   'http://127.0.0.1:8080',
-   'http://api.evangelium.app',
-   'https://api.evangelium.app',
-   'http://evangelium.app',
-   'https://evangelium.app',
-   'http://localhost:8000',
-   'http://localhost:8080',
-   'http://www.evangelium.app',
-   'https://www.evangelium.app'
-]
+#CSRF_COOKIE_HTTPONLY = False
+#CSRF_TRUSTED_ORIGINS = [
+#   'http://127.0.0.1:8000',
+#   'http://127.0.0.1:8080',
+#   'http://api.evangelium.app',
+#   'https://api.evangelium.app',
+#   'http://baptist.coffee',
+#   'https://baptist.coffee',
+#   'http://evangelium.app',
+#   'https://evangelium.app',
+#   'http://localhost:8000',
+#   'http://localhost:8080',
+#   'http://www.evangelium.app',
+#   'https://www.evangelium.app'
+#]
 
 # Session Authentication Configurations
 REST_FRAMEWORK = {
@@ -95,6 +98,7 @@ REST_FRAMEWORK = {
 ALLOWED_HOSTS = [
    '127.0.0.1',
    'api.evangelium.app',
+   'baptist.coffee',
    'evangelium.app',
    'localhost'
    'www.evangelium.app',
@@ -105,6 +109,8 @@ CORS_ALLOWED_ORIGINS = [
    'http://127.0.0.1:8080',
    'http://api.evangelium.app',
    'https://api.evangelium.app',
+   'http://baptist.coffee',
+   'https://baptist.coffee',
    'http://evangelium.app',
    'https://evangelium.app',
    'http://localhost:8000',
