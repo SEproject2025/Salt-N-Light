@@ -71,7 +71,8 @@
           <span>Make my profile anonymous</span>
         </label>
         <p class="helper-text">
-          Anonymous profiles will not appear in search results or matchmaking
+          Anonymous profiles will not appear in search results or matchmaking.
+          Your profile will only be visible to you.
         </p>
       </div>
     </div>

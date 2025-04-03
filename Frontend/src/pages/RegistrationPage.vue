@@ -106,6 +106,7 @@ export default {
         phone_number: "",
         years_of_experience: null,
         description: "",
+        is_anonymous: false,
       },
       passwordsDoNotMatch: false,
       message: "",
@@ -311,6 +312,7 @@ export default {
           phone_number: this.form.phone_number,
           years_of_experience: this.form.years_of_experience,
           description: this.form.description,
+          is_anonymous: this.form.is_anonymous,
         };
 
         // Log the data being sent
