@@ -70,10 +70,12 @@ class MatchmakingResultsView(generics.ListAPIView):
       user_tags = user_profile.tags.all()
 
       # Find profiles with at least one matching tag, excluding
-      # the current user's profile
+      # the current user's profile and anonymous profiles
       matching_profiles = Profile.objects.filter(
-         Q(tags__in=user_tags)).exclude(
-          user=self.request.user).distinct()
+         Q(tags__in=user_tags)
+      ).exclude(
+         Q(user=self.request.user) | Q(is_anonymous=True)
+      ).distinct()
 
       return matching_profiles.exclude(user_type=user_profile.user_type)
 

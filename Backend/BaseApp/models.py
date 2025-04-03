@@ -28,6 +28,7 @@ class Profile(models.Model):
    phone_number = models.CharField(max_length=100, blank=True, null=True)
    years_of_experience = models.IntegerField(blank=True, null=True)
    description = models.TextField(blank=True, null=True)
+   is_anonymous = models.BooleanField(default=False)
 
    # Tags with additional metadata through the intermediate model
    tags = models.ManyToManyField(Tag, through='ProfileTagging',
