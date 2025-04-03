@@ -97,7 +97,7 @@ REST_FRAMEWORK = {
 ALLOWED_HOSTS = [
    '127.0.0.1',
    'api.evangelium.app',
-   'baptist.coffe',
+   'baptist.coffee',
    'evangelium.app',
    'localhost'
    'www.evangelium.app',
