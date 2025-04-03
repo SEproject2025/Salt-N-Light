@@ -60,6 +60,20 @@
       <div v-if="yearsError" :class="['message-container', 'error-message']">
         {{ yearsError }}
       </div>
+
+      <div class="anonymous-option">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            v-model="localData.is_anonymous"
+            @change="updateData"
+          />
+          <span>Make my profile anonymous</span>
+        </label>
+        <p class="helper-text">
+          Anonymous profiles will not appear in search results or matchmaking
+        </p>
+      </div>
     </div>
   </div>
 </template>
@@ -82,6 +96,7 @@ export default {
         last_name: this.personalData.last_name || "",
         phone_number: this.personalData.phone_number || "",
         years_of_experience: this.personalData.years_of_experience || null,
+        is_anonymous: this.personalData.is_anonymous || false,
       },
       yearsError: "",
     };
@@ -141,6 +156,7 @@ export default {
           last_name: newValue.last_name || "",
           phone_number: newValue.phone_number || "",
           years_of_experience: newValue.years_of_experience || null,
+          is_anonymous: newValue.is_anonymous || false,
         };
       },
       deep: true,
@@ -176,5 +192,30 @@ export default {
 
 .error-message {
   color: #c62828;
+}
+
+.anonymous-option {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+.helper-text {
+  margin-top: 5px;
+  font-size: 0.9rem;
+  color: #666;
 }
 </style>

@@ -11,20 +11,6 @@
         @input="updateData"
       ></textarea>
 
-      <div class="anonymous-option">
-        <label class="checkbox-label">
-          <input
-            type="checkbox"
-            v-model="localData.is_anonymous"
-            @change="updateData"
-          />
-          <span>Make my profile anonymous</span>
-        </label>
-        <p class="helper-text">
-          Anonymous profiles will not appear in search results or matchmaking
-        </p>
-      </div>
-
       <label for="tags">Select some tags that describe your ministry:</label>
       <div class="tags-container">
         <div class="tags-grid">
@@ -59,7 +45,6 @@ export default {
     return {
       localData: {
         description: this.additionalData.description || "",
-        is_anonymous: this.additionalData.is_anonymous || false,
         tags: this.additionalData.tags || [],
       },
       availableTags: [],
@@ -111,7 +96,6 @@ export default {
       handler(newValue) {
         this.localData = {
           description: newValue.description || "",
-          is_anonymous: newValue.is_anonymous || false,
           tags: newValue.tags || [],
         };
       },
@@ -122,25 +106,6 @@ export default {
 </script>
 
 <style scoped>
-.anonymous-option {
-  margin: 20px 0;
-  padding: 15px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-}
-
 .tags-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -165,11 +130,5 @@ export default {
   background-color: #e3f2fd;
   border-color: #2196f3;
   color: #1976d2;
-}
-
-.helper-text {
-  margin-top: 5px;
-  font-size: 0.9rem;
-  color: #666;
 }
 </style>
