@@ -77,6 +77,8 @@ SESSION_SAVE_EVERY_REQUEST = True
 #   'http://127.0.0.1:8080',
 #   'http://api.evangelium.app',
 #   'https://api.evangelium.app',
+#   'http://baptist.coffee',
+#   'https://baptist.coffee',
 #   'http://evangelium.app',
 #   'https://evangelium.app',
 #   'http://localhost:8000',
@@ -95,6 +97,7 @@ REST_FRAMEWORK = {
 ALLOWED_HOSTS = [
    '127.0.0.1',
    'api.evangelium.app',
+   'baptist.coffe',
    'evangelium.app',
    'localhost'
    'www.evangelium.app',
@@ -105,6 +108,8 @@ CORS_ALLOWED_ORIGINS = [
    'http://127.0.0.1:8080',
    'http://api.evangelium.app',
    'https://api.evangelium.app',
+   'http://baptist.coffee',
+   'https://baptist.coffee',
    'http://evangelium.app',
    'https://evangelium.app',
    'http://localhost:8000',
