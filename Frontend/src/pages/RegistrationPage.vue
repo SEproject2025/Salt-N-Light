@@ -4,11 +4,7 @@
       <h1>Create Your Account</h1>
 
       <!-- Progress Bar Component -->
-      <ProgressBar
-        :steps="steps"
-        :currentStep="currentStep"
-        @go-to-step="goToStep"
-      />
+      <ProgressBar :steps="steps" :currentStep="currentStep" />
 
       <form>
         <!-- Step 1: Account Information -->
@@ -225,12 +221,6 @@ export default {
       if (this.currentStep > 0) {
         this.message = ""; // Clear message when moving to previous step
         this.currentStep--;
-      }
-    },
-    goToStep(step) {
-      // Only allow going to completed steps or the next available step
-      if (step <= this.currentStep + 1) {
-        this.currentStep = step;
       }
     },
     isStepOneValid() {

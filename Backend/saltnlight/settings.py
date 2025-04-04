@@ -20,147 +20,155 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv()
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!p&g+1@)_e&nh4-0xt88n&j6kr*v+a!g=+xh!+a6=(cvvrc31+'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
-
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django_filters',
-    'rest_framework_simplejwt',
-
-    #My Apps
-    'rest_framework',
-    'BaseApp',
-    #'bootstrap5',
-    'corsheaders'
+   'django.contrib.admin',
+   'django.contrib.auth',
+   'django.contrib.contenttypes',
+   'django.contrib.sessions',
+   'django.contrib.messages',
+   'django.contrib.staticfiles',
+   'django_filters',
+   'rest_framework_simplejwt',
+   'rest_framework',
+   'BaseApp',
+   'corsheaders'
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+   'django.middleware.security.SecurityMiddleware',
+   'django.contrib.sessions.middleware.SessionMiddleware',
+   'corsheaders.middleware.CorsMiddleware',
+   'django.middleware.common.CommonMiddleware',
+   'django.middleware.csrf.CsrfViewMiddleware',
+   'django.contrib.auth.middleware.AuthenticationMiddleware',
+   'django.contrib.messages.middleware.MessageMiddleware',
+   'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 # Authentication backends
 AUTHENTICATION_BACKENDS = [
-        'django.contrib.auth.backends.ModelBackend',
-    ]
+   'django.contrib.auth.backends.ModelBackend',
+]
 
 # Session authentication configurations
-SESSION_ENGINE = 'django.contrib.sessions.backends.db' 
-SESSION_COOKIE_NAME = 'sessionid'  
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True  
-SESSION_COOKIE_SECURE = False  
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_NAME = 'sessionid'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_HTTPONLY = False
 SESSION_SAVE_EVERY_REQUEST = True
 
 # CSRF configurations
-CSRF_COOKIE_NAME = 'csrftoken'  
-CSRF_COOKIE_SECURE = False  
-CSRF_COOKIE_HTTPONLY = False  
-CSRF_TRUSTED_ORIGINS = [
-   'http://localhost:8080',
-   "https://www.evangelium.app",
-   "https://evangelium.app" 
-]
+#CSRF_COOKIE_NAME = 'csrftoken'
+#CSRF_COOKIE_SECURE = True
+#CSRF_COOKIE_HTTPONLY = False
+#CSRF_TRUSTED_ORIGINS = [
+#   'http://127.0.0.1:8000',
+#   'http://127.0.0.1:8080',
+#   'http://api.evangelium.app',
+#   'https://api.evangelium.app',
+#   'http://baptist.coffee',
+#   'https://baptist.coffee',
+#   'http://evangelium.app',
+#   'https://evangelium.app',
+#   'http://localhost:8000',
+#   'http://localhost:8080',
+#   'http://www.evangelium.app',
+#   'https://www.evangelium.app'
+#]
 
 # Session Authentication Configurations
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+   'DEFAULT_AUTHENTICATION_CLASSES': (
+      'rest_framework_simplejwt.authentication.JWTAuthentication',
+   ),
 }
 
 ALLOWED_HOSTS = [
-   "evangelium.app",
-   "www.evangelium.app",
-   "baptist.coffee",
-   "www.baptist.coffee"
+   '127.0.0.1',
+   'api.evangelium.app',
+   'baptist.coffee',
+   'evangelium.app',
+   'localhost'
+   'www.evangelium.app',
 ]
 
 CORS_ALLOWED_ORIGINS = [
+   'http://127.0.0.1:8000',
+   'http://127.0.0.1:8080',
+   'http://api.evangelium.app',
+   'https://api.evangelium.app',
+   'http://baptist.coffee',
+   'https://baptist.coffee',
+   'http://evangelium.app',
+   'https://evangelium.app',
+   'http://localhost:8000',
    'http://localhost:8080',
-   "https://www.evangelium.app",
-   "https://evangelium.app"
+   'http://www.evangelium.app',
+   'https://www.evangelium.app'
 ]
-CORS_ALLOW_CREDENTIALS = True
 
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'saltnlight.urls'
 
 TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "templates"],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
+   {
+      'BACKEND': 'django.template.backends.django.DjangoTemplates',
+      'DIRS': [BASE_DIR / "templates"],
+      'APP_DIRS': True,
+      'OPTIONS': {
+         'context_processors': [
+            'django.template.context_processors.debug',
+            'django.template.context_processors.request',
+            'django.contrib.auth.context_processors.auth',
+            'django.contrib.messages.context_processors.messages',
+         ],
+      },
+   },
 ]
 
 WSGI_APPLICATION = 'saltnlight.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
-   'default': dj_database_url.config(default=os.getenv("DATABASE_URL"), conn_max_age=600, ssl_require=True)
+   'default': dj_database_url.config(default=os.getenv("DATABASE_URL"),
+                                     conn_max_age=600, ssl_require=True)
 #    'default': {
 #        'ENGINE': 'django.db.backends.sqlite3',
 #        'NAME': BASE_DIR / 'db.sqlite3',
 #    }
 }
 
-#if os.getenv('USE_POSTGRES'):
-#    DATABASES['default'] = DATABASES['postgres']
-
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+   {
+      'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+   },
+   {
+      'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+   },
+   {
+      'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+   },
+   {
+      'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+   },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
@@ -172,7 +180,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
