@@ -101,13 +101,15 @@
             @input="updateData"
           />
         </div>
+        <div v-if="countryError" class="error-message">{{ countryError }}</div>
       </div>
 
-      <!-- Location Visibility Warning -->
-      <div class="location-warning">
+      <div v-if="!isAnonymous" class="location-warning">
         <p>
-          Your location information will be visible to other users. This helps
-          with matchmaking and community features.
+          <strong>Note:</strong> Your location information will be visible to
+          other users to help facilitate connections and support. If you prefer
+          to keep your location private, you can make your profile anonymous in
+          the previous step.
         </p>
       </div>
     </div>
@@ -120,6 +122,10 @@ export default {
   props: {
     locationData: {
       type: Object,
+      required: true,
+    },
+    isAnonymous: {
+      type: Boolean,
       required: true,
     },
   },
@@ -229,6 +235,20 @@ export default {
         };
       },
       deep: true,
+    },
+    isAnonymous: {
+      handler(newValue) {
+        // Clear location warning when anonymous status changes
+        if (newValue) {
+          this.suggestions = {
+            address: [],
+            city: [],
+            state: [],
+            country: [],
+          };
+        }
+      },
+      immediate: true,
     },
   },
 };

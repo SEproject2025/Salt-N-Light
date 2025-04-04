@@ -29,6 +29,7 @@
         <LocationInfoStep
           v-show="currentStep === 2"
           v-model:locationData="form"
+          :isAnonymous="form.is_anonymous"
           @validation="handleLocationValidation"
         />
 
