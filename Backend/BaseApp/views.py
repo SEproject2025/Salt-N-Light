@@ -36,6 +36,13 @@ class ProfileListCreateView(generics.ListCreateAPIView):
    filterset_fields = ['user_type', 'city', 'state', 'country',
                        'tags']
 
+   def get_queryset(self):
+      # Get the base queryset
+      queryset = super().get_queryset()
+      # Filter out anonymous profiles
+      queryset = queryset.exclude(is_anonymous=True)
+      return queryset
+
 
 class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
    queryset = (
