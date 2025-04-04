@@ -4,27 +4,39 @@ import logging
 # Third-party imports
 # pylint: disable=C0412
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework import generics, filters, views, response, status
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 # pylint: enable=C0412
 
 # Django imports
 from django.db.models import Q
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, \
-                                   PermissionDenied
+    PermissionDenied
+from django.contrib.auth.models import User
+from django.db.utils import DatabaseError
 from .models import Tag, SearchHistory, \
     ExternalMedia, Profile, ProfileVote, ProfileComment, \
     ProfileTagging, Notification, Friendship
 from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
-    ProfileSerializer, ProfileVoteSerializer,\
-    ProfileCommentSerializer, NotificationSerializer, FriendshipSerializer
+    ProfileSerializer, ProfileVoteSerializer, \
+    ProfileCommentSerializer, NotificationSerializer, FriendshipSerializer, \
+    AdminProfileCommentSerializer, AdminProfileSerializer
 
 # Set up logging
 logger = logging.getLogger(__name__)
+
+
+# Custom pagination class for admin views
+class AdminPagination(PageNumberPagination):
+   page_size = 20
+   page_size_query_param = 'page_size'
+   max_page_size = 100
+
 
 class ProfileListCreateView(generics.ListCreateAPIView):
    queryset = Profile.objects.select_related(
@@ -51,6 +63,7 @@ class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
       context = super().get_serializer_context()
       context['profile_id'] = self.kwargs.get('pk')
       return context
+
 
 class MatchmakingResultsView(generics.ListAPIView):
    serializer_class = ProfileSerializer
@@ -92,7 +105,7 @@ class TagViewSet(ModelViewSet):
       return [AllowAny()]
 
    @action(detail=False, methods=['post'], url_path='add-to-profile',
-   url_name='add_to_profile')
+           url_name='add_to_profile')
    def add_to_profile(self, request):
       profile_id = request.data.get('profile_id')
       tag_id = request.data.get('tag_id')
@@ -138,7 +151,7 @@ class TagViewSet(ModelViewSet):
          }, status=status.HTTP_200_OK)
 
       except ObjectDoesNotExist:
-         return Response( # pylint: disable=eval-used
+         return Response(  # pylint: disable=eval-used
             {'error': 'Profile or Tag not found'},
             status=status.HTTP_404_NOT_FOUND
          )
@@ -150,7 +163,7 @@ class TagViewSet(ModelViewSet):
          )
 
    @action(detail=False, methods=['post'], url_path='remove-from-profile',
-   url_name='remove_from_profile')
+           url_name='remove_from_profile')
    # pylint: disable=too-many-return-statements
    def remove_from_profile(self, request):
       profile_id = request.data.get('profile_id')
@@ -194,7 +207,7 @@ class TagViewSet(ModelViewSet):
          if is_self_added and request.user.id != profile.user.id:
             return Response(
                {'error':
-               'Cannot remove tags that users added to their own profile'},
+                'Cannot remove tags that users added to their own profile'},
                status=status.HTTP_403_FORBIDDEN
             )
 
@@ -203,7 +216,7 @@ class TagViewSet(ModelViewSet):
             not is_self_added
             and added_by_id != request.user.id
             and request.user.id != profile.user.id
-         ):
+            ):
             return Response(
                {'error': 'You can only remove tags you added'},
                status=status.HTTP_403_FORBIDDEN
@@ -270,6 +283,7 @@ class CurrentUserView(views.APIView):
          return response.Response(serializer.data)
 
       return response.Response({"error": "Profile not found"}, status=404)
+
 
 class ProfileVoteView(generics.CreateAPIView, generics.UpdateAPIView):
    serializer_class = ProfileVoteSerializer
@@ -354,6 +368,7 @@ class ProfileCommentView(generics.CreateAPIView, generics.UpdateAPIView):
 
       return response.Response(serializer.data)
 
+
 class ProfileVoteStatusView(views.APIView):
    authentication_classes = [JWTAuthentication]
    permission_classes = [IsAuthenticated]
@@ -383,6 +398,7 @@ class NotificationView(ModelViewSet):
       # Set the recipient as the current user when creating a notification
       serializer.save(recipient=self.request.user)
 
+
 class FriendshipViewSet(ModelViewSet):
    serializer_class = FriendshipSerializer
    authentication_classes = [JWTAuthentication]
@@ -408,7 +424,7 @@ class FriendshipViewSet(ModelViewSet):
       )
 
    @action(detail=True, methods=['post'])
-   def respond(self, request, pk=None): # pylint: disable=unused-argument
+   def respond(self, request, pk=None):  # pylint: disable=unused-argument
 
       try:
          friendship = self.get_object()
@@ -447,7 +463,7 @@ class FriendshipViewSet(ModelViewSet):
       try:
          if not profile_id:
             return Response({'error': 'Profile ID is required'},
-                          status=status.HTTP_400_BAD_REQUEST)
+                            status=status.HTTP_400_BAD_REQUEST)
 
          # Get the friendship between the current user and the specified profile
          friendship = Friendship.objects.filter(
@@ -470,3 +486,103 @@ class FriendshipViewSet(ModelViewSet):
       except (ObjectDoesNotExist, ValidationError) as e:
          print(f"Error in status method: {str(e)}")  # Debug log
          return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Admin API views
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def check_superuser(request):
+   """Check if the current user is a superuser"""
+   is_superuser = request.user.is_superuser
+   return Response({'is_superuser': is_superuser})
+
+
+class AdminProfileListView(generics.ListAPIView):
+   """List all profiles for admin purposes"""
+   serializer_class = AdminProfileSerializer
+   authentication_classes = [JWTAuthentication]
+   permission_classes = [IsAuthenticated, IsAdminUser]
+   # Add pagination
+   pagination_class = AdminPagination
+
+   def get_queryset(self):
+      return Profile.objects.select_related('user').prefetch_related(
+         'tags').order_by('user__username').all()
+
+
+class AdminProfileDeleteView(generics.DestroyAPIView):
+   """Delete a profile and all related data"""
+   authentication_classes = [JWTAuthentication]
+   permission_classes = [IsAuthenticated, IsAdminUser]
+
+   def destroy(self, request, *args, **kwargs):
+      try:
+          # Get the user ID from the URL
+         user_id = kwargs.get('pk')
+
+         # Get the user
+         user = User.objects.get(id=user_id)
+
+         # Delete the user (this will cascade delete profile and other related
+         # objects)
+         user.delete()
+
+         return Response(status=status.HTTP_204_NO_CONTENT)
+      except ObjectDoesNotExist:
+         return Response(
+             {'error': 'User not found'},
+             status=status.HTTP_404_NOT_FOUND
+         )
+      except (ValidationError, PermissionDenied) as e:
+         return Response(
+             {'error': str(e)},
+             status=status.HTTP_400_BAD_REQUEST
+         )
+      except DatabaseError as e:
+         return Response(
+             {'error': f'Database error: {str(e)}'},
+             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+         )
+
+
+class AdminCommentListView(generics.ListAPIView):
+   """List all comments for admin purposes"""
+   serializer_class = AdminProfileCommentSerializer
+   authentication_classes = [JWTAuthentication]
+   permission_classes = [IsAuthenticated, IsAdminUser]
+   # Add pagination
+   pagination_class = AdminPagination
+
+   def get_queryset(self):
+      return ProfileComment.objects.select_related(
+          'commenter', 'profile', 'profile__user'
+      ).order_by('-created_at').all()
+
+
+class AdminCommentDeleteView(generics.DestroyAPIView):
+   """Delete a specific comment"""
+   authentication_classes = [JWTAuthentication]
+   permission_classes = [IsAuthenticated, IsAdminUser]
+   queryset = ProfileComment.objects.all()
+
+   def destroy(self, request, *args, **kwargs):
+      try:
+         comment = self.get_object()
+         comment.delete()
+         return Response(status=status.HTTP_204_NO_CONTENT)
+      except ObjectDoesNotExist:
+         return Response(
+             {'error': 'Comment not found'},
+             status=status.HTTP_404_NOT_FOUND
+         )
+      except (ValidationError, PermissionDenied) as e:
+         return Response(
+             {'error': str(e)},
+             status=status.HTTP_400_BAD_REQUEST
+         )
+      except DatabaseError as e:
+         return Response(
+             {'error': f'Database error: {str(e)}'},
+             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+         )
