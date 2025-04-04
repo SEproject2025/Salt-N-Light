@@ -165,3 +165,37 @@ class FriendshipSerializer(serializers.ModelSerializer):
       # Automatically set the sender to the current user
       validated_data['sender'] = self.context['request'].user
       return super().create(validated_data)
+
+class UserSearchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
+class ProfileSearchSerializer(serializers.ModelSerializer):
+    user = UserSearchSerializer()
+    tags = TagSerializer(many=True, read_only=True)
+    vote_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Profile
+        fields = [
+            'user',
+            'user_type',
+            'first_name',
+            'last_name',
+            'city',
+            'state',
+            'country',
+            'description',
+            'tags',
+            'vote_count',
+            'created_at'
+        ]
+
+    def get_vote_count(self, obj):
+        try:
+            upvotes = obj.votes_received.filter(is_upvote=True).count()
+            downvotes = obj.votes_received.filter(is_upvote=False).count()
+            return upvotes - downvotes
+        except Exception:  # Handle any potential database errors gracefully
+            return 0

@@ -10,10 +10,20 @@ import {
   faThumbsUp,
   faThumbsDown,
   faSave,
+  faBookmark,
 } from "@fortawesome/free-solid-svg-icons";
+import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 
 // Add the icons to the library
-library.add(faEdit, faTimes, faThumbsUp, faThumbsDown, faSave);
+library.add(
+  faEdit,
+  faTimes,
+  faThumbsUp,
+  faThumbsDown,
+  faSave,
+  faBookmark,
+  farBookmark
+);
 
 const app = createApp(App);
 

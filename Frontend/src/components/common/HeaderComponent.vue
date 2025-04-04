@@ -11,6 +11,9 @@
       </a>
     </div>
 
+     <!-- Quick Search -->
+     <QuickSearch class="header-search" />
+
     <!-- Navigation Links -->
     <nav class="nav-links">
       <a href="/SearchPage" class="nav-link">Explore</a>
@@ -26,8 +29,12 @@
 </template>
 
 <script>
+import QuickSearch from "@/components/search/QuickSearch.vue";
 export default {
   name: "HeaderComponent",
+  components: {
+    QuickSearch,
+  },
   methods: {
     logout() {
       // Clear tokens from localStorage
@@ -59,6 +66,7 @@ export default {
   background-color: #f9f9f9;
   border-bottom: 1px solid #ddd;
   font-family: Arial, sans-serif;
+  position: relative;
 }
 
 /* Site Icon */
@@ -69,10 +77,18 @@ export default {
   object-fit: cover;
 }
 
+/* Header Search */
+.header-search {
+  flex: 1;
+  max-width: 600px;
+  margin: 0 20px;
+}
+
 /* Navigation Links */
 .nav-links {
   display: flex;
   gap: 20px;
+  position: center;
 }
 
 .nav-link {
@@ -99,5 +115,22 @@ export default {
 
 .header-banner button:hover {
   background-color: #0056b3;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-banner {
+    flex-wrap: wrap;
+    padding: 10px;
+  }
+  .header-search {
+    order: 3;
+    width: 100%;
+    margin: 10px 0;
+    max-width: none;
+  }
+  .nav-links {
+    gap: 10px;
+  }
 }
 </style>

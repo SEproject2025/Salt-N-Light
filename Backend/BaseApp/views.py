@@ -3,6 +3,7 @@ import logging
 
 # Third-party imports
 # pylint: disable=C0412
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import generics, filters, views, response, status
@@ -21,7 +22,10 @@ from .models import Tag, SearchHistory, \
 from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
     ProfileSerializer, ProfileVoteSerializer,\
-    ProfileCommentSerializer, NotificationSerializer, FriendshipSerializer
+    ProfileCommentSerializer, NotificationSerializer, FriendshipSerializer, \
+    ProfileSearchSerializer
+from django.db.models import Case, When, IntegerField
+from django.conf import settings
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -470,3 +474,131 @@ class FriendshipViewSet(ModelViewSet):
       except (ObjectDoesNotExist, ValidationError) as e:
          print(f"Error in status method: {str(e)}")  # Debug log
          return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class ProfileSearchView(generics.ListAPIView):
+   serializer_class = ProfileSearchSerializer
+   authentication_classes = [JWTAuthentication]
+   permission_classes = [IsAuthenticated]
+   pagination_class = PageNumberPagination
+
+   def get_queryset(self):
+      # Start with base queryset and optimize with select_related and prefetch_related
+      queryset = (Profile.objects
+                 .select_related('user')
+                 .prefetch_related('tags', 'votes_received')
+                 .exclude(user_type__isnull=True)
+                 .exclude(user_type='')
+                 .exclude(user_type='anonymous'))
+
+      # Get search parameters from query string
+      search_query = self.request.query_params.get('q', '').strip()
+      user_type = self.request.query_params.get('user_type', '').strip()
+      tags = self.request.query_params.getlist('tags', [])
+      location = self.request.query_params.get('location', '').strip()
+      sort = self.request.query_params.get('sort', 'recent')
+
+      # Build search filters
+      filters = Q()
+
+      # Apply text search if provided
+      if search_query:
+         search_terms = search_query.split()
+         for term in search_terms:
+            term_filter = (
+               Q(first_name__icontains=term) |
+               Q(last_name__icontains=term) |
+               Q(description__icontains=term) |
+               Q(city__icontains=term) |
+               Q(state__icontains=term) |
+               Q(country__icontains=term)
+            )
+            filters &= term_filter
+
+      # Apply user type filter
+      if user_type:
+         filters &= Q(user_type=user_type)
+
+      # Apply location search if provided
+      if location:
+         location_terms = location.split()
+         location_filter = Q()
+         for term in location_terms:
+            location_filter |= (
+               Q(city__icontains=term) |
+               Q(state__icontains=term) |
+               Q(country__icontains=term)
+            )
+         filters &= location_filter
+
+      # Apply filters to queryset
+      if filters:
+         queryset = queryset.filter(filters)
+
+      # Apply tag filtering if provided
+      if tags:
+         tag_match_type = self.request.query_params.get('tag_match_type', 'any')
+         if tag_match_type == 'all':
+            # Match all tags (AND)
+            for tag in tags:
+               queryset = queryset.filter(tags__tag_name=tag)
+         else:
+            # Match any tag (OR)
+            queryset = queryset.filter(tags__tag_name__in=tags)
+         queryset = queryset.distinct()
+
+      # Apply sorting
+      if sort == 'recent':
+         queryset = queryset.order_by('-created_at')
+      elif sort == 'name':
+         queryset = queryset.order_by('first_name', 'last_name')
+      elif sort == 'location':
+         queryset = queryset.order_by('country', 'state', 'city')
+      elif sort == 'relevance' and search_query:
+         # If sorting by relevance and there's a search query,
+         # prioritize exact matches in name fields
+         queryset = queryset.annotate(
+            name_match=Case(
+               When(first_name__iexact=search_query, then=2),
+               When(last_name__iexact=search_query, then=2),
+               When(first_name__icontains=search_query, then=1),
+               When(last_name__icontains=search_query, then=1),
+               default=0,
+               output_field=IntegerField(),
+            )
+         ).order_by('-name_match', '-created_at')
+
+      return queryset
+
+   def list(self, request, *args, **kwargs):
+      try:
+         # Get page size from query params, default to 12
+         page_size = request.query_params.get('page_size', 12)
+         try:
+            page_size = min(int(page_size), getattr(settings, 'MAX_PAGE_SIZE', 100))
+         except (TypeError, ValueError):
+            page_size = 12
+
+         # Set pagination
+         self.pagination_class.page_size = page_size
+
+         # Get queryset and paginate
+         queryset = self.get_queryset()
+         page = self.paginate_queryset(queryset)
+         
+         if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+         # If no pagination requested, return all results
+         serializer = self.get_serializer(queryset, many=True)
+         return Response({
+            'count': len(serializer.data),
+            'results': serializer.data
+         })
+
+      except Exception as e:
+         logger.error(f"Error in profile search: {str(e)}")
+         return Response(
+            {'error': 'An error occurred while processing your search request'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+         )
