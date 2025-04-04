@@ -5,7 +5,9 @@ from .views import TagViewSet, SearchHistoryViewSet, \
     ProfileListCreateView, ProfileDetailView, \
     MatchmakingResultsView, CurrentUserView, \
     ProfileVoteView, ProfileCommentView, \
-    ProfileVoteStatusView, NotificationView, FriendshipViewSet
+    ProfileVoteStatusView, NotificationView, FriendshipViewSet, \
+    check_superuser, AdminProfileListView, AdminProfileDeleteView, \
+    AdminCommentListView, AdminCommentDeleteView
 
 # Automatically generates URLs for all ViewSet classes
 router = routers.DefaultRouter()
@@ -41,4 +43,16 @@ urlpatterns = [
    path('api/friendships/status/<int:profile_id>/',
         FriendshipViewSet.as_view({'get': 'status'}),
         name='friendship-status'),
+
+   # Admin API endpoints
+   path('api/admin/check-superuser/', check_superuser,
+        name='admin-check-superuser'),
+   path('api/admin/profiles/', AdminProfileListView.as_view(),
+        name='admin-profile-list'),
+   path('api/admin/profiles/<int:pk>/',
+        AdminProfileDeleteView.as_view(), name='admin-profile-delete'),
+   path('api/admin/comments/', AdminCommentListView.as_view(),
+        name='admin-comment-list'),
+   path('api/admin/comments/<int:pk>/',
+        AdminCommentDeleteView.as_view(), name='admin-comment-delete'),
 ]
