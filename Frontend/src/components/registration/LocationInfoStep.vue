@@ -80,18 +80,16 @@
           v-model="localData.country"
           class="country-select"
           required
-          @change="updateData"
+          @change="handleCountryChange"
         >
           <option value="">Select your country</option>
-          <option value="United States">United States</option>
-          <option value="Canada">Canada</option>
-          <option value="United Kingdom">United Kingdom</option>
-          <option value="Australia">Australia</option>
-          <option value="Philippines">Philippines</option>
-          <option value="India">India</option>
-          <option value="Nigeria">Nigeria</option>
-          <option value="Kenya">Kenya</option>
-          <option value="South Africa">South Africa</option>
+          <option
+            v-for="country in commonCountries"
+            :key="country.code"
+            :value="country.name"
+          >
+            {{ country.name }}
+          </option>
           <option value="Other">Other (specify below)</option>
         </select>
         <div v-if="localData.country === 'Other'" class="other-country-input">
@@ -99,7 +97,6 @@
             type="text"
             v-model="localData.other_country"
             placeholder="Enter your country"
-            class="mt-2"
             required
             @input="updateData"
           />
@@ -118,8 +115,6 @@
 </template>
 
 <script>
-/* global google */
-
 export default {
   name: "LocationInfoStep",
   props: {
@@ -142,9 +137,20 @@ export default {
         address: [],
         city: [],
         state: [],
+        country: [],
       },
-      autocompleteService: null,
-      placesService: null,
+      commonCountries: [
+        { code: "US", name: "United States" },
+        { code: "CA", name: "Canada" },
+        { code: "GB", name: "United Kingdom" },
+        { code: "AU", name: "Australia" },
+        { code: "DE", name: "Germany" },
+        { code: "FR", name: "France" },
+        { code: "JP", name: "Japan" },
+        { code: "IN", name: "India" },
+        { code: "BR", name: "Brazil" },
+        { code: "ZA", name: "South Africa" },
+      ],
       countryError: "",
     };
   },
@@ -155,17 +161,6 @@ export default {
       }
       return this.localData.country.trim() !== "";
     },
-  },
-  mounted() {
-    this.initGooglePlaces();
-  },
-  beforeUnmount() {
-    // Clean up event listeners
-    ["streetAddress", "city", "state"].forEach((field) => {
-      this.$refs[`${field}Input`]?.removeEventListener("input", (e) =>
-        this.handleInput(e, field)
-      );
-    });
   },
   methods: {
     /* Updates parent with current location data values */
@@ -194,99 +189,28 @@ export default {
       }
     },
 
-    /* Initializes Google Places API for address autocomplete */
-    initGooglePlaces() {
-      if (window.google && window.google.maps && window.google.maps.places) {
-        this.setupGooglePlacesServices();
-      } else {
-        const script = document.createElement("script");
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCzHCbngGLUj41VG6hmwFsAoUak7QwnX3k&libraries=places`;
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-          this.setupGooglePlacesServices();
-        };
-        document.head.appendChild(script);
+    handleCountryChange() {
+      if (this.localData.country !== "Other") {
+        this.localData.other_country = "";
       }
+      this.updateData();
     },
 
-    /* Sets up Google Places services and input event listeners */
-    setupGooglePlacesServices() {
-      this.autocompleteService = new google.maps.places.AutocompleteService();
-      this.placesService = new google.maps.places.PlacesService(
-        document.createElement("div")
-      );
-
-      // Add input event listeners
-      ["streetAddress", "city", "state"].forEach((field) => {
-        this.$refs[`${field}Input`]?.addEventListener("input", (e) =>
-          this.handleInput(e, field)
-        );
-      });
-    },
-
-    /* Fetches and displays autocomplete suggestions based on user input */
-    async handleInput(event, field) {
-      const input = event.target.value;
-      if (input.length < 2) {
-        this.suggestions[field] = [];
-        return;
-      }
-
-      try {
-        const types = {
-          streetAddress: ["address"],
-          city: ["(cities)"],
-          state: ["administrative_area_level_1"],
-        };
-
-        const response = await this.autocompleteService.getPlacePredictions({
-          input,
-          types: types[field],
-        });
-        this.suggestions[field] = response.predictions;
-      } catch (error) {
-        console.error(`Error fetching ${field} suggestions:`, error);
-        this.suggestions[field] = [];
-      }
-    },
-
-    /* Updates address field and extracts city and state from selection */
+    /* Handles address selection from suggestions */
     selectAddress(place) {
       this.suggestions.address = [];
       this.localData.street_address = place.description;
       this.updateData();
-
-      this.placesService.getDetails(
-        {
-          placeId: place.place_id,
-          fields: ["address_components"],
-        },
-        (result, status) => {
-          if (status === google.maps.places.PlacesServiceStatus.OK) {
-            result.address_components.forEach((component) => {
-              const type = component.types[0];
-              if (type === "locality") {
-                this.localData.city = component.long_name;
-              }
-              if (type === "administrative_area_level_1") {
-                this.localData.state = component.long_name;
-              }
-            });
-            this.updateData();
-          }
-        }
-      );
     },
 
-    /* Updates city field with selected suggestion */
+    /* Handles city selection from suggestions */
     selectCity(suggestion) {
       this.suggestions.city = [];
       this.localData.city = suggestion.description;
       this.updateData();
     },
 
-    /* Updates state field with selected suggestion */
+    /* Handles state selection from suggestions */
     selectState(suggestion) {
       this.suggestions.state = [];
       this.localData.state = suggestion.description;
@@ -355,6 +279,8 @@ export default {
   border: 1px solid #ddd;
   border-radius: 4px;
   margin-top: 4px;
+  background-color: white;
+  cursor: pointer;
 }
 
 .other-country-input {
@@ -366,5 +292,31 @@ export default {
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
+}
+
+.suggestions-list {
+  position: absolute;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  z-index: 1000;
+  margin-top: 4px;
+}
+
+.suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.suggestion-item:hover {
+  background-color: #f5f5f5;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
 }
 </style>
