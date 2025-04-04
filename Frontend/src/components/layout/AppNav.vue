@@ -36,8 +36,6 @@
 
 <script>
 import api from "@/api/axios.js";
-import { jwtDecode } from "jwt-decode";
-
 export default {
   name: "AppNav",
   data() {
