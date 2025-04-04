@@ -452,7 +452,6 @@ export default {
         "first_name",
         "last_name",
         "user_type",
-        "denomination",
         "phone_number",
         "street_address",
         "city",

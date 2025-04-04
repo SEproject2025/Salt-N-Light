@@ -44,9 +44,16 @@ class ProfileListCreateView(generics.ListCreateAPIView):
    serializer_class = ProfileSerializer
    permission_classes = [AllowAny]  # Public access for testing
    filter_backends = [filters.SearchFilter]
-   search_fields = ['user_type', 'city', 'state', 'country', 'denomination']
+   search_fields = ['user_type', 'city', 'state', 'country']
    filterset_fields = ['user_type', 'city', 'state', 'country',
-                       'denomination', 'tags']
+                       'tags']
+
+   def get_queryset(self):
+      # Get the base queryset
+      queryset = super().get_queryset()
+      # Filter out anonymous profiles
+      queryset = queryset.exclude(is_anonymous=True)
+      return queryset
 
 
 class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -83,10 +90,12 @@ class MatchmakingResultsView(generics.ListAPIView):
       user_tags = user_profile.tags.all()
 
       # Find profiles with at least one matching tag, excluding
-      # the current user's profile
+      # the current user's profile and anonymous profiles
       matching_profiles = Profile.objects.filter(
-         Q(tags__in=user_tags)).exclude(
-          user=self.request.user).distinct()
+         Q(tags__in=user_tags)
+      ).exclude(
+         Q(user=self.request.user) | Q(is_anonymous=True)
+      ).distinct()
 
       return matching_profiles.exclude(user_type=user_profile.user_type)
 

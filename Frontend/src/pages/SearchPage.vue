@@ -27,18 +27,6 @@
       </div>
 -->
   <!--  Future placeholder = Search for names, places, or interests-->
-  <!-- Denomination Field (Commented Out) -->
-  <!--
-      <div class="form-group">
-        <label for="denomination">Denomination</label>
-        <select id="denomination" v-model="filters.denomination">
-          <option value="">-Select a denomination-</option>
-          <option value="Catholic">Catholic</option>
-          <option value="Protestant">Protestant</option>
-          <option value="Non-Denominational">Non-Denominational</option>
-        </select>
-      </div>
-      -->
 
   <!-- Mission Field (Commented Out) -->
   <!--
@@ -110,7 +98,6 @@ export default {
       filters: {
         user_type: "", // Role filter (Missionary or Supporter)
         contains: "", // General search field for names, places, or interests
-        // denomination: "", // Commented out
         // missionField: "", // Commented out
       },
       searchResults: [], // Combined API results
@@ -190,15 +177,7 @@ export default {
             !this.filters.user_type ||
             user.user_type === this.filters.user_type;
 
-          // const matchesDenomination =
-          //   !this.filters.denomination ||
-          //   (user.denomination && user.denomination === this.filters.denomination);
-
-          // const matchesMissionField =
-          //   !this.filters.missionField ||
-          //   (user.mission_field && user.mission_field === this.filters.missionField);
-
-          return matchesContains && matchesRole; // && matchesDenomination && matchesMissionField
+          return matchesContains && matchesRole;
         });
 
         this.searchResults = filteredResults;

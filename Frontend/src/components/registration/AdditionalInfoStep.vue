@@ -11,21 +11,19 @@
         @input="updateData"
       ></textarea>
 
-      <label for="tags">Select Tags:</label>
+      <label for="tags">Select some tags that describe your ministry:</label>
       <div class="tags-container">
-        <select
-          id="tags"
-          v-model="localData.tags"
-          multiple
-          @change="updateData"
-        >
-          <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">
+        <div class="tags-grid">
+          <div
+            v-for="tag in availableTags"
+            :key="tag.id"
+            class="tag-option"
+            :class="{ selected: localData.tags.includes(tag.id) }"
+            @click="toggleTag(tag.id)"
+          >
             {{ tag.tag_name }}
-          </option>
-        </select>
-        <p class="helper-text">
-          Hold Ctrl (or Cmd on Mac) to select multiple tags
-        </p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -47,7 +45,6 @@ export default {
     return {
       localData: {
         description: this.additionalData.description || "",
-        profile_picture: null,
         tags: this.additionalData.tags || [],
       },
       availableTags: [],
@@ -57,12 +54,20 @@ export default {
     this.fetchTags();
   },
   methods: {
+    toggleTag(tagId) {
+      const index = this.localData.tags.indexOf(tagId);
+      if (index === -1) {
+        this.localData.tags.push(tagId);
+      } else {
+        this.localData.tags.splice(index, 1);
+      }
+      this.updateData();
+    },
     /* Updates parent with current additional information values */
     updateData() {
       this.$emit("update:additionalData", {
         ...this.additionalData,
         ...this.localData,
-        profile_picture: null,
       });
     },
 
@@ -91,7 +96,6 @@ export default {
       handler(newValue) {
         this.localData = {
           description: newValue.description || "",
-          profile_picture: null,
           tags: newValue.tags || [],
         };
       },
@@ -100,3 +104,31 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.tags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.tag-option {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.tag-option:hover {
+  background-color: #f0f0f0;
+}
+
+.tag-option.selected {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+  color: #1976d2;
+}
+</style>

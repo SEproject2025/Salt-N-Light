@@ -21,7 +21,6 @@ class Profile(models.Model):
     )
    first_name = models.CharField(max_length=100, blank=True, null=True)
    last_name = models.CharField(max_length=100, blank=True, null=True)
-   denomination = models.CharField(max_length=100, blank=True, null=True)
    street_address = models.CharField(max_length=100, blank=True, null=True)
    city = models.CharField(max_length=100, blank=True, null=True)
    state = models.CharField(max_length=100, blank=True, null=True)
@@ -29,7 +28,7 @@ class Profile(models.Model):
    phone_number = models.CharField(max_length=100, blank=True, null=True)
    years_of_experience = models.IntegerField(blank=True, null=True)
    description = models.TextField(blank=True, null=True)
-   profile_picture = models.URLField(max_length=225, null=True, blank=True)
+   is_anonymous = models.BooleanField(default=False)
 
    # Tags with additional metadata through the intermediate model
    tags = models.ManyToManyField(Tag, through='ProfileTagging',

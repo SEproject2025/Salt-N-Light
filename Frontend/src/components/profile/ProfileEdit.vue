@@ -28,11 +28,6 @@
         </div>
 
         <div class="form-group">
-          <label>Denomination</label>
-          <input v-model="formData.denomination" type="text" />
-        </div>
-
-        <div class="form-group">
           <label>Phone Number</label>
           <input v-model="formData.phone_number" type="text" />
         </div>
@@ -110,7 +105,6 @@ export default {
         first_name: "",
         last_name: "",
         user_type: "",
-        denomination: "",
         phone_number: "",
         street_address: "",
         city: "",
