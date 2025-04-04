@@ -11,6 +11,8 @@
           <PublicProfileView
             :profile="profile"
             :is-own-profile="isOwnProfile"
+            :current-user-id="getCurrentUserId()"
+            v-model:friendshipStatus="friendshipStatus"
             @tag-added="handleTagAdded"
             @tag-removed="handleTagRemoved"
           />
@@ -43,6 +45,7 @@ export default {
       loading: true,
       error: null,
       isOwnProfile: false,
+      friendshipStatus: null,
     };
   },
   methods: {
@@ -180,6 +183,12 @@ export default {
   display: flex;
   gap: 2rem;
   margin-top: 2rem;
+  width: 100%;
+}
+
+.content-wrapper > :first-child {
+  flex: 1;
+  min-width: 0; /* Prevents flex items from overflowing */
 }
 
 .back-btn {
@@ -240,6 +249,10 @@ export default {
 @media (max-width: 1200px) {
   .content-wrapper {
     flex-direction: column;
+  }
+
+  .content-wrapper > * {
+    width: 100%;
   }
 }
 </style>
