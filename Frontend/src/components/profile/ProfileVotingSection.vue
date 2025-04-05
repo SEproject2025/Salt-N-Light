@@ -34,10 +34,20 @@
 
         <div v-if="showCommentForm" class="comment-section">
           <h3>Add a Comment</h3>
-          <textarea
-            v-model="newComment"
-            placeholder="Share your thoughts..."
-          ></textarea>
+          <div class="comment-input-container">
+            <textarea
+              v-model="newComment"
+              placeholder="Share your thoughts..."
+              maxlength="150"
+              @input="validateCommentLength"
+            ></textarea>
+            <div
+              class="char-counter"
+              :class="{ 'near-limit': newComment.length > 120 }"
+            >
+              {{ newComment.length }}/150 characters
+            </div>
+          </div>
           <button
             class="submit-comment"
             @click="submitComment"
@@ -332,6 +342,12 @@ export default {
       this.editingCommentId = null;
       this.editedComment = "";
     },
+
+    validateCommentLength() {
+      if (this.newComment.length > 150) {
+        this.newComment = this.newComment.slice(0, 150);
+      }
+    },
   },
   async created() {
     await this.fetchCurrentUser();
@@ -428,6 +444,26 @@ h2 {
   color: #2c3e50;
 }
 
+.comment-input-container {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.char-counter {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 0.8rem;
+  color: #666;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.char-counter.near-limit {
+  color: #e74c3c;
+}
+
 textarea {
   width: 100%;
   padding: 0.8rem;
@@ -436,6 +472,7 @@ textarea {
   margin-bottom: 1rem;
   resize: vertical;
   min-height: 100px;
+  padding-bottom: 2rem;
 }
 
 .submit-comment {

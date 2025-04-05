@@ -211,6 +211,12 @@ export default {
     },
 
     validatePhoneNumber() {
+      // Check if phone_number is null or undefined
+      if (!this.formData.phone_number) {
+        this.errors.phone_number = "";
+        return true;
+      }
+
       // Remove any non-digit characters for length check
       const digitsOnly = this.formData.phone_number.replace(/\D/g, "");
       if (digitsOnly.length < 10 || digitsOnly.length > 15) {
@@ -223,6 +229,10 @@ export default {
     },
 
     validateStreetAddress() {
+      if (!this.formData.street_address) {
+        this.errors.street_address = "";
+        return true;
+      }
       if (this.formData.street_address.length > 65) {
         this.errors.street_address = "Address cannot exceed 65 characters";
         return false;
@@ -232,6 +242,10 @@ export default {
     },
 
     validateCity() {
+      if (!this.formData.city) {
+        this.errors.city = "";
+        return true;
+      }
       if (this.formData.city.length > 35) {
         this.errors.city = "City cannot exceed 35 characters";
         return false;
@@ -241,6 +255,10 @@ export default {
     },
 
     validateState() {
+      if (!this.formData.state) {
+        this.errors.state = "";
+        return true;
+      }
       if (this.formData.state.length > 35) {
         this.errors.state = "State cannot exceed 35 characters";
         return false;
@@ -250,6 +268,10 @@ export default {
     },
 
     validateCountry() {
+      if (!this.formData.country) {
+        this.errors.country = "";
+        return true;
+      }
       if (this.formData.country.length > 35) {
         this.errors.country = "Country cannot exceed 35 characters";
         return false;
@@ -259,6 +281,10 @@ export default {
     },
 
     validateDescription() {
+      if (!this.formData.description) {
+        this.errors.description = "";
+        return true;
+      }
       if (this.formData.description.length > 1000) {
         this.errors.description = "Description cannot exceed 1000 characters";
         return false;

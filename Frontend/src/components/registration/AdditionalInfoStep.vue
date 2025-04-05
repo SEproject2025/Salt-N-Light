@@ -8,8 +8,15 @@
         v-model="localData.description"
         placeholder="Tell us about yourself and your mission"
         rows="4"
-        @input="updateData"
+        maxlength="1000"
+        @input="validateDescription"
       ></textarea>
+      <div
+        class="char-counter"
+        :class="{ 'near-limit': localData.description.length > 900 }"
+      >
+        {{ localData.description.length }}/1000 characters
+      </div>
 
       <label for="tags">Select Tags:</label>
       <div class="tags-container">
@@ -64,6 +71,16 @@ export default {
         ...this.localData,
         profile_picture: null,
       });
+    },
+
+    validateDescription() {
+      if (this.localData.description.length > 1000) {
+        this.localData.description = this.localData.description.substring(
+          0,
+          1000
+        );
+      }
+      this.updateData();
     },
 
     /* Fetches and filters predefined tags from the backend API */

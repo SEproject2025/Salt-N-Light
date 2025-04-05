@@ -110,8 +110,6 @@ export default {
       const value = this.localData.first_name;
       if (!value) {
         this.firstNameError = "First Name is required";
-      } else if (value.length < 2) {
-        this.firstNameError = "First Name must be at least 2 characters";
       } else if (value.length > 35) {
         this.firstNameError = "First Name must not exceed 35 characters";
       } else if (!/^[a-zA-Z\s-']+$/.test(value)) {
@@ -126,8 +124,6 @@ export default {
       const value = this.localData.last_name;
       if (!value) {
         this.lastNameError = "Last Name is required";
-      } else if (value.length < 2) {
-        this.lastNameError = "Last Name must be at least 2 characters";
       } else if (value.length > 35) {
         this.lastNameError = "Last Name must not exceed 35 characters";
       } else if (!/^[a-zA-Z\s-']+$/.test(value)) {

@@ -422,13 +422,11 @@ export default {
 
         try {
           await this.sendProfileUpdate(profileId, changedFields);
-          alert("Profile updated successfully!");
           this.editing = false;
           this.fetchProfile();
         } catch (err) {
           if (err.response?.status === 401 && (await this.refreshToken())) {
             await this.sendProfileUpdate(profileId, changedFields);
-            alert("Profile updated successfully!");
             this.editing = false;
             this.fetchProfile();
           } else {

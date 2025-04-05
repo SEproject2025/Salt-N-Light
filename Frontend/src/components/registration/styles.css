@@ -165,6 +165,18 @@ textarea {
   min-height: 100px;
 }
 
+.char-counter {
+  font-size: 0.8rem;
+  color: #757575;
+  text-align: right;
+  margin-top: 5px;
+}
+
+.char-counter.near-limit {
+  color: #ff9800;
+  font-weight: 500;
+}
+
 .required {
   color: #f44336;
   margin-right: 3px;
