@@ -17,12 +17,9 @@
             id="firstName"
             v-model="localData.first_name"
             placeholder="Enter your first name"
-            @input="validateFirstName"
-            :class="{ error: firstNameError }"
+            maxlength="35"
+            @input="updateData"
           />
-          <p v-if="firstNameError" class="error-message">
-            {{ firstNameError }}
-          </p>
         </div>
         <div class="form-col">
           <label for="lastName">Last Name:</label>
@@ -31,10 +28,9 @@
             id="lastName"
             v-model="localData.last_name"
             placeholder="Enter your last name"
-            @input="validateLastName"
-            :class="{ error: lastNameError }"
+            maxlength="35"
+            @input="updateData"
           />
-          <p v-if="lastNameError" class="error-message">{{ lastNameError }}</p>
         </div>
       </div>
 
@@ -44,6 +40,7 @@
         id="denomination"
         v-model="localData.denomination"
         placeholder="Enter your religious denomination"
+        maxlength="35"
         @input="updateData"
       />
 
@@ -105,34 +102,6 @@ export default {
         ...this.personalData,
         ...this.localData,
       });
-    },
-    validateFirstName() {
-      const value = this.localData.first_name;
-      if (!value) {
-        this.firstNameError = "First Name is required";
-      } else if (value.length > 35) {
-        this.firstNameError = "First Name must not exceed 35 characters";
-      } else if (!/^[a-zA-Z\s-']+$/.test(value)) {
-        this.firstNameError =
-          "First Name can only contain letters, spaces, hyphens, and apostrophes";
-      } else {
-        this.firstNameError = "";
-      }
-      this.updateData();
-    },
-    validateLastName() {
-      const value = this.localData.last_name;
-      if (!value) {
-        this.lastNameError = "Last Name is required";
-      } else if (value.length > 35) {
-        this.lastNameError = "Last Name must not exceed 35 characters";
-      } else if (!/^[a-zA-Z\s-']+$/.test(value)) {
-        this.lastNameError =
-          "Last Name can only contain letters, spaces, hyphens, and apostrophes";
-      } else {
-        this.lastNameError = "";
-      }
-      this.updateData();
     },
     validatePhoneNumber() {
       const value = this.localData.phone_number;

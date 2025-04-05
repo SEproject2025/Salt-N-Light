@@ -6,16 +6,15 @@
       <textarea
         id="description"
         v-model="localData.description"
-        placeholder="Tell us about yourself and your mission"
-        rows="4"
+        placeholder="Tell us about yourself"
         maxlength="1000"
-        @input="validateDescription"
+        @input="updateData"
       ></textarea>
       <div
         class="char-counter"
-        :class="{ 'near-limit': localData.description.length > 900 }"
+        :class="{ 'near-limit': localData.description?.length > 800 }"
       >
-        {{ localData.description.length }}/1000 characters
+        {{ localData.description?.length || 0 }}/1000
       </div>
 
       <label for="tags">Select Tags:</label>
@@ -73,16 +72,6 @@ export default {
       });
     },
 
-    validateDescription() {
-      if (this.localData.description.length > 1000) {
-        this.localData.description = this.localData.description.substring(
-          0,
-          1000
-        );
-      }
-      this.updateData();
-    },
-
     /* Fetches and filters predefined tags from the backend API */
     async fetchTags() {
       try {
@@ -117,3 +106,16 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.char-counter {
+  text-align: right;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.char-counter.near-limit {
+  color: #ff6b6b;
+}
+</style>

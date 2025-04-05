@@ -15,7 +15,7 @@
             v-model="formData.first_name"
             type="text"
             required
-            @input="validateFirstName"
+            maxlength="35"
           />
           <span class="error-message" v-if="errors.first_name">{{
             errors.first_name
@@ -28,7 +28,7 @@
             v-model="formData.last_name"
             type="text"
             required
-            @input="validateLastName"
+            maxlength="35"
           />
           <span class="error-message" v-if="errors.last_name">{{
             errors.last_name
@@ -52,8 +52,11 @@
           <label>Phone Number</label>
           <input
             v-model="formData.phone_number"
-            type="text"
-            @input="validatePhoneNumber"
+            type="tel"
+            pattern="[0-9]*"
+            inputmode="numeric"
+            @input="validateAndFormatPhoneNumber"
+            :class="{ error: errors.phone_number }"
           />
           <span class="error-message" v-if="errors.phone_number">{{
             errors.phone_number
@@ -62,11 +65,7 @@
 
         <div class="form-group">
           <label>Street Address</label>
-          <input
-            v-model="formData.street_address"
-            type="text"
-            @input="validateStreetAddress"
-          />
+          <input v-model="formData.street_address" type="text" maxlength="65" />
           <span class="error-message" v-if="errors.street_address">{{
             errors.street_address
           }}</span>
@@ -74,7 +73,7 @@
 
         <div class="form-group">
           <label>City</label>
-          <input v-model="formData.city" type="text" @input="validateCity" />
+          <input v-model="formData.city" type="text" maxlength="35" />
           <span class="error-message" v-if="errors.city">{{
             errors.city
           }}</span>
@@ -82,7 +81,7 @@
 
         <div class="form-group">
           <label>State</label>
-          <input v-model="formData.state" type="text" @input="validateState" />
+          <input v-model="formData.state" type="text" maxlength="35" />
           <span class="error-message" v-if="errors.state">{{
             errors.state
           }}</span>
@@ -90,11 +89,7 @@
 
         <div class="form-group">
           <label>Country</label>
-          <input
-            v-model="formData.country"
-            type="text"
-            @input="validateCountry"
-          />
+          <input v-model="formData.country" type="text" maxlength="35" />
           <span class="error-message" v-if="errors.country">{{
             errors.country
           }}</span>
@@ -120,8 +115,14 @@
         <textarea
           v-model="formData.description"
           rows="4"
-          @input="validateDescription"
+          maxlength="1000"
         ></textarea>
+        <div
+          class="char-counter"
+          :class="{ 'near-limit': formData.description.length > 900 }"
+        >
+          {{ formData.description.length }}/1000 characters
+        </div>
         <span class="error-message" v-if="errors.description">{{
           errors.description
         }}</span>
@@ -186,7 +187,7 @@ export default {
     // Initialize form data with profile data
     Object.keys(this.formData).forEach((key) => {
       if (key !== "selectedTags") {
-        this.formData[key] = this.profile[key];
+        this.formData[key] = this.profile[key] || "";
       }
     });
     this.formData.selectedTags = [...this.selectedTags];
@@ -210,22 +211,29 @@ export default {
       return true;
     },
 
-    validatePhoneNumber() {
-      // Check if phone_number is null or undefined
-      if (!this.formData.phone_number) {
+    validateAndFormatPhoneNumber(event) {
+      // Get the value either from the event or current formData
+      let value = event ? event.target.value : this.formData.phone_number || "";
+
+      // Remove any non-digit characters from the input
+      value = value.replace(/\D/g, "");
+
+      // Restrict to maximum 15 digits
+      if (value.length > 15) {
+        value = value.slice(0, 15);
+      }
+
+      // Update the model with only digits
+      this.formData.phone_number = value;
+
+      // Validate the phone number
+      if (!value || value.length >= 10) {
         this.errors.phone_number = "";
         return true;
       }
 
-      // Remove any non-digit characters for length check
-      const digitsOnly = this.formData.phone_number.replace(/\D/g, "");
-      if (digitsOnly.length < 10 || digitsOnly.length > 15) {
-        this.errors.phone_number =
-          "Phone number must be between 10 and 15 digits";
-        return false;
-      }
-      this.errors.phone_number = "";
-      return true;
+      this.errors.phone_number = "Phone number must be at least 10 digits";
+      return false;
     },
 
     validateStreetAddress() {
@@ -297,7 +305,7 @@ export default {
       return (
         this.validateFirstName() &&
         this.validateLastName() &&
-        this.validatePhoneNumber() &&
+        this.validateAndFormatPhoneNumber() &&
         this.validateStreetAddress() &&
         this.validateCity() &&
         this.validateState() &&
@@ -440,6 +448,18 @@ export default {
 .form-group input.error,
 .form-group textarea.error {
   border-color: #e74c3c;
+}
+
+.char-counter {
+  font-size: 0.8rem;
+  color: #757575;
+  text-align: right;
+  margin-top: 5px;
+}
+
+.char-counter.near-limit {
+  color: #ff9800;
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {
