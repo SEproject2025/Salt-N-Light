@@ -66,7 +66,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
 import ProgressBar from "@/components/registration/ProgressBar.vue";
 import AccountInfoStep from "@/components/registration/AccountInfoStep.vue";
 import PersonalInfoStep from "@/components/registration/PersonalInfoStep.vue";
@@ -160,7 +160,7 @@ export default {
     },
     async fetchExistingUsers() {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/profiles/");
+        const response = await api.get("api/profiles/");
         this.existingUsernames = new Set(
           response.data.map((profile) => profile.user.username.toLowerCase())
         );
@@ -169,6 +169,7 @@ export default {
         );
       } catch (error) {
         console.error("Error fetching existing users:", error);
+        // Don't show error to user, just log it
       }
     },
     isStepOneValid() {
@@ -202,6 +203,19 @@ export default {
           this.message = "";
           this.isSuccess = false;
 
+          // If we don't have the existing users data yet, try to fetch it
+          if (
+            this.existingUsernames.size === 0 ||
+            this.existingEmails.size === 0
+          ) {
+            try {
+              await this.fetchExistingUsers();
+            } catch (error) {
+              console.error("Failed to fetch existing users:", error);
+              // Continue anyway, we'll handle missing data gracefully
+            }
+          }
+
           // Check if username exists (case-insensitive comparison)
           if (
             this.existingUsernames.has(this.form.user.username.toLowerCase())
@@ -225,8 +239,15 @@ export default {
           this.currentStep++;
         } catch (error) {
           console.error("Validation error:", error);
-          this.message =
-            "Error checking username and email availability. Please try again.";
+
+          if (error.code === "ECONNABORTED") {
+            this.message =
+              "Connection timed out. Please check your connection and try again.";
+          } else {
+            this.message =
+              "Error checking username and email availability. Please try again.";
+          }
+
           this.isSuccess = false;
           return;
         }
@@ -251,20 +272,18 @@ export default {
     // Fetches predefined tags from the backend
     async fetchTags() {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/tag/");
+        const response = await api.get("tag/");
         this.availableTags = response.data.filter(
           (tag) => tag.tag_is_predefined
         );
       } catch (error) {
-        console.error("Failed to fetch tags:", error.response?.data);
+        console.error("Failed to fetch tags:", error);
+        // Don't show error to user, just log it
       }
     },
 
     // Calls the profiles endpoint to register the user
     async registerUser() {
-      //console.log("registerUser method called");
-      //console.log("Current form data:", this.form);
-
       try {
         // Create the data in the nested format expected by the backend
         const formData = {
@@ -277,43 +296,51 @@ export default {
           user_type: this.form.user_type
             ? this.form.user_type.toLowerCase()
             : null,
-          first_name: this.form.first_name,
-          last_name: this.form.last_name,
-          denomination: this.form.denomination,
-          street_address: this.form.street_address,
-          city: this.form.city,
-          state: this.form.state,
+          first_name: this.form.first_name || null,
+          last_name: this.form.last_name || null,
+          denomination: this.form.denomination || null,
+          street_address: this.form.street_address || null,
+          city: this.form.city || null,
+          state: this.form.state || null,
           country:
             this.form.country === "Other"
               ? this.form.other_country
-              : this.form.country,
-          phone_number: this.form.phone_number,
-          years_of_experience: this.form.years_of_experience,
-          description: this.form.description,
-          profile_picture: null, // Always send null for profile picture
+              : this.form.country || null,
+          phone_number: this.form.phone_number || null,
+          years_of_experience: this.form.years_of_experience || null,
+          description: this.form.description || null,
+          profile_picture: null,
         };
 
         // Log the data being sent
-        //console.log("Registration data being sent:", formData);
+        console.log("Registration data being sent:", formData);
 
-        const response = await axios.post(
-          "http://127.0.0.1:8000/api/profiles/",
-          formData
-        );
+        const response = await api.post("api/profiles/", formData);
         console.log("Registration response:", response.data);
 
         this.message = "Registration successful!";
         this.isSuccess = true;
         setTimeout(() => this.$router.push("/AppLogin"), 1000);
       } catch (error) {
-        //console.error("Registration failed:", error.response?.data);
-        //console.error("Error status:", error.response?.status);
-        //console.error("Error details:", error);
-        this.message =
-          error.response?.data?.detail ||
-          error.response?.data?.user?.username?.[0] ||
-          error.response?.data?.user?.email?.[0] ||
-          "Registration failed. Please try again.";
+        console.error("Registration failed:", error);
+
+        if (error.code === "ECONNABORTED") {
+          this.message =
+            "Registration timed out. Please check your connection and try again.";
+        } else if (error.response) {
+          // Log the full error response for debugging
+          console.error("Error response:", error.response);
+
+          this.message =
+            error.response?.data?.detail ||
+            error.response?.data?.user?.username?.[0] ||
+            error.response?.data?.user?.email?.[0] ||
+            "Registration failed. Please try again.";
+        } else {
+          this.message =
+            "Registration failed. Please check your connection and try again.";
+        }
+
         this.isSuccess = false;
       }
     },
