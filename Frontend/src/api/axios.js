@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Set the base URL for all API requests
 const api = axios.create({
-  baseURL: process.env.VUE_APP_API_URL || "http://127.0.0.1:8000",
+  baseURL: "https://baptist.coffee/", // Add your root API URL
   timeout: 10000, // Optional: Set a timeout (in ms)
   headers: {
     "Content-Type": "application/json",

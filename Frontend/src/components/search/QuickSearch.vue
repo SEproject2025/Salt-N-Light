@@ -36,7 +36,7 @@
         <label>Tags</label>
         <multiselect
           v-model="selectedTags"
-          :options="availableTagsList"
+          :options="availableTags"
           :multiple="true"
           :close-on-select="false"
           :clear-on-select="false"
@@ -110,7 +110,7 @@ export default {
     };
   },
   created() {
-    this.loadAllTags();
+    this.loadTags();
     // Add route change listener
     this.$router.beforeEach((to, from, next) => {
       this.closeModal();
@@ -127,11 +127,11 @@ export default {
     handleSearch() {
       this.debounce(this.performSearch, 300);
     },
-    async loadAllTags() {
+    async loadTags() {
       try {
-        this.availableTags = await searchService.getAllTags();
+        this.availableTags = await searchService.getTags();
       } catch (error) {
-        console.error("Error loading all tags:", error);
+        console.error("Error loading tags:", error);
       }
     },
     async performSearch() {
@@ -152,17 +152,16 @@ export default {
         user_type: this.userType,
         location: this.location,
         tags: this.selectedTags.map((tag) => tag.tag_name),
+        tag_match_type: "any",
         page_size: 5, // Limit results for quick search
       };
 
       try {
         const response = await searchService.searchProfiles(params);
-        this.searchResults = response.results;
+        this.searchResults = response.results || [];
         this.showResults = true;
       } catch (error) {
         console.error("Search error:", error);
-        this.searchResults = [];
-        this.showResults = false;
       }
     },
     handleClickOutside() {
@@ -199,12 +198,6 @@ export default {
         query: Object.fromEntries(params),
       });
       this.closeModal();
-    },
-  },
-  computed: {
-    // Convert Set of tag strings back to objects for the multiselect
-    availableTagsList() {
-      return Array.from(this.availableTags).map((tagStr) => JSON.parse(tagStr));
     },
   },
   beforeUnmount() {

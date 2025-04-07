@@ -228,9 +228,7 @@ export default {
       totalPages: 1,
       totalResults: 0,
       sortBy: "recent",
-      pageSize: 12,
-      isInitialLoad: true,
-      tagsLoaded: false,
+      pageSize: "all",
     };
   },
   computed: {
@@ -243,112 +241,12 @@ export default {
       );
     },
   },
-  async created() {
-    if (!this.tagsLoaded) {
-      await this.loadTags();
-      this.tagsLoaded = true;
-    }
+  created() {
+    this.loadTags();
     this.initializeFromQuery();
-    // Always perform initial search, even with empty fields
-    await this.performSearch();
+    this.performSearch();
   },
   methods: {
-    debounce(func, wait) {
-      clearTimeout(this.searchTimeout);
-      this.searchTimeout = setTimeout(() => {
-        func.apply(this);
-      }, wait);
-    },
-    handleSearch() {
-      if (this.isLoading) return;
-
-      this.currentPage = 1; // Reset to first page on new search
-      this.debounce(this.performSearch, 500);
-    },
-    handleSort() {
-      if (this.isLoading) return;
-      this.currentPage = 1;
-      this.performSearch();
-    },
-    handlePageSizeChange() {
-      if (this.isLoading) return;
-      this.currentPage = 1;
-      this.performSearch();
-    },
-    async loadTags() {
-      try {
-        this.availableTags = await searchService.getAllTags();
-      } catch (error) {
-        console.error("Error loading tags:", error);
-      }
-    },
-    async performSearch() {
-      if (this.isLoading) return;
-
-      this.isLoading = true;
-      this.error = null;
-
-      try {
-        // Create a clean params object with only non-empty values
-        const params = {
-          page: this.currentPage,
-          sort: this.sortBy,
-          page_size: this.pageSize,
-        };
-
-        // Only add non-empty search parameters
-        if (this.searchParams.q) params.q = this.searchParams.q;
-        if (this.searchParams.user_type)
-          params.user_type = this.searchParams.user_type;
-        if (this.searchParams.location)
-          params.location = this.searchParams.location;
-
-        // Add tags if any are selected
-        if (this.selectedTags.length > 0) {
-          params.tags = this.selectedTags.map((tag) => tag.tag_name);
-          params.tag_match_type = this.tagMatchType;
-        }
-
-        console.log("Search params:", params); // Debug log
-
-        const response = await searchService.searchProfiles(params);
-        this.searchResults = response.results || [];
-        this.totalResults = response.count || 0;
-        this.totalPages = Math.ceil((response.count || 0) / this.pageSize);
-
-        // Update URL with current search parameters
-        this.updateURL(params);
-      } catch (error) {
-        if (error.response?.status === 401) {
-          this.error = "Please log in to continue";
-          setTimeout(() => {
-            this.$router.push("/AppLogin");
-          }, 2000);
-        } else {
-          this.error = "An error occurred while searching. Please try again.";
-          console.error("Search error:", error);
-        }
-        this.searchResults = [];
-        this.totalPages = 1;
-        this.totalResults = 0;
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    updateURL(params) {
-      const query = {};
-      if (params.q) query.q = params.q;
-      if (params.user_type) query.user_type = params.user_type;
-      if (params.location) query.location = params.location;
-      if (params.tags) query.tags = params.tags;
-      if (params.tag_match_type) query.tag_match_type = params.tag_match_type;
-      if (params.sort) query.sort = params.sort;
-      if (params.page_size) query.page_size = params.page_size;
-
-      this.$router.replace({
-        query: query,
-      });
-    },
     initializeFromQuery() {
       const query = this.$route.query;
 
@@ -362,18 +260,79 @@ export default {
         const tagNames = Array.isArray(query.tags) ? query.tags : [query.tags];
         this.selectedTags = tagNames.map((tagName) => ({
           tag_name: tagName,
-          id: tagName,
+          id: tagName, // Using tag_name as id since we don't have the actual id
         }));
       }
+    },
+    debounce(func, wait) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = setTimeout(() => {
+        func.apply(this);
+      }, wait);
+    },
+    handleSearch() {
+      this.currentPage = 1; // Reset to first page on new search
+      this.debounce(this.performSearch, 300);
+    },
+    handleSort() {
+      this.currentPage = 1; // Reset to first page on sort change
+      this.performSearch();
+    },
+    handlePageSizeChange() {
+      this.currentPage = 1; // Reset to first page when changing page size
+      this.performSearch();
+    },
+    async loadTags() {
+      try {
+        this.availableTags = await searchService.getTags();
+      } catch (error) {
+        console.error("Error loading tags:", error);
+        this.error = "Failed to load tags. Please try again.";
+      }
+    },
+    async performSearch() {
+      this.isLoading = true;
+      this.error = null;
 
-      // Set other parameters
-      if (query.sort) this.sortBy = query.sort;
-      if (query.page_size) this.pageSize = parseInt(query.page_size);
-      if (query.tag_match_type) this.tagMatchType = query.tag_match_type;
+      try {
+        const params = {
+          ...this.searchParams,
+          tags: this.selectedTags.map((tag) => tag.tag_name),
+          tag_match_type: this.tagMatchType,
+          page: this.currentPage,
+          sort: this.sortBy,
+          page_size: this.pageSize,
+        };
+
+        const response = await searchService.searchProfiles(params);
+
+        // Handle both paginated and non-paginated responses
+        if (Array.isArray(response)) {
+          this.searchResults = response;
+          this.totalResults = response.length;
+          this.totalPages = 1;
+        } else {
+          this.searchResults = response.results || [];
+          this.totalResults = response.count || 0;
+          this.totalPages =
+            this.pageSize === "all"
+              ? 1
+              : Math.ceil((response.count || 0) / parseInt(this.pageSize));
+        }
+      } catch (error) {
+        this.error = "An error occurred while searching. Please try again.";
+        console.error("Search error:", error);
+        this.searchResults = [];
+        this.totalPages = 1;
+        this.totalResults = 0;
+      } finally {
+        this.isLoading = false;
+      }
     },
     changePage(page) {
       this.currentPage = page;
       this.performSearch();
+      // Scroll to top of results
       this.$nextTick(() => {
         this.$el
           .querySelector(".search-results")
@@ -401,6 +360,7 @@ export default {
       this.searchParams.user_type = "";
       this.searchParams.location = "";
       this.selectedTags = [];
+      // Update URL to remove all query parameters
       this.$router.replace({
         path: this.$route.path,
       });
@@ -411,31 +371,30 @@ export default {
     },
   },
   watch: {
-    // Consolidate all search parameter watchers into a single watcher
-    searchParams: {
-      handler(newVal, oldVal) {
-        // Only trigger search if values actually changed
-        if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
-          this.handleSearch();
-        }
+    "searchParams.q": {
+      handler() {
+        this.handleSearch();
       },
-      deep: true,
+    },
+    "searchParams.user_type": {
+      handler() {
+        this.handleSearch();
+      },
+    },
+    "searchParams.location": {
+      handler() {
+        this.handleSearch();
+      },
     },
     selectedTags: {
-      handler(newVal, oldVal) {
-        // Only trigger search if values actually changed
-        if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
-          this.handleSearch();
-        }
+      handler() {
+        this.handleSearch();
       },
       deep: true,
     },
     tagMatchType: {
-      handler(newVal, oldVal) {
-        // Only trigger search if value actually changed
-        if (newVal !== oldVal) {
-          this.handleSearch();
-        }
+      handler() {
+        this.handleSearch();
       },
     },
   },
@@ -443,12 +402,6 @@ export default {
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
     }
-  },
-  beforeRouteUpdate(to, from, next) {
-    if (to.path !== from.path) {
-      this.tagsLoaded = false;
-    }
-    next();
   },
 };
 </script>
@@ -659,8 +612,8 @@ export default {
 
 .user-card {
   width: 100%;
-  min-height: 200px;
-  margin: 0;
+  min-height: 200px; /* Set a minimum height for consistency */
+  margin: 0; /* Remove any default margins */
 }
 
 .loading {
@@ -763,6 +716,7 @@ export default {
   color: #666;
 }
 
+/* Tag option styling */
 .tag-option {
   padding: 4px 0;
 }
@@ -778,6 +732,7 @@ export default {
   margin-top: 2px;
 }
 
+/* Custom multiselect styling */
 .multiselect {
   min-height: 42px;
 }
@@ -847,6 +802,7 @@ export default {
   border-color: #1976d2;
 }
 
+/* Responsive layout */
 @media (max-width: 1024px) {
   .results-grid {
     grid-template-columns: 1fr;

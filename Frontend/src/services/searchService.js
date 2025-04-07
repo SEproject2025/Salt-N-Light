@@ -1,20 +1,17 @@
-import api from "@/api/axios";
+import axios from "axios";
+
+const API_URL = "http://127.0.0.1:8000";
 
 export default {
   async searchProfiles(params) {
     try {
       const queryParams = new URLSearchParams();
 
-      // Only add non-empty parameters
-      if (params.q) queryParams.append("q", params.q.trim());
+      if (params.q) queryParams.append("q", params.q);
       if (params.user_type) queryParams.append("user_type", params.user_type);
-      if (params.location)
-        queryParams.append("location", params.location.trim());
+      if (params.location) queryParams.append("location", params.location);
       if (params.tags && params.tags.length) {
         params.tags.forEach((tag) => queryParams.append("tags", tag));
-        if (params.tag_match_type) {
-          queryParams.append("tag_match_type", params.tag_match_type);
-        }
       }
       if (params.page) queryParams.append("page", params.page);
       if (params.sort) queryParams.append("sort", params.sort);
@@ -26,16 +23,12 @@ export default {
         throw new Error("Authentication required");
       }
 
-      // Add debug logging
-      console.log("Search params:", Object.fromEntries(queryParams));
-
-      const response = await api.get(
-        `/api/profiles/search/?${queryParams.toString()}`,
+      const response = await axios.get(
+        `${API_URL}/api/profiles/search/?${queryParams.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          timeout: 30000,
         }
       );
 
@@ -55,18 +48,12 @@ export default {
       };
     } catch (error) {
       console.error("Error searching profiles:", error);
-
-      // Handle timeout error specifically
-      if (error.code === "ECONNABORTED") {
-        throw new Error("Search request timed out. Please try again.");
-      }
-
       if (error.response?.status === 401) {
         // Try to refresh the token
         try {
           const refreshToken = localStorage.getItem("refresh_token");
           if (refreshToken) {
-            const response = await api.post(`/api/token/refresh/`, {
+            const response = await axios.post(`${API_URL}/api/token/refresh/`, {
               refresh: refreshToken,
             });
             localStorage.setItem("access_token", response.data.access);
@@ -85,44 +72,16 @@ export default {
     }
   },
 
-  async getAllTags() {
+  async getTags() {
     try {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        throw new Error("Authentication required");
-      }
-
-      const response = await api.get("/tag/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        timeout: 30000,
-      });
-
+      const response = await axios.get(`${API_URL}/tag/`);
       // Sort tags alphabetically by tag_name
-      return response.data.sort((a, b) => a.tag_name.localeCompare(b.tag_name));
+      const tags = response.data.sort((a, b) =>
+        a.tag_name.localeCompare(b.tag_name)
+      );
+      return tags;
     } catch (error) {
-      console.error("Error fetching all tags:", error);
-      if (error.response?.status === 401) {
-        // Try to refresh the token
-        try {
-          const refreshToken = localStorage.getItem("refresh_token");
-          if (refreshToken) {
-            const response = await api.post(`/api/token/refresh/`, {
-              refresh: refreshToken,
-            });
-            localStorage.setItem("access_token", response.data.access);
-            // Retry the tags fetch with the new token
-            return this.getAllTags();
-          }
-        } catch (refreshError) {
-          console.error("Token refresh failed:", refreshError);
-        }
-        // If refresh fails or no refresh token, redirect to login
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        window.location.href = "/AppLogin";
-      }
+      console.error("Error fetching tags:", error);
       throw error;
     }
   },
