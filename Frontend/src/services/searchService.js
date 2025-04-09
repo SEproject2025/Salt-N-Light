@@ -17,24 +17,24 @@ export default {
         queryParams.append("page_size", params.page_size);
       }
 
-      console.log("Search API Request:", {
-        url: `/api/search/?${queryParams.toString()}`,
-        params: params,
-      });
-
       const response = await api.get(`/api/search/?${queryParams.toString()}`);
 
-      console.log("Search API Response:", {
-        status: response.status,
-        data: response.data,
-      });
-
-      return {
-        count: response.data.count,
-        next: response.data.next,
-        previous: response.data.previous,
-        results: response.data.results || [],
-      };
+      // Handle both array and paginated responses
+      if (Array.isArray(response.data)) {
+        return {
+          count: response.data.length,
+          next: null,
+          previous: null,
+          results: response.data,
+        };
+      } else {
+        return {
+          count: response.data.count || response.data.results?.length || 0,
+          next: response.data.next,
+          previous: response.data.previous,
+          results: response.data.results || [],
+        };
+      }
     } catch (error) {
       console.error("Error searching profiles:", error);
       throw error;

@@ -230,6 +230,7 @@ export default {
       totalResults: 0,
       sortBy: "recent",
       pageSize: "all",
+      showRawResults: false,
     };
   },
   computed: {
@@ -305,22 +306,19 @@ export default {
         };
 
         const response = await searchService.searchProfiles(params);
-        console.log("Search API Response:", {
-          status: response.status,
-          data: response.data,
-        });
 
-        if (response && response.data) {
-          // Check if data is an array or has a results property
-          const results = Array.isArray(response.data)
-            ? response.data
-            : response.data.results || [];
+        if (response) {
+          const results = response.results || [];
 
           if (results.length > 0) {
             this.searchResults = results;
-            this.totalResults = results.length;
-            this.totalPages = 1;
-            console.log("Set searchResults:", this.searchResults);
+            this.totalResults = response.count || results.length;
+            this.totalPages = Math.ceil(
+              this.totalResults /
+                (this.pageSize === "all"
+                  ? this.totalResults
+                  : parseInt(this.pageSize))
+            );
           } else {
             this.searchResults = [];
             this.totalResults = 0;
