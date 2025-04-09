@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { jwtDecode } from "jwt-decode"; // Correct import
+import { jwtDecode } from "jwt-decode";
 import AppLogin from "@/pages/AppLogin.vue";
 import UserProfile from "@/pages/UserProfile.vue";
 import LandingPage from "@/pages/LandingPage.vue";
@@ -12,21 +12,21 @@ import api from "@/api/axios.js";
 async function isAuthenticated() {
   const token = localStorage.getItem("access_token");
   if (!token) {
-    return false; // No token means not authenticated
+    return false;
   }
 
   try {
     const decodedToken = jwtDecode(token);
-    const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+    const currentTime = Math.floor(Date.now() / 1000);
 
-    // If the token is expired, try refreshing it
     if (decodedToken.exp < currentTime) {
       return await refreshAccessToken();
     }
 
-    return true; // Token is valid
+    return true;
   } catch (error) {
-    return false; // Invalid token format
+    console.error("Token validation error:", error);
+    return false;
   }
 }
 
@@ -39,7 +39,7 @@ async function refreshAccessToken() {
     localStorage.setItem("access_token", response.data.access);
     return true;
   } catch (error) {
-    // If refresh fails, log out the user
+    console.error("Token refresh error:", error);
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     return false;
@@ -47,22 +47,38 @@ async function refreshAccessToken() {
 }
 
 const routes = [
-  { path: "/", component: LandingPage },
-  { path: "/AppLogin", component: AppLogin },
-  { path: "/Matchmaking", component: MatchmakingPage },
-  { path: "/LandingPage", component: LandingPage },
-  { path: "/RegistrationPage", component: RegistrationPage },
-  { path: "/UserProfile", component: UserProfile },
-
-  // Protected routes (require authentication)
   {
-    path: "/LandingPage",
+    path: "/",
+    name: "LandingPage",
     component: LandingPage,
+  },
+  {
+    path: "/AppLogin",
+    name: "AppLogin",
+    component: AppLogin,
+    meta: { guest: true },
+  },
+  {
+    path: "/RegistrationPage",
+    name: "RegistrationPage",
+    component: RegistrationPage,
+    meta: { guest: true },
+  },
+  {
+    path: "/SearchPage",
+    name: "SearchPage",
+    component: SearchPage,
     meta: { requiresAuth: true },
   },
-  { path: "/SearchPage", component: SearchPage, meta: { requiresAuth: true } },
+  {
+    path: "/Matchmaking",
+    name: "Matchmaking",
+    component: MatchmakingPage,
+    meta: { requiresAuth: true },
+  },
   {
     path: "/UserProfile",
+    name: "UserProfile",
     component: UserProfile,
     meta: { requiresAuth: true },
   },
@@ -70,6 +86,7 @@ const routes = [
     path: "/profile/:id",
     name: "PublicProfile",
     component: PublicProfile,
+    meta: { requiresAuth: true },
   },
 ];
 
@@ -80,11 +97,21 @@ const router = createRouter({
 
 // Global Navigation Guard
 router.beforeEach(async (to, from, next) => {
-  if (to.meta.requiresAuth && !(await isAuthenticated())) {
-    next("/AppLogin"); // Redirect to login if not authenticated
-  } else {
-    next(); // Proceed as normal
+  const isUserAuthenticated = await isAuthenticated();
+
+  // If the route requires auth and user is not authenticated
+  if (to.meta.requiresAuth && !isUserAuthenticated) {
+    next("/AppLogin");
+    return;
   }
+
+  // If it's a guest route (login/register) and user is authenticated
+  if (to.meta.guest && isUserAuthenticated) {
+    next("/SearchPage");
+    return;
+  }
+
+  next();
 });
 
 export default router;

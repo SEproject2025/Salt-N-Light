@@ -1,5 +1,7 @@
 # Standard library imports
 import logging
+import operator
+from functools import reduce
 
 # Third-party imports
 # pylint: disable=C0412
@@ -35,7 +37,24 @@ class ProfileListCreateView(generics.ListCreateAPIView):
    filter_backends = [filters.SearchFilter]
    search_fields = ['user_type', 'city', 'state', 'country', 'denomination']
    filterset_fields = ['user_type', 'city', 'state', 'country',
-                       'denomination', 'tags']
+                       'denomination']
+
+   def get_queryset(self):
+      queryset = super().get_queryset()
+      
+      # Handle tag filtering
+      tags = self.request.query_params.get('tags', None)
+      if tags:
+         tag_list = [tag.strip() for tag in tags.split(',')]
+         # Get Tag objects for the specified tag names
+         tag_objects = Tag.objects.filter(tag_name__in=tag_list)
+         if tag_objects.exists():
+            # Filter profiles that have all the specified tags
+            for tag in tag_objects:
+               queryset = queryset.filter(tags=tag)
+            queryset = queryset.distinct()
+      
+      return queryset
 
 
 class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -415,89 +434,114 @@ class ProfileSearchView(generics.ListAPIView):
    pagination_class = PageNumberPagination
 
    def get_queryset(self):
-      # Start with base queryset and
-      # exclude profiles without a user_type or anonymous profiles
-      queryset = (Profile.objects
-                 .select_related('user')
-                 .prefetch_related('tags')
-                 .exclude(user_type__isnull=True)
-                 .exclude(user_type='')
-                 .exclude(user_type='anonymous'))
-
-      # Get search parameters from query string
+      """Get the queryset for the search view"""
+      queryset = Profile.objects.exclude(user_type__isnull=True).exclude(user_type='')
+      
+      # Get search parameters
       search_query = self.request.query_params.get('q', '')
+      name_query = self.request.query_params.get('name', '')
       user_type = self.request.query_params.get('user_type', '')
-      tags = self.request.query_params.getlist('tags', [])
       location = self.request.query_params.get('location', '')
-      sort = self.request.query_params.get('sort', 'recent')
+      city = self.request.query_params.get('city', '')
+      tags = self.request.query_params.getlist('tags', [])
+      sort = self.request.query_params.get('sort', 'recent').lower()
+      
+      # Combine search queries if both are provided
+      if search_query and name_query:
+          search_query = f"{search_query} {name_query}"
+      elif name_query:
+          search_query = name_query
+      
+      filters = []
+      
+      # Name search
+      if search_query:
+          # Split the search query into words
+          search_terms = search_query.split()
+          name_filters = []
+          
+          for term in search_terms:
+              # Create a more flexible name search that matches partial names
+              term_filter = (
+                  Q(user__first_name__istartswith=term) |
+                  Q(user__last_name__istartswith=term) |
+                  Q(user__first_name__icontains=term) |
+                  Q(user__last_name__icontains=term) |
+                  Q(description__icontains=term)
+              )
+              name_filters.append(term_filter)
+          
+          # Combine all name filters with AND logic
+          if name_filters:
+              combined_filter = name_filters[0]
+              for filter in name_filters[1:]:
+                  combined_filter &= filter
+              filters.append(combined_filter)
+
+      # Add user_type filter if provided
+      if user_type:
+         filters.append(Q(user_type=user_type))
+
+      # Add location search if provided
+      if location or city:
+         location_query = location or city
+         filters.append(
+            Q(street_address__icontains=location_query) |
+            Q(city__icontains=location_query) |
+            Q(state__icontains=location_query) |
+            Q(country__icontains=location_query)
+         )
+
+      # Add tags filter if provided
+      if tags:
+         tag_filters = Q()
+         for tag in tags:
+            tag_filters |= Q(tags__tag_name__iexact=tag)
+         filters.append(tag_filters)
+
+      # Apply all filters
+      if filters:
+         queryset = queryset.filter(*filters).distinct()
 
       # Apply sorting
-      if sort == 'recent':
-         queryset = queryset.order_by('-user_id')  # Most recent users first
-      elif sort == 'name':
-         queryset = queryset.order_by('first_name', 'last_name')
+      if sort == 'name':
+         queryset = queryset.order_by('user__first_name', 'user__last_name')
       elif sort == 'location':
-         queryset = queryset.order_by('country', 'state', 'city')
-
-      # Only apply filters if search parameters are provided
-      if any([search_query, user_type, tags, location]):
-         if search_query:
-            queryset = queryset.filter(
-               Q(first_name__icontains=search_query) |
-               Q(last_name__icontains=search_query) |
-               Q(description__icontains=search_query) |
-               Q(street_address__icontains=search_query) |
-               Q(city__icontains=search_query) |
-               Q(state__icontains=search_query) |
-               Q(country__icontains=search_query)
-            )
-
-         if user_type:
-            queryset = queryset.filter(user_type=user_type)
-
-         if tags:
-            queryset = queryset.filter(tags__tag_name__in=tags).distinct()
-
-         if location:
-            queryset = queryset.filter(
-               Q(street_address__icontains=location) |
-               Q(city__icontains=location) |
-               Q(state__icontains=location) |
-               Q(country__icontains=location)
-            )
+         queryset = queryset.order_by('country', 'city')
+      else:  # Default to 'recent'
+         queryset = queryset.order_by('-user__date_joined')  # Use user's date_joined instead of created_at
 
       return queryset
 
    def list(self, request, *args, **kwargs):
-      # Get the page size from query params, default to 'all'
-      page_size = request.query_params.get('page_size', 'all')
-
-      # Handle 'all' option (now the default)
-      if page_size == 'all':
-         queryset = self.get_queryset()
-         serializer = self.get_serializer(queryset, many=True)
-         return response.Response({
-            'count': len(serializer.data),
-            'next': None,
-            'previous': None,
-            'results': serializer.data
-         })
-
-      # Set the page size for pagination if a specific size is requested
       try:
-         self.pagination_class.page_size = int(page_size)
-      except ValueError:
-         # If invalid page size, default to showing all
          queryset = self.get_queryset()
+         page_size = request.query_params.get('page_size', '10')
+         
+         if page_size == 'all':
+            # When page_size=all, we still want to return a paginated response
+            # but with all results on a single page
+            self.pagination_class.page_size = queryset.count()
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+               serializer = self.get_serializer(page, many=True)
+               return self.get_paginated_response(serializer.data)
+         
+         # Normal pagination for other cases
+         page = self.paginate_queryset(queryset)
+         if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+         
          serializer = self.get_serializer(queryset, many=True)
-         return response.Response({
-            'count': len(serializer.data),
-            'next': None,
-            'previous': None,
-            'results': serializer.data
-         })
-
-      return super().list(request, *args, **kwargs)
+         return Response(serializer.data)
+         
+      except Exception as e:
+         logger.error(f"Error in ProfileSearchView.list: {str(e)}")
+         return Response(
+             {"error": "An error occurred while processing your request"},
+             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+         )
 
 
 class NotificationView(ModelViewSet):

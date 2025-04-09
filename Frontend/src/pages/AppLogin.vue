@@ -52,22 +52,36 @@ export default {
       errorMessage: "",
     };
   },
+  created() {
+    // If already authenticated, redirect to search page
+    if (localStorage.getItem("access_token")) {
+      this.$router.push("/SearchPage");
+    }
+  },
   methods: {
     async login() {
       try {
+        this.errorMessage = "";
         const response = await api.post("api/token/", {
           username: this.username,
           password: this.password,
         });
 
-        // Store tokens in local storage or Vuex
+        // Store tokens in local storage
         localStorage.setItem("access_token", response.data.access);
         localStorage.setItem("refresh_token", response.data.refresh);
 
-        // Redirect to dashboard or another page
+        // Redirect to search page
         this.$router.push("/SearchPage");
       } catch (error) {
-        this.errorMessage = "Invalid credentials. Please try again.";
+        console.error("Login error:", error);
+        if (error.response?.status === 401) {
+          this.errorMessage = "Invalid credentials. Please try again.";
+        } else if (error.response?.status === 400) {
+          this.errorMessage = "Please provide both username and password.";
+        } else {
+          this.errorMessage = "An error occurred. Please try again later.";
+        }
       }
     },
   },

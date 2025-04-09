@@ -33,6 +33,6 @@ urlpatterns = [
    path('api/profiles/<int:profile_id>/vote-status/',
         ProfileVoteStatusView.as_view(),
         name='profile-vote-status'),
-   path('api/profiles/search/', ProfileSearchView.as_view(),
+   path('api/search/', ProfileSearchView.as_view(),
         name='profile-search'),
 ]

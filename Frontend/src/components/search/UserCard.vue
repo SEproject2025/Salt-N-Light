@@ -125,6 +125,32 @@ export default {
       required: true,
     },
   },
+  created() {
+    console.log("UserCard created with props:", {
+      first_name: this.first_name,
+      last_name: this.last_name,
+      city: this.city,
+      state: this.state,
+      country: this.country,
+      description: this.description,
+      id: this.id,
+      tags: this.tags,
+      user_type: this.user_type,
+    });
+  },
+  mounted() {
+    console.log("UserCard mounted with props:", {
+      first_name: this.first_name,
+      last_name: this.last_name,
+      city: this.city,
+      state: this.state,
+      country: this.country,
+      description: this.description,
+      id: this.id,
+      tags: this.tags,
+      user_type: this.user_type,
+    });
+  },
   data() {
     return {
       userImage: userImage,

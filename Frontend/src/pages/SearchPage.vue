@@ -125,12 +125,15 @@
           {{ error }}
           <button @click="retrySearch" class="retry-button">Try Again</button>
         </div>
-        <div v-else>
-          <div class="results-header" v-if="totalResults > 0">
+        <div v-else-if="searchResults.length > 0">
+          <div class="results-header">
             <h2>
               {{ totalResults }} Profile{{ totalResults !== 1 ? "s" : "" }}
               Found
             </h2>
+            <div class="debug-info">
+              <p>Debug: {{ searchResults.length }} profiles loaded</p>
+            </div>
             <div class="controls">
               <div class="sort-controls">
                 <label>Sort by:</label>
@@ -151,20 +154,13 @@
               </div>
             </div>
           </div>
-          <div
-            v-if="!searchResults || searchResults.length === 0"
-            class="no-results"
-          >
-            <h3>No profiles found</h3>
-            <p>Try adjusting your search criteria or clearing some filters</p>
-          </div>
-          <div v-else class="results-grid">
+          <div class="results-grid">
             <UserCard
               v-for="profile in searchResults"
               :key="profile.user.id"
               :id="profile.user.id"
-              :first_name="profile.first_name"
-              :last_name="profile.last_name"
+              :first_name="profile.user.first_name"
+              :last_name="profile.user.last_name"
               :city="profile.city"
               :state="profile.state"
               :country="profile.country"
@@ -174,25 +170,30 @@
               class="user-card"
             />
           </div>
-          <div class="pagination" v-if="totalPages > 1">
-            <button
-              :disabled="currentPage === 1"
-              @click="changePage(currentPage - 1)"
-              class="page-button"
-            >
-              Previous
-            </button>
-            <span class="page-info"
-              >Page {{ currentPage }} of {{ totalPages }}</span
-            >
-            <button
-              :disabled="currentPage === totalPages"
-              @click="changePage(currentPage + 1)"
-              class="page-button"
-            >
-              Next
-            </button>
-          </div>
+        </div>
+        <div v-else class="no-results">
+          <h3>No profiles found</h3>
+          <p>Try adjusting your search criteria or clearing some filters</p>
+        </div>
+
+        <div class="pagination" v-if="totalPages > 1">
+          <button
+            :disabled="currentPage === 1"
+            @click="changePage(currentPage - 1)"
+            class="page-button"
+          >
+            Previous
+          </button>
+          <span class="page-info"
+            >Page {{ currentPage }} of {{ totalPages }}</span
+          >
+          <button
+            :disabled="currentPage === totalPages"
+            @click="changePage(currentPage + 1)"
+            class="page-button"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>
@@ -260,7 +261,7 @@ export default {
         const tagNames = Array.isArray(query.tags) ? query.tags : [query.tags];
         this.selectedTags = tagNames.map((tagName) => ({
           tag_name: tagName,
-          id: tagName, // Using tag_name as id since we don't have the actual id
+          id: tagName,
         }));
       }
     },
@@ -271,15 +272,15 @@ export default {
       }, wait);
     },
     handleSearch() {
-      this.currentPage = 1; // Reset to first page on new search
+      this.currentPage = 1;
       this.debounce(this.performSearch, 300);
     },
     handleSort() {
-      this.currentPage = 1; // Reset to first page on sort change
+      this.currentPage = 1;
       this.performSearch();
     },
     handlePageSizeChange() {
-      this.currentPage = 1; // Reset to first page when changing page size
+      this.currentPage = 1;
       this.performSearch();
     },
     async loadTags() {
@@ -298,33 +299,44 @@ export default {
         const params = {
           ...this.searchParams,
           tags: this.selectedTags.map((tag) => tag.tag_name),
-          tag_match_type: this.tagMatchType,
           page: this.currentPage,
           sort: this.sortBy,
-          page_size: this.pageSize,
+          page_size: this.pageSize === "all" ? undefined : this.pageSize,
         };
 
         const response = await searchService.searchProfiles(params);
+        console.log("Search API Response:", {
+          status: response.status,
+          data: response.data,
+        });
 
-        // Handle both paginated and non-paginated responses
-        if (Array.isArray(response)) {
-          this.searchResults = response;
-          this.totalResults = response.length;
-          this.totalPages = 1;
+        if (response && response.data) {
+          // Check if data is an array or has a results property
+          const results = Array.isArray(response.data)
+            ? response.data
+            : response.data.results || [];
+
+          if (results.length > 0) {
+            this.searchResults = results;
+            this.totalResults = results.length;
+            this.totalPages = 1;
+            console.log("Set searchResults:", this.searchResults);
+          } else {
+            this.searchResults = [];
+            this.totalResults = 0;
+            this.totalPages = 1;
+          }
         } else {
-          this.searchResults = response.results || [];
-          this.totalResults = response.count || 0;
-          this.totalPages =
-            this.pageSize === "all"
-              ? 1
-              : Math.ceil((response.count || 0) / parseInt(this.pageSize));
+          this.searchResults = [];
+          this.totalResults = 0;
+          this.totalPages = 1;
         }
       } catch (error) {
-        this.error = "An error occurred while searching. Please try again.";
         console.error("Search error:", error);
+        this.error = error.message || "An error occurred while searching";
         this.searchResults = [];
-        this.totalPages = 1;
         this.totalResults = 0;
+        this.totalPages = 1;
       } finally {
         this.isLoading = false;
       }
@@ -332,7 +344,6 @@ export default {
     changePage(page) {
       this.currentPage = page;
       this.performSearch();
-      // Scroll to top of results
       this.$nextTick(() => {
         this.$el
           .querySelector(".search-results")
@@ -360,7 +371,6 @@ export default {
       this.searchParams.user_type = "";
       this.searchParams.location = "";
       this.selectedTags = [];
-      // Update URL to remove all query parameters
       this.$router.replace({
         path: this.$route.path,
       });
@@ -552,12 +562,17 @@ export default {
   padding: 0 20px;
 }
 
-.results-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+.results-list {
+  display: flex;
+  flex-direction: column;
   gap: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+}
+
+.result-item {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .results-header {
@@ -565,6 +580,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  padding: 0 20px;
 }
 
 .results-header h2 {
@@ -600,11 +616,19 @@ export default {
   border-radius: 6px;
   font-size: 14px;
   min-width: 120px;
+  background: white;
+  cursor: pointer;
 }
 
-.card-container {
+.sort-controls select:focus,
+.page-size-controls select:focus {
+  border-color: #1976d2;
+  outline: none;
+}
+
+.results-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 24px;
   padding: 20px 0;
   width: 100%;
@@ -612,8 +636,14 @@ export default {
 
 .user-card {
   width: 100%;
-  min-height: 200px; /* Set a minimum height for consistency */
-  margin: 0; /* Remove any default margins */
+  min-height: 200px;
+  margin: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.user-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .loading {
@@ -805,14 +835,31 @@ export default {
 /* Responsive layout */
 @media (max-width: 1024px) {
   .results-grid {
-    grid-template-columns: 1fr;
-    max-width: 600px;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }
 }
 
 @media (max-width: 768px) {
-  .search-results {
-    padding: 0 10px;
+  .results-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .controls {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sort-controls,
+  .page-size-controls {
+    width: 100%;
+  }
+
+  .sort-controls select,
+  .page-size-controls select {
+    width: 100%;
   }
 }
 </style>

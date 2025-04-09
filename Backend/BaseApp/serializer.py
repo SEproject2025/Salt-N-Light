@@ -9,7 +9,7 @@ from .models import Tag, SearchHistory, \
 class UserSerializer(serializers.ModelSerializer):
    class Meta:
       model = User
-      fields = ['id', 'username', 'email', 'password']
+      fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name']
       extra_kwargs = {
          'password': {'write_only': True},
          'id': {'read_only': True}
@@ -90,7 +90,7 @@ class ProfileSerializer(serializers.ModelSerializer):
       model = Profile
       fields = ['user', 'tags', 'tags_ids', 'vote_count', 'comments',
                'current_user_vote', 'user_type', 'first_name', 'last_name',
-               'denomination', 'street_address', 'city', 'state', 'country',
+               'street_address', 'city', 'state', 'country',
                'phone_number', 'years_of_experience', 'description',
                'profile_picture']
 
