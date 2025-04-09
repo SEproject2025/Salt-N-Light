@@ -626,7 +626,7 @@ export default {
 
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   padding: 20px 0;
   width: 100%;
@@ -833,7 +833,7 @@ export default {
 /* Responsive layout */
 @media (max-width: 1024px) {
   .results-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: 1fr;
   }
 }
 
