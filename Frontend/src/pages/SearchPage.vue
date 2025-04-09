@@ -131,9 +131,6 @@
               {{ totalResults }} Profile{{ totalResults !== 1 ? "s" : "" }}
               Found
             </h2>
-            <div class="debug-info">
-              <p>Debug: {{ searchResults.length }} profiles loaded</p>
-            </div>
             <div class="controls">
               <div class="sort-controls">
                 <label>Sort by:</label>
