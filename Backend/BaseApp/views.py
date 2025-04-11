@@ -28,118 +28,100 @@ from .serializer import TagSerializer, TagIdSerializer, SearchHistorySerializer,
 logger = logging.getLogger(__name__)
 
 class ProfileListCreateView(generics.ListCreateAPIView):
-   queryset = Profile.objects.select_related(
-      'user').prefetch_related('tags').all()
-   serializer_class = ProfileSerializer
-   permission_classes = [AllowAny]  # Public access for testing
-   filter_backends = [filters.SearchFilter]
-   search_fields = ['user_type', 'city', 'state', 'country', 'denomination']
-   filterset_fields = ['user_type', 'city', 'state', 'country',
-                       'denomination']
+    queryset = Profile.objects.select_related('user').prefetch_related('tags').all()
+    serializer_class = ProfileSerializer
+    permission_classes = [AllowAny]
+    search_fields = ['user__username', 'user__email', 'first_name', 'last_name', 'denomination']
+    filter_fields = ['user_type', 'city', 'state', 'country', 'denomination']
 
-   def get_queryset(self):
-      queryset = super().get_queryset()
-      
-      # Handle tag filtering
-      tags = self.request.query_params.getlist('tags', [])
-      tag_objects = self.request.query_params.getlist('tag_objects', [])
-      
-      if tags or tag_objects:
-         # Convert all tag inputs to a single list of tag names
-         tag_names = []
-         
-         # Process tag IDs
-         if tags:
-            try:
-               # Try to convert to integers (IDs)
-               tag_ids = [int(tag) for tag in tags]
-               tag_names.extend(Tag.objects.filter(id__in=tag_ids).values_list('tag_name', flat=True))
-            except ValueError:
-               # If conversion fails, treat as tag names
-               tag_names.extend(tags)
-         
-         # Add tag_objects names
-         tag_names.extend(tag_objects)
-         
-         # Remove duplicates and empty strings
-         tag_names = list(set(filter(None, tag_names)))
-         
-         # Create filter for any matching tags
-         if tag_names:
-            tag_filters = Q(tags__tag_name__in=tag_names)
-            queryset = queryset.filter(tag_filters).distinct()
-      
-      return queryset
+    def get_serializer_class(self):
+        if self.request.method == 'GET' and self.request.query_params.get('enriched') == 'true':
+            return ProfileEnrichedSerializer
+        return ProfileSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        tags = self.request.query_params.getlist('tags')
+        if tags:
+            # Handle both tag IDs and tag names
+            tag_ids = []
+            tag_names = []
+            for tag in tags:
+                if tag.isdigit():
+                    tag_ids.append(int(tag))
+                else:
+                    tag_names.append(tag)
+            
+            # Get tag IDs from names
+            if tag_names:
+                name_tag_ids = Tag.objects.filter(tag_name__in=tag_names).values_list('id', flat=True)
+                tag_ids.extend(name_tag_ids)
+            
+            # Remove duplicates
+            tag_ids = list(set(tag_ids))
+            
+            # Filter profiles that have all the specified tags
+            if tag_ids:
+                queryset = queryset.filter(tags__in=tag_ids).distinct()
+        return queryset
 
 
 class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
-   queryset = (
-      Profile.objects
-      .select_related('user')
-      .prefetch_related('tags', 'profile_taggings')
-      .all()
-   )
-   serializer_class = ProfileSerializer
-   permission_classes = [AllowAny]  # Public access for testing
+    queryset = Profile.objects.select_related('user').prefetch_related('tags').all()
+    permission_classes = [AllowAny]
 
-   def get_serializer(self, *args, **kwargs):
-      if self.request.query_params.get('enriched') == 'true':
-         kwargs['context'] = self.get_serializer_context()
-         return ProfileEnrichedSerializer(*args, **kwargs)
-      return super().get_serializer(*args, **kwargs)
+    def get_serializer_class(self):
+        if self.request.query_params.get('enriched') == 'true':
+            return ProfileEnrichedSerializer
+        return ProfileSerializer
 
-   def get_serializer_context(self):
-      context = super().get_serializer_context()
-      context['profile_id'] = self.kwargs.get('pk')
-      context['request'] = self.request
-      return context
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['profile_id'] = self.kwargs.get('pk')
+        return context
 
-   def retrieve(self, request, *args, **kwargs):
-      instance = self.get_object()
-      serializer = self.get_serializer(instance)
-      data = serializer.data
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
 
-      # Ensure tags are in the format expected by the frontend
-      if 'tags' in data:
-         # Each tag should have id, tag_name, and is_self_added
-         data['tags'] = [
-            {
-               'id': tag['id'],
-               'tag_name': tag['tag_name'],
-               'is_self_added': tag.get('is_self_added', False)
-            }
-            for tag in data['tags']
-         ]
+        # Ensure tags are in the format expected by the frontend
+        if 'tags' in data:
+            # Each tag should have id, tag_name, and is_self_added
+            data['tags'] = [
+                {
+                    'id': tag['id'],
+                    'tag_name': tag['tag_name'],
+                    'is_self_added': tag.get('is_self_added', False)
+                }
+                for tag in data['tags']
+            ]
 
-      # Add tag_ids for backward compatibility and frontend editing
-      data['tag_ids'] = [tag['id'] for tag in data.get('tags', [])]
+        # Add tag_ids for backward compatibility and frontend editing
+        data['tag_ids'] = [tag['id'] for tag in data.get('tags', [])]
 
-      return Response(data)
+        return Response(data)
 
 class MatchmakingResultsView(generics.ListAPIView):
-   serializer_class = ProfileSerializer
-   authentication_classes = [JWTAuthentication]
-   # Only authenticated users can access
-   permission_classes = [IsAuthenticated]
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated]
 
-   def get_queryset(self):
-      user_profile = Profile.objects.filter(
-         user=self.request.user).prefetch_related('tags').first()
+    def get_serializer_class(self):
+        if self.request.query_params.get('enriched') == 'true':
+            return ProfileEnrichedSerializer
+        return ProfileSerializer
 
-      if not user_profile:
-         return Profile.objects.none()
-         # Return an empty queryset if the user has no profile
-
-      # Get the tags associated with the current user's profile
-      user_tags = user_profile.tags.all()
-
-      # Find profiles with at least one matching tag, excluding
-      # the current user's profile
-      matching_profiles = Profile.objects.filter(
-         Q(tags__in=user_tags)).exclude(
-          user=self.request.user).distinct()
-
-      return matching_profiles.exclude(user_type=user_profile.user_type)
+    def get_queryset(self):
+        user_profile = self.request.user.profile
+        queryset = Profile.objects.exclude(user=self.request.user)
+        
+        # Add basic matching criteria
+        if user_profile.user_type:
+            queryset = queryset.filter(user_type=user_profile.user_type)
+        if user_profile.country:
+            queryset = queryset.filter(country=user_profile.country)
+        
+        return queryset.select_related('user').prefetch_related('tags')
 
 # Tag viewset that performs CRUD operations
 
@@ -324,34 +306,27 @@ class ExternalMediaViewSet(ModelViewSet):
 
 
 class CurrentUserView(views.APIView):
-   authentication_classes = [JWTAuthentication]
-   permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
-   def get(self, request):
-      # Fetch the user's profile with prefetched tags
-      user_profile = (Profile.objects
-         .filter(user=request.user)
-         .select_related('user')
-         .prefetch_related(
-            'tags',
-            'profile_taggings'
-         )
-         .first())
-
-      if user_profile:
-         # Create context with request and profile_id
-         context = {
-            'request': request,
-            'profile_id': user_profile.user.id
-         }
-         
-         if request.query_params.get('enriched') == 'true':
-            serializer = ProfileEnrichedSerializer(user_profile, context=context)
-         else:
-            serializer = ProfileSerializer(user_profile, context=context)
-         return response.Response(serializer.data)
-
-      return response.Response({"error": "Profile not found"}, status=404)
+    def get(self, request):
+        try:
+            # Get the user's profile with prefetched tags
+            profile = Profile.objects.select_related('user').prefetch_related('tags').get(user=request.user)
+            
+            # Create context with request and profile_id
+            context = {
+                'request': request,
+                'profile_id': profile.id
+            }
+            
+            # Use enriched serializer by default for display purposes
+            serializer = ProfileEnrichedSerializer(profile, context=context)
+            return Response(serializer.data)
+        except Profile.DoesNotExist:
+            return Response(
+                {"detail": "Profile not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 class ProfileVoteView(generics.CreateAPIView, generics.UpdateAPIView):
    serializer_class = ProfileVoteSerializer
@@ -453,51 +428,46 @@ class ProfileVoteStatusView(views.APIView):
 
 
 class ProfileSearchView(generics.ListAPIView):
-   queryset = Profile.objects.select_related('user').prefetch_related('tags').all()
-   serializer_class = ProfileSerializer
-   permission_classes = [AllowAny]
-   filter_backends = [filters.SearchFilter]
-   search_fields = ['user_type', 'city', 'state', 'country', 'denomination']
-   filterset_fields = ['user_type', 'city', 'state', 'country', 'denomination']
+    queryset = Profile.objects.select_related('user').prefetch_related('tags')
+    serializer_class = ProfileSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['user__user_type', 'user__city', 'user__state', 'user__country', 'user__denomination']
+    ordering_fields = ['user__first_name', 'user__last_name', 'user__city', 'user__state']
+    ordering = ['user__first_name']
 
-   def list(self, request, *args, **kwargs):
-      if request.query_params.get('enriched') == 'true':
-         self.serializer_class = ProfileEnrichedSerializer
-      return super().list(request, *args, **kwargs)
+    def get_serializer_class(self):
+        if self.request.query_params.get('enriched') == 'true':
+            return ProfileEnrichedSerializer
+        return ProfileSerializer
 
-   def get_queryset(self):
-      queryset = super().get_queryset()
-      
-      # Handle tag filtering
-      tags = self.request.query_params.getlist('tags', [])
-      tag_objects = self.request.query_params.getlist('tag_objects', [])
-      
-      if tags or tag_objects:
-         # Convert all tag inputs to a single list of tag names
-         tag_names = []
-         
-         # Process tag IDs
-         if tags:
-            try:
-               # Try to convert to integers (IDs)
-               tag_ids = [int(tag) for tag in tags]
-               tag_names.extend(Tag.objects.filter(id__in=tag_ids).values_list('tag_name', flat=True))
-            except ValueError:
-               # If conversion fails, treat as tag names
-               tag_names.extend(tags)
-         
-         # Add tag_objects names
-         tag_names.extend(tag_objects)
-         
-         # Remove duplicates and empty strings
-         tag_names = list(set(filter(None, tag_names)))
-         
-         # Create filter for any matching tags
-         if tag_names:
-            tag_filters = Q(tags__tag_name__in=tag_names)
-            queryset = queryset.filter(tag_filters).distinct()
-      
-      return queryset
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        tag_ids = self.request.query_params.getlist('tags')
+        tag_names = self.request.query_params.getlist('tag_names')
+        
+        if tag_ids or tag_names:
+            # Convert tag names to IDs if provided
+            if tag_names:
+                tag_objects = Tag.objects.filter(tag_name__in=tag_names)
+                tag_ids.extend([str(tag.id) for tag in tag_objects])
+            
+            # Remove duplicates and convert to integers
+            tag_ids = list(set(map(int, tag_ids)))
+            
+            # Filter profiles that have ALL the specified tags
+            queryset = queryset.filter(tags__id__in=tag_ids).distinct()
+            
+            # Ensure all tags are present (not just any)
+            for tag_id in tag_ids:
+                queryset = queryset.filter(tags__id=tag_id)
+        
+        return queryset
 
 
 class NotificationView(ModelViewSet):

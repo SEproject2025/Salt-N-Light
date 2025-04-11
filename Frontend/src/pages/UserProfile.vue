@@ -346,7 +346,7 @@ export default {
       return { Authorization: `Bearer ${token}` };
     },
 
-    async fetchProfile(retry = true) {
+    async fetchProfile() {
       try {
         // Check for token before making the request
         const token = localStorage.getItem("access_token");
@@ -356,53 +356,37 @@ export default {
           return;
         }
 
-        const [profileResponse, tagResponse] = await Promise.all([
-          api.get(`api/profiles/me/`, {
-            headers: this.getAuthHeader(),
-          }),
-          api.get(`tag/`),
-        ]);
+        const response = await api.get(`api/profiles/me/?enriched=true`, {
+          headers: this.getAuthHeader(),
+        });
 
-        if (!profileResponse.data || !profileResponse.data.user) {
+        if (!response.data || !response.data.user) {
           throw new Error("Invalid profile data received");
         }
 
-        this.profile = profileResponse.data;
-        this.originalProfile = JSON.parse(JSON.stringify(profileResponse.data));
-        this.selectedTags = profileResponse.data.tags.map((tag) => tag.id);
+        this.profile = response.data;
+        this.originalProfile = JSON.parse(JSON.stringify(response.data));
+        this.selectedTags = response.data.tags.map((tag) => tag.id);
 
+        // Fetch available tags for the tag dialog
+        const tagResponse = await api.get(`tag/`);
         this.availableTags = tagResponse.data.map((tag) => ({
           id: tag.id,
           name: tag.tag_name,
         }));
 
-        this.profile.tags = profileResponse.data.tags.map(
+        this.profile.tags = response.data.tags.map(
           (tagId) =>
             this.availableTags.find((tag) => tag.id === tagId) || {
               id: tagId,
               name: "Unknown Tag",
             }
         );
-      } catch (err) {
-        console.error("Profile fetch error:", err);
-        if (err.response?.status === 401 && retry) {
-          try {
-            const refreshed = await this.refreshToken();
-            if (refreshed) {
-              return this.fetchProfile(false);
-            } else {
-              this.error = "Session expired. Please log in again.";
-              this.$router.push("/AppLogin");
-            }
-          } catch (refreshError) {
-            console.error("Token refresh error:", refreshError);
-            this.error = "Session expired. Please log in again.";
-            this.$router.push("/AppLogin");
-          }
-        } else {
-          this.error = "Failed to load profile data.";
-        }
-      } finally {
+
+        this.loading = false;
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        this.error = "Failed to load profile data.";
         this.loading = false;
       }
     },

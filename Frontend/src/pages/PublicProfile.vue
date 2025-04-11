@@ -56,63 +56,18 @@ export default {
     },
     async fetchProfile() {
       try {
-        const profileId = this.$route.params.id;
-        const currentUserId = this.getCurrentUserId();
-
-        // Check if this is the user's own profile
-        this.isOwnProfile =
-          currentUserId && parseInt(profileId) === currentUserId;
-
-        // If the profile being viewed belongs to the current user, redirect to UserProfile
-        if (this.isOwnProfile) {
-          this.$router.push("/UserProfile");
-          return;
-        }
-
-        const [profileResponse, tagResponse] = await Promise.all([
-          api.get(`api/profiles/${profileId}/`, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-            },
-          }),
-          api.get(`tag/`, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-            },
-          }),
-        ]);
-
-        // Get the profile data
-        const profileData = profileResponse.data;
-
-        // Map the tags using the tag response data
-        const availableTags = tagResponse.data.map((tag) => ({
-          id: tag.id,
-          tag_name: tag.tag_name,
-          description: tag.tag_description,
-        }));
-
-        // Map the profile tags to include the full tag information
-        if (Array.isArray(profileData.tags)) {
-          profileData.tags = profileData.tags.map(
-            (tagId) =>
-              availableTags.find((tag) => tag.id === tagId) || {
-                id: tagId,
-                tag_name: "Unknown Tag",
-              }
-          );
-        } else {
-          profileData.tags = [];
-        }
-
-        this.profile = profileData;
-      } catch (err) {
-        console.error("Failed to load profile:", err);
-        this.error = "Failed to load profile data.";
-      } finally {
-        if (!this.redirecting) {
-          this.loading = false;
-        }
+        const response = await api.get(
+          `api/profiles/${this.$route.params.id}/?enriched=true`,
+          {
+            headers: this.getAuthHeader(),
+          }
+        );
+        this.profile = response.data;
+        this.loading = false;
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        this.error = "Failed to load profile";
+        this.loading = false;
       }
     },
     async handleTagAdded() {

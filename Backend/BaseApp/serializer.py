@@ -79,67 +79,46 @@ class ProfileCommentSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-   user = UserSerializer()  # Nested User serializer
+   user = UserSerializer(read_only=True)
    tags = serializers.PrimaryKeyRelatedField(
       queryset=Tag.objects.all(),
       many=True,
-      required=False
+      required=False,
+      allow_empty=True
    )
-   vote_count = serializers.SerializerMethodField()
-   comments = ProfileCommentSerializer(
-      source='comments_received', many=True, read_only=True)
-   current_user_vote = serializers.SerializerMethodField()
+   description = serializers.CharField(required=False, allow_blank=True)
 
    class Meta:
       model = Profile
-      fields = ['user', 'tags', 'vote_count', 'comments',
-               'current_user_vote', 'user_type', 'first_name', 'last_name',
-               'street_address', 'city', 'state', 'country',
-               'phone_number', 'years_of_experience', 'description',
-               'profile_picture']
+      fields = ['id', 'user', 'tags', 'description']
 
-   def get_vote_count(self, obj):
-      try:
-         upvotes = obj.votes_received.filter(is_upvote=True).count()
-         downvotes = obj.votes_received.filter(is_upvote=False).count()
-         return upvotes - downvotes
-      except OperationalError:
-         return 0
+   def to_representation(self, instance):
+      data = super().to_representation(instance)
+      # Convert tag IDs to full tag objects if enriched=true
+      if self.context.get('request') and self.context['request'].query_params.get('enriched') == 'true':
+         data['tags'] = TagSerializer(instance.tags.all(), many=True).data
+      return data
 
-   def get_current_user_vote(self, obj):
-      try:
-         request = self.context.get('request')
-         if request and request.user.is_authenticated:
-            vote = obj.votes_received.filter(voter=request.user).first()
-            if vote:
-               return vote.is_upvote
-         return None
-      except OperationalError:
-         return None
-
-# Enriched version of ProfileSerializer that includes full tag objects
-class ProfileEnrichedSerializer(serializers.ModelSerializer):
-   user = UserSerializer()
+class ProfileEnrichedSerializer(ProfileSerializer):
    tags = TagSerializer(many=True, read_only=True)
    current_user_vote = serializers.SerializerMethodField()
    vote_count = serializers.SerializerMethodField()
 
-   class Meta:
-      model = Profile
-      fields = ['id', 'user', 'tags', 'description', 'current_user_vote', 'vote_count']
+   class Meta(ProfileSerializer.Meta):
+      fields = ProfileSerializer.Meta.fields + ['current_user_vote', 'vote_count']
 
    def get_current_user_vote(self, obj):
       request = self.context.get('request')
       if request and request.user.is_authenticated:
-         vote = obj.votes_received.filter(voter=request.user).first()
-         if vote:
-            return vote.is_upvote
+         vote = ProfileVote.objects.filter(
+            profile=obj,
+            voter=request.user
+         ).first()
+         return vote.is_upvote if vote else None
       return None
 
    def get_vote_count(self, obj):
-      upvotes = obj.votes_received.filter(is_upvote=True).count()
-      downvotes = obj.votes_received.filter(is_upvote=False).count()
-      return upvotes - downvotes
+      return obj.votes_received.count()
 
 # Serializer class for Search History
 class SearchHistorySerializer(serializers.ModelSerializer):
