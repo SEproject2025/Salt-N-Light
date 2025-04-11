@@ -41,7 +41,6 @@ class ProfileListCreateView(generics.ListCreateAPIView):
 
    def get_queryset(self):
       queryset = super().get_queryset()
-      
       # Handle tag filtering
       tags = self.request.query_params.get('tags', None)
       if tags:
@@ -53,7 +52,6 @@ class ProfileListCreateView(generics.ListCreateAPIView):
             for tag in tag_objects:
                queryset = queryset.filter(tags=tag)
             queryset = queryset.distinct()
-      
       return queryset
 
 
@@ -435,8 +433,9 @@ class ProfileSearchView(generics.ListAPIView):
 
    def get_queryset(self):
       """Get the queryset for the search view"""
-      queryset = Profile.objects.exclude(user_type__isnull=True).exclude(user_type='')
-      
+      queryset = Profile.objects.exclude(
+         user_type__isnull=True).exclude(user_type='')
+
       # Get search parameters
       search_query = self.request.query_params.get('q', '')
       name_query = self.request.query_params.get('name', '')
@@ -445,47 +444,47 @@ class ProfileSearchView(generics.ListAPIView):
       city = self.request.query_params.get('city', '')
       tags = self.request.query_params.getlist('tags', [])
       sort = self.request.query_params.get('sort', 'recent').lower()
-      
+
       # Combine search queries if both are provided
       if search_query and name_query:
-          search_query = f"{search_query} {name_query}"
+         search_query = f"{search_query} {name_query}"
       elif name_query:
-          search_query = name_query
-      
-      filters = []
-      
+         search_query = name_query
+
+      search_filters = []
+
       # Name search
       if search_query:
           # Split the search query into words
-          search_terms = search_query.split()
-          name_filters = []
-          
-          for term in search_terms:
+         search_terms = search_query.split()
+         name_filters = []
+
+         for term in search_terms:
               # Create a more flexible name search that matches partial names
-              term_filter = (
+            term_filter = (
                   Q(user__first_name__istartswith=term) |
                   Q(user__last_name__istartswith=term) |
                   Q(user__first_name__icontains=term) |
                   Q(user__last_name__icontains=term) |
                   Q(description__icontains=term)
               )
-              name_filters.append(term_filter)
-          
+            name_filters.append(term_filter)
+
           # Combine all name filters with AND logic
-          if name_filters:
-              combined_filter = name_filters[0]
-              for filter in name_filters[1:]:
-                  combined_filter &= filter
-              filters.append(combined_filter)
+         if name_filters:
+            combined_filter = name_filters[0]
+            for name_filter in name_filters[1:]:
+               combined_filter &= name_filter
+            search_filters.append(combined_filter)
 
       # Add user_type filter if provided
       if user_type:
-         filters.append(Q(user_type=user_type))
+         search_filters.append(Q(user_type=user_type))
 
       # Add location search if provided
       if location or city:
          location_query = location or city
-         filters.append(
+         search_filters.append(
             Q(street_address__icontains=location_query) |
             Q(city__icontains=location_query) |
             Q(state__icontains=location_query) |
@@ -497,11 +496,11 @@ class ProfileSearchView(generics.ListAPIView):
          tag_filters = Q()
          for tag in tags:
             tag_filters |= Q(tags__tag_name__iexact=tag)
-         filters.append(tag_filters)
+         search_filters.append(tag_filters)
 
       # Apply all filters
-      if filters:
-         queryset = queryset.filter(*filters).distinct()
+      if search_filters:
+         queryset = queryset.filter(*search_filters).distinct()
 
       # Apply sorting
       if sort == 'name':
@@ -509,7 +508,8 @@ class ProfileSearchView(generics.ListAPIView):
       elif sort == 'location':
          queryset = queryset.order_by('country', 'city')
       else:  # Default to 'recent'
-         queryset = queryset.order_by('-user__date_joined')  # Use user's date_joined instead of created_at
+         queryset = queryset.order_by('-user__date_joined')
+         # Use user's date_joined instead of created_at
 
       return queryset
 
@@ -517,7 +517,7 @@ class ProfileSearchView(generics.ListAPIView):
       try:
          queryset = self.get_queryset()
          page_size = request.query_params.get('page_size', '10')
-         
+
          if page_size == 'all':
             # When page_size=all, we still want to return a paginated response
             # but with all results on a single page
@@ -526,18 +526,18 @@ class ProfileSearchView(generics.ListAPIView):
             if page is not None:
                serializer = self.get_serializer(page, many=True)
                return self.get_paginated_response(serializer.data)
-         
+
          # Normal pagination for other cases
          page = self.paginate_queryset(queryset)
          if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-         
+
          serializer = self.get_serializer(queryset, many=True)
          return Response(serializer.data)
-         
+
       except Exception as e:
-         logger.error(f"Error in ProfileSearchView.list: {str(e)}")
+         logger.error("Error in ProfileSearchView.list: %s", str(e))
          return Response(
              {"error": "An error occurred while processing your request"},
              status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -558,52 +558,53 @@ class NotificationView(ModelViewSet):
       serializer.save(recipient=self.request.user)
 
 class DedicatedSearchView(generics.ListAPIView):
-    serializer_class = SearchProfileSerializer
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    pagination_class = PageNumberPagination
+   serializer_class = SearchProfileSerializer
+   authentication_classes = [JWTAuthentication]
+   permission_classes = [IsAuthenticated]
+   pagination_class = PageNumberPagination
 
-    def get_queryset(self):
-        """Get the queryset for the dedicated search view"""
-        queryset = Profile.objects.select_related('user').prefetch_related('tags').all()
-        
-        # Get search parameters
-        search_query = self.request.query_params.get('q', '')
-        user_type = self.request.query_params.get('user_type', '')
-        location = self.request.query_params.get('location', '')
-        city = self.request.query_params.get('city', '')
-        tags = self.request.query_params.getlist('tags', [])
-        
-        # Apply filters
-        if search_query:
-            search_terms = search_query.split()
-            name_filters = []
-            for term in search_terms:
-                name_filters.append(
-                    Q(user__first_name__icontains=term) |
-                    Q(user__last_name__icontains=term)
-                )
-            if name_filters:
-                queryset = queryset.filter(reduce(operator.and_, name_filters))
-        
-        if user_type:
-            queryset = queryset.filter(user_type=user_type)
-        
-        if location:
-            queryset = queryset.filter(
-                Q(city__icontains=location) |
-                Q(state__icontains=location) |
-                Q(country__icontains=location)
+   def get_queryset(self):
+      """Get the queryset for the dedicated search view"""
+      queryset = Profile.objects.select_related(
+         'user').prefetch_related('tags').all()
+
+      # Get search parameters
+      search_query = self.request.query_params.get('q', '')
+      user_type = self.request.query_params.get('user_type', '')
+      location = self.request.query_params.get('location', '')
+      city = self.request.query_params.get('city', '')
+      tags = self.request.query_params.getlist('tags', [])
+
+      # Apply search_filters
+      if search_query:
+         search_terms = search_query.split()
+         search_filters = []
+         for term in search_terms:
+            search_filters.append(
+               Q(user__first_name__icontains=term) |
+               Q(user__last_name__icontains=term)
             )
-        
-        if city:
-            queryset = queryset.filter(city__icontains=city)
-        
-        if tags:
-            tag_objects = Tag.objects.filter(tag_name__in=tags)
-            if tag_objects.exists():
-                for tag in tag_objects:
-                    queryset = queryset.filter(tags=tag)
-                queryset = queryset.distinct()
-        
-        return queryset
+         if search_filters:
+            queryset = queryset.filter(reduce(operator.and_, search_filters))
+
+      if user_type:
+         queryset = queryset.filter(user_type=user_type)
+
+      if location:
+         queryset = queryset.filter(
+            Q(city__icontains=location) |
+            Q(state__icontains=location) |
+            Q(country__icontains=location)
+         )
+
+      if city:
+         queryset = queryset.filter(city__icontains=city)
+
+      if tags:
+         tag_objects = Tag.objects.filter(tag_name__in=tags)
+         if tag_objects.exists():
+            for tag in tag_objects:
+               queryset = queryset.filter(tags=tag)
+            queryset = queryset.distinct()
+
+      return queryset
