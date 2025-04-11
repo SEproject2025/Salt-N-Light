@@ -171,3 +171,15 @@ class NotificationSerializer(serializers.ModelSerializer):
       model = Notification
       fields = '__all__'
       read_only_fields = ['created_at']
+
+class SearchProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Profile
+        fields = [
+            'id', 'user', 'user_type', 'city', 'state', 'country',
+            'denomination', 'tags', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']

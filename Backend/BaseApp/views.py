@@ -24,7 +24,7 @@ from .models import Tag, SearchHistory, \
 from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
     ProfileSerializer, ProfileVoteSerializer,\
-    ProfileCommentSerializer, NotificationSerializer
+    ProfileCommentSerializer, NotificationSerializer, SearchProfileSerializer
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -556,3 +556,54 @@ class NotificationView(ModelViewSet):
    def perform_create(self, serializer):
       # Set the recipient as the current user when creating a notification
       serializer.save(recipient=self.request.user)
+
+class DedicatedSearchView(generics.ListAPIView):
+    serializer_class = SearchProfileSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        """Get the queryset for the dedicated search view"""
+        queryset = Profile.objects.select_related('user').prefetch_related('tags').all()
+        
+        # Get search parameters
+        search_query = self.request.query_params.get('q', '')
+        user_type = self.request.query_params.get('user_type', '')
+        location = self.request.query_params.get('location', '')
+        city = self.request.query_params.get('city', '')
+        tags = self.request.query_params.getlist('tags', [])
+        
+        # Apply filters
+        if search_query:
+            search_terms = search_query.split()
+            name_filters = []
+            for term in search_terms:
+                name_filters.append(
+                    Q(user__first_name__icontains=term) |
+                    Q(user__last_name__icontains=term)
+                )
+            if name_filters:
+                queryset = queryset.filter(reduce(operator.and_, name_filters))
+        
+        if user_type:
+            queryset = queryset.filter(user_type=user_type)
+        
+        if location:
+            queryset = queryset.filter(
+                Q(city__icontains=location) |
+                Q(state__icontains=location) |
+                Q(country__icontains=location)
+            )
+        
+        if city:
+            queryset = queryset.filter(city__icontains=city)
+        
+        if tags:
+            tag_objects = Tag.objects.filter(tag_name__in=tags)
+            if tag_objects.exists():
+                for tag in tag_objects:
+                    queryset = queryset.filter(tags=tag)
+                queryset = queryset.distinct()
+        
+        return queryset
