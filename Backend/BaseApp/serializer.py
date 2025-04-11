@@ -40,6 +40,12 @@ class TagSerializer(serializers.ModelSerializer):
       except ObjectDoesNotExist:
          return False
 
+# Simple serializer that only returns tag IDs
+class TagIdSerializer(serializers.ModelSerializer):
+   class Meta:
+      model = Tag
+      fields = ['id']
+
 class ProfileVoteSerializer(serializers.ModelSerializer):
    voter_username = serializers.CharField(
       source='voter.username', read_only=True)
@@ -74,13 +80,11 @@ class ProfileCommentSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
    user = UserSerializer()  # Nested User serializer
-   tags = TagSerializer(many=True, read_only=True)  # For reading tags
-   tags_ids = serializers.PrimaryKeyRelatedField(
+   tags = serializers.PrimaryKeyRelatedField(
       queryset=Tag.objects.all(),
       many=True,
-      write_only=True,
-      source='tags'
-   )  # For writing tags
+      required=False
+   )
    vote_count = serializers.SerializerMethodField()
    comments = ProfileCommentSerializer(
       source='comments_received', many=True, read_only=True)
@@ -88,47 +92,11 @@ class ProfileSerializer(serializers.ModelSerializer):
 
    class Meta:
       model = Profile
-      fields = ['user', 'tags', 'tags_ids', 'vote_count', 'comments',
+      fields = ['user', 'tags', 'vote_count', 'comments',
                'current_user_vote', 'user_type', 'first_name', 'last_name',
                'street_address', 'city', 'state', 'country',
                'phone_number', 'years_of_experience', 'description',
                'profile_picture']
-
-   def to_representation(self, instance):
-      # Add profile_id to context for TagSerializer
-      self.context['profile_id'] = instance.user.id
-      return super().to_representation(instance)
-
-   def create(self, validated_data):
-      user_data = validated_data.pop('user')
-      tags = validated_data.pop('tags', [])
-      user = User.objects.create_user(**user_data)
-      profile = Profile.objects.create(user=user, **validated_data)
-      if tags:
-         profile.tags.set(tags)
-      return profile
-
-   def update(self, instance, validated_data):
-      user_data = validated_data.pop('user', None)
-      tags = validated_data.pop('tags', None)
-
-      if user_data:
-         user_instance = instance.user
-         for key, value in user_data.items():
-            if key != 'password':
-               setattr(user_instance, key, value)
-         user_instance.save()
-
-      for key, value in validated_data.items():
-         if hasattr(instance, key):
-            setattr(instance, key, value)
-      instance.save()
-
-      # Update tags if provided
-      if tags is not None:
-         instance.tags.set(tags)
-
-      return instance
 
    def get_vote_count(self, obj):
       try:
@@ -148,6 +116,30 @@ class ProfileSerializer(serializers.ModelSerializer):
          return None
       except OperationalError:
          return None
+
+# Enriched version of ProfileSerializer that includes full tag objects
+class ProfileEnrichedSerializer(serializers.ModelSerializer):
+   user = UserSerializer()
+   tags = TagSerializer(many=True, read_only=True)
+   current_user_vote = serializers.SerializerMethodField()
+   vote_count = serializers.SerializerMethodField()
+
+   class Meta:
+      model = Profile
+      fields = ['id', 'user', 'tags', 'description', 'current_user_vote', 'vote_count']
+
+   def get_current_user_vote(self, obj):
+      request = self.context.get('request')
+      if request and request.user.is_authenticated:
+         vote = obj.votes_received.filter(voter=request.user).first()
+         if vote:
+            return vote.is_upvote
+      return None
+
+   def get_vote_count(self, obj):
+      upvotes = obj.votes_received.filter(is_upvote=True).count()
+      downvotes = obj.votes_received.filter(is_upvote=False).count()
+      return upvotes - downvotes
 
 # Serializer class for Search History
 class SearchHistorySerializer(serializers.ModelSerializer):

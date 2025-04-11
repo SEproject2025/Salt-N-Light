@@ -91,7 +91,7 @@ export default {
           email: "",
           password: "",
         },
-        tags_ids: [],
+        tags: [],
         user_type: "",
         first_name: "",
         last_name: "",
@@ -247,7 +247,7 @@ export default {
             email: this.form.user.email,
             password: this.form.user.password,
           },
-          tags_ids: this.form.tags_ids,
+          tags: this.form.tags,
           user_type: this.form.user_type
             ? this.form.user_type.toLowerCase()
             : null,
@@ -277,14 +277,37 @@ export default {
         this.isSuccess = true;
         setTimeout(() => this.$router.push("/AppLogin"), 1000);
       } catch (error) {
-        console.error("Registration failed:", error.response?.data);
+        console.error("Registration failed:", error);
+        console.error("Error response:", error.response?.data);
         console.error("Error status:", error.response?.status);
         console.error("Error details:", error);
-        this.message =
-          error.response?.data?.detail ||
-          error.response?.data?.user?.username?.[0] ||
-          error.response?.data?.user?.email?.[0] ||
-          "Registration failed. Please try again.";
+
+        // More detailed error message handling
+        if (error.response?.data) {
+          if (error.response.data.user) {
+            // Handle user-related errors
+            const userErrors = error.response.data.user;
+            if (userErrors.username) {
+              this.message = `Username error: ${userErrors.username[0]}`;
+            } else if (userErrors.email) {
+              this.message = `Email error: ${userErrors.email[0]}`;
+            } else if (userErrors.password) {
+              this.message = `Password error: ${userErrors.password[0]}`;
+            }
+          } else if (error.response.data.tags) {
+            // Handle tag-related errors
+            this.message = `Tag error: ${error.response.data.tags[0]}`;
+          } else if (error.response.data.detail) {
+            // Handle general errors
+            this.message = error.response.data.detail;
+          } else {
+            // Handle other errors
+            this.message =
+              "Registration failed. Please check your input and try again.";
+          }
+        } else {
+          this.message = "Registration failed. Please try again.";
+        }
         this.isSuccess = false;
       }
     },

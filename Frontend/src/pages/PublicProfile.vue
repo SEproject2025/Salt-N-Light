@@ -88,7 +88,7 @@ export default {
         // Map the tags using the tag response data
         const availableTags = tagResponse.data.map((tag) => ({
           id: tag.id,
-          name: tag.tag_name,
+          tag_name: tag.tag_name,
           description: tag.tag_description,
         }));
 
@@ -98,7 +98,7 @@ export default {
             (tagId) =>
               availableTags.find((tag) => tag.id === tagId) || {
                 id: tagId,
-                name: "Unknown Tag",
+                tag_name: "Unknown Tag",
               }
           );
         } else {

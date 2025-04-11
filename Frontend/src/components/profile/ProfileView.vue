@@ -51,7 +51,7 @@
         <h3>Tags</h3>
         <div class="tags">
           <span v-for="tag in profile.tags" :key="tag.id" class="tag">
-            {{ tag.name }}
+            {{ tag.tag_name }}
           </span>
         </div>
       </div>

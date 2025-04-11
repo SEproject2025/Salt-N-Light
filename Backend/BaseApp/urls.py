@@ -1,12 +1,12 @@
 from django.urls import path, include
 from rest_framework import routers
-from .views import TagViewSet, SearchHistoryViewSet, \
+from .views import (TagViewSet, SearchHistoryViewSet, \
     ExternalMediaViewSet, \
     ProfileListCreateView, ProfileDetailView, \
     MatchmakingResultsView, CurrentUserView, \
     ProfileVoteView, ProfileCommentView, \
     ProfileVoteStatusView, NotificationView, \
-    ProfileSearchView
+    ProfileSearchView)
 
 # Automatically generates URLs for all ViewSet classes
 router = routers.DefaultRouter()
