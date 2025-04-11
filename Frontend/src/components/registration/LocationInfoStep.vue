@@ -71,23 +71,25 @@
       </div>
 
       <div class="form-group">
-        <label for="country">Country:</label>
+        <label for="country">
+          <span class="required">*</span> Country:
+          <span class="required-text">required</span>
+        </label>
         <select
           id="country"
           v-model="localData.country"
           class="country-select"
-          @change="updateData"
+          required
+          @change="handleCountryChange"
         >
-          <option value="">Select your country (optional)</option>
-          <option value="United States">United States</option>
-          <option value="Canada">Canada</option>
-          <option value="United Kingdom">United Kingdom</option>
-          <option value="Australia">Australia</option>
-          <option value="Philippines">Philippines</option>
-          <option value="India">India</option>
-          <option value="Nigeria">Nigeria</option>
-          <option value="Kenya">Kenya</option>
-          <option value="South Africa">South Africa</option>
+          <option value="">Select your country</option>
+          <option
+            v-for="country in commonCountries"
+            :key="country.code"
+            :value="country.name"
+          >
+            {{ country.name }}
+          </option>
           <option value="Other">Other (specify below)</option>
         </select>
         <div v-if="localData.country === 'Other'" class="other-country-input">
@@ -95,10 +97,20 @@
             type="text"
             v-model="localData.other_country"
             placeholder="Enter your country"
-            class="mt-2"
+            required
             @input="updateData"
           />
         </div>
+        <div v-if="countryError" class="error-message">{{ countryError }}</div>
+      </div>
+
+      <div v-if="!isAnonymous" class="location-warning">
+        <p>
+          <strong>Note:</strong> Your location information will be visible to
+          other users to help facilitate connections and support. If you prefer
+          to keep your location private, you can make your profile anonymous in
+          the previous step.
+        </p>
       </div>
     </div>
   </div>
@@ -114,8 +126,12 @@ export default {
       type: Object,
       required: true,
     },
+    isAnonymous: {
+      type: Boolean,
+      required: true,
+    },
   },
-  emits: ["update:locationData"],
+  emits: ["update:locationData", "validation-status"],
   data() {
     return {
       localData: {
@@ -129,9 +145,23 @@ export default {
         address: [],
         city: [],
         state: [],
+        country: [],
       },
+      commonCountries: [
+        { code: "US", name: "United States" },
+        { code: "CA", name: "Canada" },
+        { code: "GB", name: "United Kingdom" },
+        { code: "AU", name: "Australia" },
+        { code: "DE", name: "Germany" },
+        { code: "FR", name: "France" },
+        { code: "JP", name: "Japan" },
+        { code: "IN", name: "India" },
+        { code: "BR", name: "Brazil" },
+        { code: "ZA", name: "South Africa" },
+      ],
       autocompleteService: null,
       placesService: null,
+      countryError: "",
     };
   },
   mounted() {
@@ -152,6 +182,26 @@ export default {
         ...this.locationData,
         ...this.localData,
       });
+      this.validateForm();
+    },
+    validateForm() {
+      // Country is required in this step
+      let isValid = true;
+
+      if (!this.localData.country) {
+        this.countryError = "Please select a country";
+        isValid = false;
+      } else if (
+        this.localData.country === "Other" &&
+        !this.localData.other_country
+      ) {
+        this.countryError = "Please specify your country";
+        isValid = false;
+      } else {
+        this.countryError = "";
+      }
+
+      this.$emit("validation-status", isValid);
     },
 
     /* Initializes Google Places API for address autocomplete */
@@ -252,6 +302,10 @@ export default {
       this.localData.state = suggestion.description;
       this.updateData();
     },
+
+    handleCountryChange() {
+      this.updateData();
+    },
   },
   watch: {
     locationData: {
@@ -266,6 +320,107 @@ export default {
       },
       deep: true,
     },
+    isAnonymous: {
+      handler(newValue) {
+        // Clear location warning when anonymous status changes
+        if (newValue) {
+          this.suggestions = {
+            address: [],
+            city: [],
+            state: [],
+            country: [],
+          };
+        }
+      },
+      immediate: true,
+    },
   },
 };
 </script>
+
+<style scoped>
+.location-warning {
+  margin-top: 2px;
+  padding: 2px;
+  background-color: #fff3e0;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.warning-icon {
+  font-size: 1.2rem;
+}
+
+.location-warning p {
+  margin: 0;
+  color: #e65100;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.error-message {
+  color: #d32f2f;
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+
+.required {
+  color: #d32f2f;
+  margin-right: 4px;
+}
+
+.required-text {
+  color: #666;
+  font-size: 0.875rem;
+  margin-left: 4px;
+}
+
+.country-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 4px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.other-country-input {
+  margin-top: 8px;
+}
+
+.other-country-input input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.suggestions-list {
+  position: absolute;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  z-index: 1000;
+  margin-top: 4px;
+}
+
+.suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.suggestion-item:hover {
+  background-color: #f5f5f5;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+</style>

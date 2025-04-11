@@ -3,10 +3,13 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
 # Defines the Tag table
+
+
 class Tag(models.Model):
    tag_name = models.CharField(max_length=100, null=False)
    tag_description = models.TextField(blank=True)
    tag_is_predefined = models.BooleanField(default=True)
+
 
 # Defines the Supporter table
 class Profile(models.Model):
@@ -21,7 +24,6 @@ class Profile(models.Model):
     )
    first_name = models.CharField(max_length=100, blank=True, null=True)
    last_name = models.CharField(max_length=100, blank=True, null=True)
-   denomination = models.CharField(max_length=100, blank=True, null=True)
    street_address = models.CharField(max_length=100, blank=True, null=True)
    city = models.CharField(max_length=100, blank=True, null=True)
    state = models.CharField(max_length=100, blank=True, null=True)
@@ -29,14 +31,15 @@ class Profile(models.Model):
    phone_number = models.CharField(max_length=100, blank=True, null=True)
    years_of_experience = models.IntegerField(blank=True, null=True)
    description = models.TextField(blank=True, null=True)
-   profile_picture = models.URLField(max_length=225, null=True, blank=True)
+   is_anonymous = models.BooleanField(default=False)
 
    # Tags with additional metadata through the intermediate model
    tags = models.ManyToManyField(Tag, through='ProfileTagging',
-   related_name='profiles', blank=True)
+                                 related_name='profiles', blank=True)
 
    def __str__(self):
       return f"{self.user.username} - {self.user_type}"  # pylint: disable=no-member
+
 
 # Defines Search History table
 class SearchHistory(models.Model):
@@ -49,6 +52,7 @@ class SearchHistory(models.Model):
    class Meta:
       verbose_name_plural = "Search History"
 
+
 # Defines External Media table
 class ExternalMedia(models.Model):
    user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -59,6 +63,7 @@ class ExternalMedia(models.Model):
    # Overwrites the automatic plural form of words in admin
    class Meta:
       verbose_name_plural = "External Media"
+
 
 class ProfileVote(models.Model):
    voter = models.ForeignKey(
@@ -99,26 +104,28 @@ class ProfileComment(models.Model):
          voter=self.commenter, profile=self.profile).exists():
          raise ValidationError("Must vote before commenting")
 
+
 # Through model for user-added tags
 class ProfileTagging(models.Model):
    profile = models.ForeignKey('Profile', on_delete=models.CASCADE,
-   related_name='profile_taggings')
+                               related_name='profile_taggings')
    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
    added_by = models.ForeignKey(User, on_delete=models.SET_NULL,
-   null=True, related_name='tags_added')
+                                null=True, related_name='tags_added')
    added_at = models.DateTimeField(auto_now_add=True)
    is_self_added = models.BooleanField(default=False)
 
    def save(self, *args, **kwargs):
       # Set is_self_added if the user is adding a tag to their own profile
       if self.added_by and self.profile:
-         self.is_self_added = self.added_by == self.profile.user # pylint: disable=no-member
+         self.is_self_added = self.added_by == self.profile.user  # pylint: disable=no-member
       super().save(*args, **kwargs)
 
    class Meta:
       unique_together = ['profile', 'tag', 'added_by']
       verbose_name = "Profile Tagging"
       verbose_name_plural = "Profile Taggings"
+
 
 class Notification(models.Model):
    NOTIFICATION_TYPES = [
@@ -139,5 +146,26 @@ class Notification(models.Model):
       ordering = ['-created_at']
 
    def __str__(self):
-      return f"{ self.notification_type} notification for {
-         self.recipient.username}" # pylint: disable=no-member
+      return (f"{self.notification_type} notification for"  # pylint:disable=no-member
+              f"{self.recipient.username}"  # pylint: disable=no-member
+              )
+
+
+class Friendship(models.Model):
+   sender = models.ForeignKey(User, on_delete=models.CASCADE,
+                              related_name='friendship_sent')
+   receiver = models.ForeignKey(User, on_delete=models.CASCADE,
+                                related_name='friendship_received')
+   status = models.CharField(max_length=10, choices=[('pending', 'Pending'),
+                                                     ('accepted', 'Accepted'),
+                                                     ('rejected', 'Rejected')],
+                             default='pending')
+   created_at = models.DateTimeField(auto_now_add=True)
+
+   def __str__(self):
+      return (f"{self.sender.username} ->"  # pylint: disable=no-member
+              f"{self.receiver.username} ({self.status})"  # pylint: disable=no-member
+              )
+
+   class Meta:
+      ordering = ['-created_at']

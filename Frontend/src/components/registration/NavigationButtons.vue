@@ -13,6 +13,7 @@
       v-if="currentStep < steps.length - 1"
       type="button"
       class="btn-primary"
+      :disabled="!isCurrentStepValid"
       @click="$emit('next-step')"
     >
       Next
@@ -46,6 +47,10 @@ export default {
       required: true,
     },
     isFormValid: {
+      type: Boolean,
+      required: true,
+    },
+    isCurrentStepValid: {
       type: Boolean,
       required: true,
     },

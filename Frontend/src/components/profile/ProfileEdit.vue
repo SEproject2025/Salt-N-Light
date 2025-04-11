@@ -11,12 +11,7 @@
       <div class="form-grid">
         <div class="form-group">
           <label>First Name</label>
-          <input
-            v-model="formData.first_name"
-            type="text"
-            required
-            maxlength="35"
-          />
+          <input v-model="formData.first_name" type="text" maxlength="35" />
           <span class="error-message" v-if="errors.first_name">{{
             errors.first_name
           }}</span>
@@ -24,12 +19,7 @@
 
         <div class="form-group">
           <label>Last Name</label>
-          <input
-            v-model="formData.last_name"
-            type="text"
-            required
-            maxlength="35"
-          />
+          <input v-model="formData.last_name" type="text" maxlength="35" />
           <span class="error-message" v-if="errors.last_name">{{
             errors.last_name
           }}</span>
@@ -37,15 +27,11 @@
 
         <div class="form-group">
           <label>User Type</label>
-          <select v-model="formData.user_type" required>
-            <option value="supporter">Supporter</option>
-            <option value="missionary">Missionary</option>
+          <select v-model="formData.user_type">
+            <option value="">Select User Type (optional)</option>
+            <option value="Missionary">Missionary</option>
+            <option value="Supporter">Supporter</option>
           </select>
-        </div>
-
-        <div class="form-group">
-          <label>Denomination</label>
-          <input v-model="formData.denomination" type="text" />
         </div>
 
         <div class="form-group">
@@ -53,10 +39,9 @@
           <input
             v-model="formData.phone_number"
             type="tel"
-            pattern="[0-9]*"
-            inputmode="numeric"
-            @input="validateAndFormatPhoneNumber"
-            :class="{ error: errors.phone_number }"
+            placeholder="Enter your phone number"
+            @input="validatePhoneNumber"
+            @keypress="validatePhoneDigits"
           />
           <span class="error-message" v-if="errors.phone_number">{{
             errors.phone_number
@@ -89,15 +74,52 @@
 
         <div class="form-group">
           <label>Country</label>
-          <input v-model="formData.country" type="text" maxlength="35" />
+          <select
+            v-model="formData.country"
+            class="country-select"
+            @change="handleCountryChange"
+          >
+            <option value="">Select your country</option>
+            <option
+              v-for="country in commonCountries"
+              :key="country.code"
+              :value="country.name"
+            >
+              {{ country.name }}
+            </option>
+            <option value="Other">Other (specify below)</option>
+          </select>
+          <div v-if="formData.country === 'Other'" class="other-country-input">
+            <input
+              type="text"
+              v-model="formData.other_country"
+              placeholder="Enter your country"
+            />
+          </div>
           <span class="error-message" v-if="errors.country">{{
             errors.country
           }}</span>
         </div>
 
         <div class="form-group">
-          <label>Years of Experience</label>
-          <input v-model="formData.years_of_experience" type="number" />
+          <label
+            >Years in Ministry:
+            <span class="required-text"
+              >If it's less than one year, please leave this field blank</span
+            >
+          </label>
+          <input
+            v-model="formData.years_of_experience"
+            type="number"
+            min="0"
+            max="500"
+            placeholder="Enter the # of years in the ministry"
+            @input="validateYearsOfExperience"
+            @keypress="validateDigits"
+          />
+          <span class="error-message" v-if="errors.years_of_experience">{{
+            errors.years_of_experience
+          }}</span>
         </div>
       </div>
 
@@ -161,13 +183,13 @@ export default {
         first_name: "",
         last_name: "",
         user_type: "",
-        denomination: "",
         phone_number: "",
         street_address: "",
         city: "",
         state: "",
         country: "",
-        years_of_experience: "",
+        other_country: "",
+        years_of_experience: null,
         description: "",
         selectedTags: [],
       },
@@ -179,8 +201,21 @@ export default {
         city: "",
         state: "",
         country: "",
+        years_of_experience: "",
         description: "",
       },
+      commonCountries: [
+        { code: "US", name: "United States" },
+        { code: "CA", name: "Canada" },
+        { code: "GB", name: "United Kingdom" },
+        { code: "AU", name: "Australia" },
+        { code: "DE", name: "Germany" },
+        { code: "FR", name: "France" },
+        { code: "JP", name: "Japan" },
+        { code: "IN", name: "India" },
+        { code: "BR", name: "Brazil" },
+        { code: "ZA", name: "South Africa" },
+      ],
     };
   },
   created() {
@@ -211,29 +246,74 @@ export default {
       return true;
     },
 
-    validateAndFormatPhoneNumber(event) {
-      // Get the value either from the event or current formData
-      let value = event ? event.target.value : this.formData.phone_number || "";
-
-      // Remove any non-digit characters from the input
-      value = value.replace(/\D/g, "");
-
-      // Restrict to maximum 15 digits
-      if (value.length > 15) {
-        value = value.slice(0, 15);
+    validateDigits(event) {
+      // Allow only digits and control keys
+      if (
+        !/[0-9]/.test(event.key) &&
+        event.key !== "Backspace" &&
+        event.key !== "Delete" &&
+        event.key !== "ArrowLeft" &&
+        event.key !== "ArrowRight" &&
+        event.key !== "Tab"
+      ) {
+        event.preventDefault();
       }
+    },
+    validatePhoneDigits(event) {
+      // Allow only digits and control keys
+      if (
+        !/[0-9]/.test(event.key) &&
+        event.key !== "Backspace" &&
+        event.key !== "Delete" &&
+        event.key !== "ArrowLeft" &&
+        event.key !== "ArrowRight" &&
+        event.key !== "Tab"
+      ) {
+        event.preventDefault();
+      }
+    },
+    validatePhoneNumber() {
+      const value = this.formData.phone_number;
+      // Remove any non-digit characters
+      const digitsOnly = value.replace(/\D/g, "");
 
-      // Update the model with only digits
-      this.formData.phone_number = value;
+      // Update the input value to only contain digits
+      this.formData.phone_number = digitsOnly;
 
-      // Validate the phone number
-      if (!value || value.length >= 10) {
+      // If the field is empty, no validation needed
+      if (!digitsOnly) {
         this.errors.phone_number = "";
-        return true;
+      } else if (digitsOnly.length < 10) {
+        this.errors.phone_number = "Phone number must be at least 10 digits";
+      } else if (digitsOnly.length > 15) {
+        this.errors.phone_number = "Phone number must not exceed 15 digits";
+      } else {
+        this.errors.phone_number = "";
+      }
+    },
+    validateYearsOfExperience() {
+      const years = this.formData.years_of_experience;
+      if (years === null || years === "") {
+        this.errors.years_of_experience = "";
+        return;
       }
 
-      this.errors.phone_number = "Phone number must be at least 10 digits";
-      return false;
+      const numYears = Number(years);
+      if (isNaN(numYears) || numYears < 0) {
+        this.errors.years_of_experience = "Please enter a valid number";
+      } else if (!Number.isInteger(numYears)) {
+        this.errors.years_of_experience = "Please enter a whole number";
+      } else if (numYears > 500) {
+        this.errors.years_of_experience =
+          "Years of experience cannot exceed 500";
+      } else {
+        this.errors.years_of_experience = "";
+      }
+    },
+    handleCountryChange() {
+      if (this.formData.country !== "Other") {
+        this.formData.other_country = "";
+      }
     },
 
     validateStreetAddress() {
@@ -275,19 +355,6 @@ export default {
       return true;
     },
 
-    validateCountry() {
-      if (!this.formData.country) {
-        this.errors.country = "";
-        return true;
-      }
-      if (this.formData.country.length > 35) {
-        this.errors.country = "Country cannot exceed 35 characters";
-        return false;
-      }
-      this.errors.country = "";
-      return true;
-    },
-
     validateDescription() {
       if (!this.formData.description) {
         this.errors.description = "";
@@ -305,11 +372,11 @@ export default {
       return (
         this.validateFirstName() &&
         this.validateLastName() &&
-        this.validateAndFormatPhoneNumber() &&
+        this.validatePhoneNumber() &&
         this.validateStreetAddress() &&
         this.validateCity() &&
         this.validateState() &&
-        this.validateCountry() &&
+        this.validateYearsOfExperience() &&
         this.validateDescription()
       );
     },

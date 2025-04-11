@@ -4,11 +4,7 @@
       <h1>Create Your Account</h1>
 
       <!-- Progress Bar Component -->
-      <ProgressBar
-        :steps="steps"
-        :currentStep="currentStep"
-        @go-to-step="goToStep"
-      />
+      <ProgressBar :steps="steps" :currentStep="currentStep" />
 
       <form>
         <!-- Step 1: Account Information -->
@@ -24,18 +20,22 @@
         <PersonalInfoStep
           v-show="currentStep === 1"
           v-model:personalData="form"
+          @validation-status="handlePersonalInfoValidation"
         />
 
         <!-- Step 3: Location Information -->
         <LocationInfoStep
           v-show="currentStep === 2"
           v-model:locationData="form"
+          :isAnonymous="form.is_anonymous"
+          @validation-status="handleLocationInfoValidation"
         />
 
         <!-- Step 4: Additional Information -->
         <AdditionalInfoStep
           v-show="currentStep === 3"
           v-model:additionalData="form"
+          @validation-status="handleAdditionalInfoValidation"
         />
 
         <!-- Error Message -->
@@ -56,6 +56,7 @@
           :steps="steps"
           :isStepOneValid="isStepOneValid()"
           :isFormValid="isFormValid"
+          :isCurrentStepValid="isCurrentStepValid"
           @prev-step="prevStep"
           @next-step="nextStep"
           @submit="registerUser"
@@ -97,7 +98,6 @@ export default {
         user_type: "",
         first_name: "",
         last_name: "",
-        denomination: "",
         street_address: "",
         city: "",
         state: "",
@@ -106,6 +106,7 @@ export default {
         phone_number: "",
         years_of_experience: null,
         description: "",
+        is_anonymous: false,
       },
       passwordsDoNotMatch: false,
       message: "",
@@ -131,6 +132,12 @@ export default {
       },
       existingUsernames: new Set(),
       existingEmails: new Set(),
+      stepValidation: {
+        0: false, // Account step
+        1: false, // Personal step
+        2: false, // Location step
+        3: false, // Additional step
+      },
     };
   },
   computed: {
@@ -147,6 +154,9 @@ export default {
         !this.passwordsDoNotMatch;
       return isValid;
     },
+    isCurrentStepValid() {
+      return this.stepValidation[this.currentStep];
+    },
   },
   methods: {
     updateUserData(updatedUserData) {
@@ -157,6 +167,16 @@ export default {
     },
     handleValidationStatus(status) {
       this.validationStatus = status;
+      this.stepValidation[0] = status.isValid;
+    },
+    handlePersonalInfoValidation(isValid) {
+      this.stepValidation[1] = isValid;
+    },
+    handleLocationInfoValidation(isValid) {
+      this.stepValidation[2] = isValid;
+    },
+    handleAdditionalInfoValidation(isValid) {
+      this.stepValidation[3] = isValid;
     },
     async fetchExistingUsers() {
       try {
@@ -185,7 +205,6 @@ export default {
         this.validationStatus.isValid;
 
       if (!isValid) {
-        this.message = "Please complete all required fields before proceeding.";
         this.isSuccess = false;
       }
 
@@ -298,7 +317,6 @@ export default {
             : null,
           first_name: this.form.first_name || null,
           last_name: this.form.last_name || null,
-          denomination: this.form.denomination || null,
           street_address: this.form.street_address || null,
           city: this.form.city || null,
           state: this.form.state || null,

@@ -12,7 +12,6 @@
         id="username"
         v-model="localUserData.username"
         placeholder="Choose a unique username"
-        :class="{ error: usernameError }"
       />
       <p v-if="usernameError" class="error-message">{{ usernameError }}</p>
 
@@ -26,7 +25,6 @@
         id="email"
         v-model="localUserData.email"
         placeholder="Enter your email address"
-        :class="{ error: emailError }"
       />
       <p v-if="emailError" class="error-message">{{ emailError }}</p>
 
@@ -40,7 +38,6 @@
         id="password"
         v-model="localUserData.password"
         placeholder="Create a secure password"
-        :class="{ error: passwordError }"
       />
       <p v-if="passwordError" class="error-message">{{ passwordError }}</p>
 
@@ -54,18 +51,10 @@
         id="confirmPassword"
         v-model="confirmPassword"
         placeholder="Confirm your password"
-        :class="{ error: confirmPasswordError }"
       />
       <p v-if="confirmPasswordError" class="error-message">
         {{ confirmPasswordError }}
       </p>
-
-      <!-- Add note about required fields -->
-      <div class="info-message">
-        <span class="info-icon">ℹ️</span>
-        These account details are required. The following steps are optional but
-        help complete your profile.
-      </div>
     </div>
   </div>
 </template>
@@ -100,7 +89,7 @@ export default {
   },
   methods: {
     validateUsername(value) {
-      if (!value) {
+      if (!value || value.trim() === "") {
         this.usernameError = "Username is required";
       } else if (value.length < 3) {
         this.usernameError = "Username must be at least 3 characters";
@@ -112,7 +101,7 @@ export default {
       this.validateForm();
     },
     validateEmail(value) {
-      if (!value) {
+      if (!value || value.trim() === "") {
         this.emailError = "Email is required";
       } else {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -135,7 +124,7 @@ export default {
       this.validateForm();
     },
     validatePassword(value) {
-      if (!value) {
+      if (!value || value.trim() === "") {
         this.passwordError =
           "Password must contain at least a number, a letter and a special character and be at least 6 characters long";
       } else if (value.length < 6) {
@@ -164,7 +153,7 @@ export default {
       this.validateForm();
     },
     validateConfirmPassword(value) {
-      if (!value) {
+      if (!value || value.trim() === "") {
         this.confirmPasswordError = "Please confirm your password";
       } else if (value !== this.localUserData.password) {
         this.confirmPasswordError = "Passwords do not match";
@@ -178,7 +167,11 @@ export default {
         !this.usernameError &&
         !this.emailError &&
         !this.passwordError &&
-        !this.confirmPasswordError;
+        !this.confirmPasswordError &&
+        this.localUserData.username.trim() !== "" &&
+        this.localUserData.email.trim() !== "" &&
+        this.localUserData.password.trim() !== "" &&
+        this.confirmPassword.trim() !== "";
 
       this.$emit("password-validation", isValid);
       this.$emit("validation-status", {
