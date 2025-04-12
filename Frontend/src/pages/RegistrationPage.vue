@@ -91,7 +91,7 @@ export default {
           email: "",
           password: "",
         },
-        tags: [],
+        tags_ids: [],
         user_type: "",
         first_name: "",
         last_name: "",
@@ -287,7 +287,7 @@ export default {
             email: this.form.user.email,
             password: this.form.user.password,
           },
-          tags: this.form.tags,
+          tags_ids: this.form.tags_ids,
           user_type: this.form.user_type
             ? this.form.user_type.toLowerCase()
             : null,

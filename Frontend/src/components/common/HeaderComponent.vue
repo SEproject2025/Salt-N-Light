@@ -2,19 +2,22 @@
   <header class="header-banner">
     <!-- Site Icon -->
     <div class="site-icon">
-      <a href="/LandingPage" title="SaltnLife">
+      <router-link to="/" title="SaltnLife">
         <img
           src="@\assets\pictures\saltnlightlogo1.webp"
           alt="SaltnLight Logo"
           class="icon"
         />
-      </a>
+      </router-link>
     </div>
+
+    <!-- Quick Search -->
+    <QuickSearch class="header-search" />
 
     <!-- Navigation Links -->
     <nav class="nav-links">
-      <a href="/SearchPage" class="nav-link">Explore</a>
-      <a href="/RegistrationPage" class="nav-link">Sign Up</a>
+      <router-link to="/SearchPage" class="nav-link">Explore</router-link>
+      <router-link to="/RegistrationPage" class="nav-link">Sign Up</router-link>
       <a @click="navigateToProfile" class="nav-link" style="cursor: pointer"
         >Profile</a
       >
@@ -26,8 +29,13 @@
 </template>
 
 <script>
+import QuickSearch from "@/components/search/QuickSearch.vue";
+
 export default {
   name: "HeaderComponent",
+  components: {
+    QuickSearch,
+  },
   methods: {
     logout() {
       // Clear tokens from localStorage
@@ -59,6 +67,7 @@ export default {
   background-color: #f9f9f9;
   border-bottom: 1px solid #ddd;
   font-family: Arial, sans-serif;
+  position: relative;
 }
 
 /* Site Icon */
@@ -69,10 +78,18 @@ export default {
   object-fit: cover;
 }
 
+/* Header Search */
+.header-search {
+  flex: 1;
+  max-width: 600px;
+  margin: 0 20px;
+}
+
 /* Navigation Links */
 .nav-links {
   display: flex;
   gap: 20px;
+  align-items: center;
 }
 
 .nav-link {
@@ -99,5 +116,24 @@ export default {
 
 .header-banner button:hover {
   background-color: #0056b3;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-banner {
+    flex-wrap: wrap;
+    padding: 10px;
+  }
+
+  .header-search {
+    order: 3;
+    width: 100%;
+    margin: 10px 0;
+    max-width: none;
+  }
+
+  .nav-links {
+    gap: 10px;
+  }
 }
 </style>
