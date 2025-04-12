@@ -5,12 +5,15 @@ from .views import TagViewSet, SearchHistoryViewSet, \
     ProfileListCreateView, ProfileDetailView, \
     MatchmakingResultsView, CurrentUserView, \
     ProfileVoteView, ProfileCommentView, \
-    ProfileVoteStatusView, NotificationView, \
+    ProfileVoteStatusView, NotificationView, FriendshipViewSet, \
+    check_superuser, AdminProfileListView, AdminProfileDeleteView, \
+    AdminCommentListView, AdminCommentDeleteView, \
     ProfileSearchView, DedicatedSearchView
 
 # Automatically generates URLs for all ViewSet classes
 router = routers.DefaultRouter()
 router.register('api/notifications', NotificationView, basename='notification')
+router.register('friendships', FriendshipViewSet, basename='friendship')
 router.register('tag', TagViewSet)
 router.register('searchhistory', SearchHistoryViewSet)
 router.register('externalmedia', ExternalMediaViewSet)
@@ -33,8 +36,28 @@ urlpatterns = [
    path('api/profiles/<int:profile_id>/vote-status/',
         ProfileVoteStatusView.as_view(),
         name='profile-vote-status'),
+   path('api/friendships/<int:pk>/respond/',
+        FriendshipViewSet.as_view({'post': 'respond'}),
+        name='friendship-respond'),
+   path('api/friendships/', FriendshipViewSet.as_view({'post': 'create'}),
+        name='friendship-create'),
+   path('api/friendships/status/<int:profile_id>/',
+        FriendshipViewSet.as_view({'get': 'status'}),
+        name='friendship-status'),
    path('api/search/', ProfileSearchView.as_view(),
         name='profile-search'),
    path('api/dedicated-search/', DedicatedSearchView.as_view(),
         name='dedicated-search'),
+  
+   # Admin API endpoints
+   path('api/admin/check-superuser/', check_superuser,
+        name='admin-check-superuser'),
+   path('api/admin/profiles/', AdminProfileListView.as_view(),
+        name='admin-profile-list'),
+   path('api/admin/profiles/<int:pk>/',
+        AdminProfileDeleteView.as_view(), name='admin-profile-delete'),
+   path('api/admin/comments/', AdminCommentListView.as_view(),
+        name='admin-comment-list'),
+   path('api/admin/comments/<int:pk>/',
+        AdminCommentDeleteView.as_view(), name='admin-comment-delete'),
 ]

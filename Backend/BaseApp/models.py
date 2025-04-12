@@ -28,7 +28,7 @@ class Profile(models.Model):
    phone_number = models.CharField(max_length=100, blank=True, null=True)
    years_of_experience = models.IntegerField(blank=True, null=True)
    description = models.TextField(blank=True, null=True)
-   profile_picture = models.URLField(max_length=225, null=True, blank=True)
+   is_anonymous = models.BooleanField(default=False)
 
    # Tags with additional metadata through the intermediate model
    tags = models.ManyToManyField(Tag, through='ProfileTagging',
@@ -138,5 +138,25 @@ class Notification(models.Model):
       ordering = ['-created_at']
 
    def __str__(self):
-      return f"{
-         self.notification_type} notification for {self.recipient.username}" # pylint: disable=no-member
+      return (f"{self.notification_type} notification for" # pylint:disable=no-member
+              f"{self.recipient.username}" # pylint: disable=no-member
+      )
+
+class Friendship(models.Model):
+   sender = models.ForeignKey(User, on_delete=models.CASCADE,
+                              related_name='friendship_sent')
+   receiver = models.ForeignKey(User, on_delete=models.CASCADE,
+                                related_name='friendship_received')
+   status = models.CharField(max_length=10, choices=[('pending', 'Pending'),
+                                                     ('accepted', 'Accepted'),
+                                                     ('rejected', 'Rejected')],
+                                                     default='pending')
+   created_at = models.DateTimeField(auto_now_add=True)
+
+   def __str__(self):
+      return (f"{self.sender.username} ->" # pylint: disable=no-member
+              f"{self.receiver.username} ({self.status})" # pylint: disable=no-member
+      )
+
+   class Meta:
+      ordering = ['-created_at']

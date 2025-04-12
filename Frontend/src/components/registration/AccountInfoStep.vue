@@ -28,6 +28,7 @@
         v-model="localUserData.email"
         required
         placeholder="Enter your email address"
+        ds
         @input="validateEmail"
       />
       <p v-if="emailError" class="error-message">
@@ -48,6 +49,10 @@
         @input="updateUserData"
       />
 
+      <p v-if="passwordLengthError" class="error-message">
+        {{ passwordLengthError }}
+      </p>
+
       <label for="confirmPassword">
         <span class="required">*</span> Confirm Password:
         <span class="required-text">required</span>
@@ -64,13 +69,6 @@
       <p v-if="passwordsDoNotMatch" class="error-message">
         Passwords do not match.
       </p>
-
-      <!-- Add note about required fields -->
-      <div class="info-message">
-        <span class="info-icon">ℹ️</span>
-        These account details are required. The following steps are optional but
-        help complete your profile.
-      </div>
     </div>
   </div>
 </template>
@@ -84,7 +82,7 @@ export default {
       required: true,
     },
   },
-  emits: ["update:userData", "password-validation"],
+  emits: ["update:userData", "password-validation", "validation"],
   data() {
     return {
       localUserData: {
@@ -96,18 +94,44 @@ export default {
       passwordsDoNotMatch: false,
       usernameError: "",
       emailError: "",
+      passwordError: "",
+      passwordLengthError: "",
     };
+  },
+  computed: {
+    isStepValid() {
+      // Check if all required fields are filled out
+      const hasUsername = this.localUserData.username.trim() !== "";
+      const hasEmail = this.localUserData.email.trim() !== "";
+      const hasPassword = this.localUserData.password !== "";
+      const hasConfirmPassword = this.confirmPassword !== "";
+
+      // Check if there are any validation errors
+      const hasNoErrors =
+        !this.usernameError &&
+        !this.emailError &&
+        !this.passwordsDoNotMatch &&
+        !this.passwordLengthError;
+
+      // Only return true if all fields are filled AND there are no errors
+      return (
+        hasUsername &&
+        hasEmail &&
+        hasPassword &&
+        hasConfirmPassword &&
+        hasNoErrors
+      );
+    },
   },
   methods: {
     validateUsername() {
       const alphanumericRegex = /^[a-zA-Z0-9]+$/;
       if (!alphanumericRegex.test(this.localUserData.username)) {
         this.usernameError = "Username can only contain letters and numbers";
-        this.$emit("password-validation", false);
       } else {
         this.usernameError = "";
-        this.validateAll();
       }
+      this.validateAll();
       this.updateUserData();
     },
 
@@ -115,28 +139,47 @@ export default {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(this.localUserData.email)) {
         this.emailError = "Please enter a valid email address";
-        this.$emit("password-validation", false);
       } else {
         this.emailError = "";
-        this.validateAll();
       }
+      this.validateAll();
       this.updateUserData();
     },
 
     validateAll() {
-      const isValid =
-        !this.usernameError &&
-        !this.emailError &&
-        !this.passwordsDoNotMatch &&
-        this.localUserData.username &&
-        this.localUserData.email &&
-        this.localUserData.password;
-      this.$emit("password-validation", isValid);
+      this.$emit("password-validation", this.isStepValid);
+      this.$emit("validation", {
+        isValid: this.isStepValid,
+        error: "",
+      });
     },
 
     validatePassword() {
       this.passwordsDoNotMatch =
         this.localUserData.password !== this.confirmPassword;
+
+      // Enhanced password validation
+      const password = this.localUserData.password;
+      const hasUpperCase = /[A-Z]/.test(password);
+      const hasLowerCase = /[a-z]/.test(password);
+      const hasNumbers = /\d/.test(password);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+      if (password.length < 8) {
+        this.passwordLengthError =
+          "Password must be at least 8 characters long";
+      } else if (
+        !hasUpperCase ||
+        !hasLowerCase ||
+        !hasNumbers ||
+        !hasSpecialChar
+      ) {
+        this.passwordLengthError =
+          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character";
+      } else {
+        this.passwordLengthError = "";
+      }
+
       this.validateAll();
     },
 

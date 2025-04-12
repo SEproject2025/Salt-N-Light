@@ -3,7 +3,7 @@ import router from "@/router/router.js";
 
 // Set the base URL for all API requests
 const api = axios.create({
-  baseURL: process.env.VUE_APP_API_URL || "http://localhost:8000",
+  baseURL: process.env.VUE_APP_API_URL // || "http://localhost:8000",
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",

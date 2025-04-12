@@ -4,11 +4,7 @@
       <h1>Create Your Account</h1>
 
       <!-- Progress Bar Component -->
-      <ProgressBar
-        :steps="steps"
-        :currentStep="currentStep"
-        @go-to-step="goToStep"
-      />
+      <ProgressBar :steps="steps" :currentStep="currentStep" />
 
       <form>
         <!-- Step 1: Account Information -->
@@ -16,6 +12,7 @@
           v-show="currentStep === 0"
           v-model:userData="form.user"
           @password-validation="handlePasswordValidation"
+          @validation="handleAccountValidation"
         />
 
         <!-- Step 2: Personal Information -->
@@ -28,6 +25,8 @@
         <LocationInfoStep
           v-show="currentStep === 2"
           v-model:locationData="form"
+          :isAnonymous="form.is_anonymous"
+          @validation="handleLocationValidation"
         />
 
         <!-- Step 4: Additional Information -->
@@ -44,7 +43,6 @@
             { 'error-message': !isSuccess, 'success-message': isSuccess },
           ]"
         >
-          <span class="message-icon">{{ !isSuccess ? "⚠️" : "✅" }}</span>
           {{ message }}
         </div>
 
@@ -54,6 +52,8 @@
           :steps="steps"
           :isStepOneValid="isStepOneValid()"
           :isFormValid="isFormValid"
+          :isLocationValid="locationValidation.isValid"
+          :isAccountValid="accountValidation.isValid"
           @prev-step="prevStep"
           @next-step="nextStep"
           @submit="registerUser"
@@ -95,7 +95,6 @@ export default {
         user_type: "",
         first_name: "",
         last_name: "",
-        denomination: "",
         street_address: "",
         city: "",
         state: "",
@@ -104,6 +103,7 @@ export default {
         phone_number: "",
         years_of_experience: null,
         description: "",
+        is_anonymous: false,
       },
       passwordsDoNotMatch: false,
       message: "",
@@ -123,6 +123,14 @@ export default {
         { label: "Location" },
         { label: "Additional" },
       ],
+      locationValidation: {
+        isValid: false,
+        error: "",
+      },
+      accountValidation: {
+        isValid: false,
+        error: "",
+      },
     };
   },
   computed: {
@@ -163,6 +171,9 @@ export default {
           const existingUsernames = response.data.map((profile) =>
             profile.user.username.toLowerCase()
           );
+          const existingEmails = response.data.map((profile) =>
+            profile.user.email.toLowerCase()
+          );
 
           // Check if username exists (case-insensitive comparison)
           if (
@@ -174,16 +185,33 @@ export default {
             return;
           }
 
-          // Username is available, proceed to next step
+          // Check if email exists (case-insensitive comparison)
+          if (existingEmails.includes(this.form.user.email.toLowerCase())) {
+            this.message =
+              "This email address is already registered. Please use a different email.";
+            this.isSuccess = false;
+            return;
+          }
+
+          // Both username and email are available, proceed to next step
           this.message = "";
           this.currentStep++;
         } catch (error) {
-          console.error("Username check error:", error);
+          console.error("Username/Email check error:", error);
           this.message =
-            "Error checking username availability. Please try again.";
+            "Error checking username and email availability. Please try again.";
           this.isSuccess = false;
           return;
         }
+      } else if (this.currentStep === 2) {
+        // Check location validation before proceeding from step 3
+        if (!this.locationValidation.isValid) {
+          this.message = this.locationValidation.error;
+          this.isSuccess = false;
+          return;
+        }
+        this.message = "";
+        this.currentStep++;
       } else if (this.currentStep < this.steps.length - 1) {
         this.message = ""; // Clear message when moving to next step
         this.currentStep++;
@@ -195,12 +223,6 @@ export default {
         this.currentStep--;
       }
     },
-    goToStep(step) {
-      // Only allow going to completed steps or the next available step
-      if (step <= this.currentStep + 1) {
-        this.currentStep = step;
-      }
-    },
     isStepOneValid() {
       const { username, email, password } = this.form.user;
       const isValid =
@@ -208,11 +230,6 @@ export default {
         email.trim() &&
         password.trim() &&
         !this.passwordsDoNotMatch;
-
-      if (!isValid) {
-        this.message = "Please complete all required fields before proceeding.";
-        this.isSuccess = false;
-      }
 
       return isValid;
     },
@@ -234,6 +251,29 @@ export default {
       this.passwordsDoNotMatch = !isValid;
     },
 
+    // Handle location validation from child component
+    handleLocationValidation(validation) {
+      this.locationValidation = validation;
+      if (!validation.isValid) {
+        this.message = validation.error;
+        this.isSuccess = false;
+      } else {
+        this.message = "";
+      }
+    },
+
+    // Handle account validation from child component
+    handleAccountValidation(validation) {
+      this.accountValidation = validation;
+      // Only show error message if we're not on the account step
+      if (!validation.isValid && this.currentStep !== 0) {
+        this.message = validation.error;
+        this.isSuccess = false;
+      } else {
+        this.message = "";
+      }
+    },
+
     // Calls the profiles endpoint to register the user
     async registerUser() {
       console.log("registerUser method called");
@@ -253,7 +293,6 @@ export default {
             : null,
           first_name: this.form.first_name,
           last_name: this.form.last_name,
-          denomination: this.form.denomination,
           street_address: this.form.street_address,
           city: this.form.city,
           state: this.form.state,
@@ -264,7 +303,7 @@ export default {
           phone_number: this.form.phone_number,
           years_of_experience: this.form.years_of_experience,
           description: this.form.description,
-          profile_picture: null, // Always send null for profile picture
+          is_anonymous: this.form.is_anonymous,
         };
 
         // Log the data being sent
@@ -429,16 +468,15 @@ h1 {
     padding: 25px;
   }
 }
-
 .message-container {
-  margin: 15px 0;
-  padding: 15px;
+  margin: 2px 0;
+  padding: 2px;
   border-radius: 8px;
   font-weight: 500;
   text-align: left;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 2px;
   font-size: 0.95rem;
   animation: fadeIn 0.3s ease-in-out;
 }
@@ -454,19 +492,11 @@ h1 {
   }
 }
 
-.message-icon {
-  font-size: 1.2rem;
-}
-
 .error-message {
-  background-color: #ffebee;
   color: #c62828;
-  border-left: 4px solid #f44336;
 }
 
 .success-message {
-  background-color: #e8f5e9;
   color: #2e7d32;
-  border-left: 4px solid #4caf50;
 }
 </style>
