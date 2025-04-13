@@ -477,7 +477,7 @@ export default {
         JSON.stringify([...newTagIds].sort()) !==
         JSON.stringify([...originalTagIds].sort())
       ) {
-        changedFields.tags = newTagIds;
+        changedFields.tags = newTagIds; // Send just the IDs
       }
 
       return changedFields;

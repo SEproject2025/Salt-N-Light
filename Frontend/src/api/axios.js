@@ -1,9 +1,9 @@
 import axios from "axios";
-import router from "@/router/router.js";
+//import router from "@/router/router.js";
 
 // Set the base URL for all API requests
 const api = axios.create({
-  baseURL: process.env.VUE_APP_API_URL // || "http://localhost:8000",
+  baseURL: process.env.VUE_APP_API_URL || "http://localhost:8000",
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",
@@ -30,14 +30,21 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If the error is 401 and we haven't tried to refresh the token yet
+    // If the error status is 401 and there's no originalRequest._retry flag,
+    // it means the token has expired and we need to refresh it
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
         const refreshToken = localStorage.getItem("refresh_token");
         if (!refreshToken) {
-          throw new Error("No refresh token available");
+          // If no refresh token, this is a login error
+          if (originalRequest.url.includes("api/token/")) {
+            return Promise.reject(error);
+          }
+          // For other requests, redirect to login
+          window.location.href = "/AppLogin";
+          return Promise.reject(error);
         }
 
         const response = await axios.post(
@@ -47,21 +54,19 @@ api.interceptors.response.use(
           { refresh: refreshToken }
         );
 
-        const { access } = response.data;
-        localStorage.setItem("access_token", access);
+        if (response.status === 200) {
+          localStorage.setItem("access_token", response.data.access);
+          localStorage.setItem("refresh_token", response.data.refresh);
 
-        // Retry the original request with the new token
-        originalRequest.headers.Authorization = `Bearer ${access}`;
-        return api(originalRequest);
+          // Retry the original request
+          originalRequest.headers.Authorization = `Bearer ${response.data.access}`;
+          return api(originalRequest);
+        }
       } catch (refreshError) {
-        // If refresh fails, clear tokens and redirect to login
+        console.error("Token refresh failed:", refreshError);
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-
-        // Only redirect to login if we're not already on the login page
-        if (!router.currentRoute.value.path.includes("/AppLogin")) {
-          router.push("/AppLogin");
-        }
+        window.location.href = "/AppLogin";
         return Promise.reject(refreshError);
       }
     }

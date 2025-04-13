@@ -5,6 +5,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from .models import Tag, SearchHistory, \
     ExternalMedia, Profile, ProfileVote, ProfileComment, \
     Notification, Friendship
+from django.db.models import Q
+import logging
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -32,16 +34,19 @@ class TagSerializer(serializers.ModelSerializer):
                 'tag_is_predefined', 'is_self_added']
 
    def get_is_self_added(self, obj):
-      request = self.context.get('request')
-      profile_id = self.context.get('profile_id')
-      if not request or not profile_id:
-         return False
       try:
-         tagging = obj.profiletagging_set.filter(
-            profile_id=profile_id
-         ).first()
+         request = self.context.get('request')
+         profile_id = self.context.get('profile_id')
+
+         if not request or not profile_id:
+            return False
+
+         tagging = obj.profiletagging_set.filter(profile_id=profile_id).first()
          return tagging.is_self_added if tagging else False
-      except ObjectDoesNotExist:
+      except Exception as e:
+         # Log the error for debugging
+         logger = logging.getLogger(__name__)
+         logger.warning(f"TagSerializer get_is_self_added error: {e}")
          return False
 
 
@@ -94,10 +99,9 @@ class ProfileSerializer(serializers.ModelSerializer):
    class Meta:
       model = Profile
       fields = ['user', 'tags', 'tags_ids', 'vote_count', 'comments',
-               'current_user_vote', 'user_type', 'first_name', 'last_name',
-               'street_address', 'city', 'state', 'country',
-               'phone_number', 'years_of_experience', 'description',
-               'profile_picture']
+                'current_user_vote', 'user_type', 'first_name', 'last_name',
+                'street_address', 'city', 'state', 'country', 'phone_number',
+                'years_of_experience', 'description', 'is_anonymous']
 
    def to_representation(self, instance):
       # Add profile_id to context for TagSerializer
@@ -105,12 +109,23 @@ class ProfileSerializer(serializers.ModelSerializer):
       return super().to_representation(instance)
 
    def create(self, validated_data):
+      logger = logging.getLogger(__name__)
+      
       user_data = validated_data.pop('user')
       tags = validated_data.pop('tags', [])
+      
+      logger.info(f"Creating profile with tags: {tags}")
+      logger.info(f"Validated data: {validated_data}")
+      
       user = User.objects.create_user(**user_data)
       profile = Profile.objects.create(user=user, **validated_data)
+      
       if tags:
+         logger.info(f"Setting tags: {tags}")
          profile.tags.set(tags)
+      else:
+         logger.warning("No tags provided for profile creation")
+      
       return profile
 
    def update(self, instance, validated_data):
@@ -293,3 +308,41 @@ class SearchProfileSerializer(serializers.ModelSerializer):
          'denomination', 'tags', 'created_at', 'updated_at'
       ]
       read_only_fields = ['id', 'created_at', 'updated_at']
+
+class ProfileEnrichedSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    vote_count = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
+    friendship_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Profile
+        fields = [
+            'id', 'user', 'user_type', 'first_name', 'last_name',
+            'street_address', 'city', 'state', 'country', 'phone_number',
+            'years_of_experience', 'description', 'is_anonymous',
+            'tags', 'vote_count', 'comment_count', 'friendship_status',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_vote_count(self, obj):
+        return ProfileVote.objects.filter(profile=obj).count()
+
+    def get_comment_count(self, obj):
+        return ProfileComment.objects.filter(profile=obj).count()
+
+    def get_friendship_status(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return None
+
+        try:
+            friendship = Friendship.objects.filter(
+                Q(sender=request.user, receiver=obj.user) |
+                Q(sender=obj.user, receiver=request.user)
+            ).first()
+            return friendship.status if friendship else None
+        except Exception:
+            return None

@@ -29,7 +29,7 @@ from .serializer import TagSerializer, SearchHistorySerializer, \
     ProfileSerializer, ProfileVoteSerializer, \
     ProfileCommentSerializer, NotificationSerializer, FriendshipSerializer, \
     AdminProfileCommentSerializer, AdminProfileSerializer, \
-    SearchProfileSerializer
+    SearchProfileSerializer, ProfileEnrichedSerializer
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -45,12 +45,39 @@ class AdminPagination(PageNumberPagination):
 class ProfileListCreateView(generics.ListCreateAPIView):
    queryset = Profile.objects.select_related(
       'user').prefetch_related('tags').all()
-   serializer_class = ProfileSerializer
    permission_classes = [AllowAny]  # Public access for testing
    filter_backends = [filters.SearchFilter]
    search_fields = ['user_type', 'city', 'state', 'country']
-   filterset_fields = ['user_type', 'city', 'state', 'country',
-                       'tags']
+   filterset_fields = ['user_type', 'city', 'state', 'country', 'tags']
+
+   def get(self, request, *args, **kwargs):
+      print("GET /api/profiles/ hit")
+      try:
+         queryset = self.get_queryset()
+         serializer = self.get_serializer(queryset, many=True)
+         return Response(serializer.data)
+      except Exception as e:
+         import traceback
+         print("500 ERROR in ProfileListCreateView.get():", e)
+         traceback.print_exc()
+         return Response({"error": str(e)}, status=500)
+
+   def get_serializer_class(self):
+      if self.request.query_params.get('enriched') == 'true':
+         return ProfileEnrichedSerializer
+      return ProfileSerializer
+
+   def get_serializer_context(self):
+      context = super().get_serializer_context()
+      context['request'] = self.request
+      # Add profile_id to context for TagSerializer
+      if self.request.user.is_authenticated:
+         try:
+            profile = Profile.objects.get(user=self.request.user)
+            context['profile_id'] = profile.user.id
+         except Profile.DoesNotExist:
+            pass
+      return context
 
    def get_queryset(self):
       # Get the base queryset
@@ -69,6 +96,24 @@ class ProfileListCreateView(generics.ListCreateAPIView):
                queryset = queryset.filter(tags=tag)
             queryset = queryset.distinct()
       return queryset
+
+   def create(self, request, *args, **kwargs):
+      import logging
+      logger = logging.getLogger(__name__)
+      
+      logger.info(f"Registration request data: {request.data}")
+      
+      serializer = self.get_serializer(data=request.data)
+      serializer.is_valid(raise_exception=True)
+      
+      logger.info(f"Validated serializer data: {serializer.validated_data}")
+      
+      instance = serializer.save()
+      
+      logger.info(f"Created profile with ID: {instance.user.id}")
+      logger.info(f"Profile tags after creation: {list(instance.tags.all())}")
+      
+      return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -450,6 +495,18 @@ class ProfileSearchView(generics.ListAPIView):
    authentication_classes = [JWTAuthentication]
    permission_classes = [IsAuthenticated]
    pagination_class = PageNumberPagination
+
+   def get_serializer_context(self):
+      context = super().get_serializer_context()
+      context['request'] = self.request
+      # Add profile_id to context for TagSerializer
+      if self.request.user.is_authenticated:
+         try:
+            profile = Profile.objects.get(user=self.request.user)
+            context['profile_id'] = profile.user.id
+         except Profile.DoesNotExist:
+            pass
+      return context
 
    def get_queryset(self):
       """Get the queryset for the search view"""

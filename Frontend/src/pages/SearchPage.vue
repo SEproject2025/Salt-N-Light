@@ -316,7 +316,11 @@ export default {
                   ? this.totalResults
                   : parseInt(this.pageSize))
             );
-
+          } else {
+            this.searchResults = [];
+            this.totalResults = 0;
+            this.totalPages = 1;
+          }
         } else {
           this.searchResults = [];
           this.totalResults = 0;
