@@ -287,7 +287,7 @@ export default {
             email: this.form.user.email,
             password: this.form.user.password,
           },
-          tags_ids: this.form.tags,
+          tags: this.form.tags,
           user_type: this.form.user_type
             ? this.form.user_type.toLowerCase()
             : null,

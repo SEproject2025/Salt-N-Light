@@ -376,15 +376,13 @@ export default {
           name: tag.tag_name,
         }));
 
-        this.profile.tags = profileResponse.data.tags.map((tag) => {
-          const matchedTag = this.availableTags.find((t) => t.id === tag.id);
-          return (
-            matchedTag || {
-              id: tag.id,
-              name: tag.tag_name || "Unknown Tag",
+        this.profile.tags = profileResponse.data.tags.map(
+          (tagId) =>
+            this.availableTags.find((tag) => tag.id === tagId) || {
+              id: tagId,
+              name: "Unknown Tag",
             }
-          );
-        });
+        );
       } catch (err) {
         console.error("Profile fetch error:", err);
         if (err.response?.status === 401 && retry) {
@@ -469,15 +467,12 @@ export default {
         }
       });
 
-      // Compare tag IDs for changes
       const originalTagIds = this.originalProfile.tags.map((tag) => tag.id);
-      const newTagIds = formData.tags.map((tag) => tag.id);
-
       if (
-        JSON.stringify([...newTagIds].sort()) !==
+        JSON.stringify([...formData.tags].sort()) !==
         JSON.stringify([...originalTagIds].sort())
       ) {
-        changedFields.tags = newTagIds; // Send just the IDs
+        changedFields.tags = formData.tags;
       }
 
       return changedFields;

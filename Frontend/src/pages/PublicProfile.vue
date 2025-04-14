@@ -97,17 +97,13 @@ export default {
 
         // Map the profile tags to include the full tag information
         if (Array.isArray(profileData.tags)) {
-          profileData.tags = profileData.tags.map((tag) => {
-            // Find the matching tag from availableTags using the tag's id
-            const matchedTag = availableTags.find((t) => t.id === tag.id);
-            return (
-              matchedTag || {
-                id: tag.id,
-                name: tag.tag_name || "Unknown Tag",
-                description: tag.tag_description || "",
+          profileData.tags = profileData.tags.map(
+            (tagId) =>
+              availableTags.find((tag) => tag.id === tagId) || {
+                id: tagId,
+                name: "Unknown Tag",
               }
-            );
-          });
+          );
         } else {
           profileData.tags = [];
         }

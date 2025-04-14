@@ -71,23 +71,22 @@ export default {
       });
     },
 
-    /* Fetches predefined tags from the backend API */
+    /* Fetches and filters predefined tags from the backend API */
     async fetchTags() {
       try {
-        const response = await api.get(
-          "http://127.0.0.1:8000/tag/?tag_is_predefined=true"
-        );
-        console.log("Raw response:", response);
-        console.log("Response data:", response.data);
+        const response = await api.get("tag/", {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        console.log("Tags response:", response.data); // Add logging to debug
         this.availableTags = response.data;
       } catch (error) {
-        console.error("Failed to fetch tags:", {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          headers: error.response?.headers,
-        });
-        this.availableTags = []; // Set empty array as fallback
+        console.error(
+          "Failed to fetch tags:",
+          error.response?.data || error.message
+        );
+        this.availableTags = []; // Ensure we reset to empty array on error
       }
     },
   },
