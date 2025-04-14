@@ -1,4 +1,5 @@
 <template>
+<<<<<<< HEAD
   <div class="quick-search-results" v-if="results.length > 0">
     <div class="results-header">
       <h3>Quick Results</h3>
@@ -35,6 +36,35 @@
         </div>
       </li>
     </ul>
+=======
+  <div class="quick-search-results">
+    <div class="results-container">
+      <div v-if="isLoading" class="loading">
+        <div class="loading-spinner"></div>
+        <span>Searching...</span>
+      </div>
+      <div v-else class="results-list">
+        <div
+          v-for="result in results"
+          :key="result.user.id"
+          class="result-item"
+          @click="$emit('select-result', result)"
+        >
+          <div class="result-content">
+            <div class="name">
+              {{ result.first_name }} {{ result.last_name }}
+            </div>
+            <div class="details">
+              <span class="type">{{ result.user_type }}</span>
+              <span v-if="result.city" class="location">
+                {{ result.city }}, {{ result.state || result.country }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+>>>>>>> 1133bde2919c72394fd207d82de3c4aa82b2a6d4
   </div>
 </template>
 
@@ -46,6 +76,13 @@ export default {
       type: Array,
       required: true,
     },
+<<<<<<< HEAD
+=======
+    isLoading: {
+      type: Boolean,
+      default: false,
+    },
+>>>>>>> 1133bde2919c72394fd207d82de3c4aa82b2a6d4
   },
 };
 </script>
@@ -56,6 +93,7 @@ export default {
   top: 100%;
   left: 0;
   right: 0;
+<<<<<<< HEAD
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -109,10 +147,63 @@ export default {
 
 .result-item:last-child {
   border-bottom: none;
+=======
+  margin-top: 4px;
+  z-index: 1000;
+}
+
+.results-container {
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.loading {
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #1976d2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.results-list {
+  padding: 4px 0;
+}
+
+.result-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.result-item:hover {
+  background-color: #f5f5f5;
+>>>>>>> 1133bde2919c72394fd207d82de3c4aa82b2a6d4
 }
 
 .result-content {
   display: flex;
+<<<<<<< HEAD
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
@@ -125,10 +216,18 @@ export default {
 .user-info h4 {
   margin: 0 0 4px;
   font-size: 14px;
+=======
+  flex-direction: column;
+  gap: 4px;
+}
+
+.name {
+>>>>>>> 1133bde2919c72394fd207d82de3c4aa82b2a6d4
   font-weight: 500;
   color: #333;
 }
 
+<<<<<<< HEAD
 .location {
   margin: 0 0 8px;
   font-size: 12px;
@@ -168,5 +267,20 @@ export default {
 
 .view-profile:hover {
   background: #1565c0;
+=======
+.details {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+.type {
+  text-transform: capitalize;
+}
+
+.location {
+  color: #666;
+>>>>>>> 1133bde2919c72394fd207d82de3c4aa82b2a6d4
 }
 </style>

@@ -2,13 +2,13 @@
   <header class="header-banner">
     <!-- Site Icon -->
     <div class="site-icon">
-      <a href="/LandingPage" title="SaltnLife">
+      <router-link to="/" title="SaltnLife">
         <img
           src="@\assets\pictures\saltnlightlogo1.webp"
           alt="SaltnLight Logo"
           class="icon"
         />
-      </a>
+      </router-link>
     </div>
 
     <!-- Quick Search -->
@@ -16,8 +16,8 @@
 
     <!-- Navigation Links -->
     <nav class="nav-links">
-      <a href="/SearchPage" class="nav-link">Explore</a>
-      <a href="/RegistrationPage" class="nav-link">Sign Up</a>
+      <router-link to="/SearchPage" class="nav-link">Explore</router-link>
+      <router-link to="/RegistrationPage" class="nav-link">Sign Up</router-link>
       <a @click="navigateToProfile" class="nav-link" style="cursor: pointer"
         >Profile</a
       >

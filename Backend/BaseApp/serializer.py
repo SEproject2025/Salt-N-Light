@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.db.utils import OperationalError
+<<<<<<< HEAD
+=======
+from django.core.exceptions import ObjectDoesNotExist
+>>>>>>> 1133bde2919c72394fd207d82de3c4aa82b2a6d4
 from .models import Tag, SearchHistory, \
     ExternalMedia, Profile, ProfileVote, ProfileComment, \
     Notification, Friendship
@@ -9,7 +13,8 @@ from .models import Tag, SearchHistory, \
 class UserSerializer(serializers.ModelSerializer):
    class Meta:
       model = User
-      fields = ['id', 'username', 'email', 'password']
+      fields = ['id', 'username', 'email', 'password',
+                 'first_name', 'last_name']
       extra_kwargs = {
          'password': {'write_only': True},
          'id': {'read_only': True}
@@ -34,10 +39,13 @@ class TagSerializer(serializers.ModelSerializer):
       profile_id = self.context.get('profile_id')
       if not request or not profile_id:
          return False
-      tagging = obj.profiletagging_set.filter(
-         profile_id=profile_id
-          ).first()
-      return tagging.is_self_added if tagging else False
+      try:
+         tagging = obj.profiletagging_set.filter(
+            profile_id=profile_id
+         ).first()
+         return tagging.is_self_added if tagging else False
+      except ObjectDoesNotExist:
+         return False
 
 
 class ProfileVoteSerializer(serializers.ModelSerializer):
@@ -74,7 +82,17 @@ class ProfileCommentSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
    user = UserSerializer()  # Nested User serializer
+<<<<<<< HEAD
    tags = TagSerializer(many=True)
+=======
+   tags = TagSerializer(many=True, read_only=True)  # For reading tags
+   tags_ids = serializers.PrimaryKeyRelatedField(
+      queryset=Tag.objects.all(),
+      many=True,
+      write_only=True,
+      source='tags'
+   )  # For writing tags
+>>>>>>> 1133bde2919c72394fd207d82de3c4aa82b2a6d4
    vote_count = serializers.SerializerMethodField()
    comments = ProfileCommentSerializer(
       source='comments_received', many=True, read_only=True)
@@ -82,37 +100,45 @@ class ProfileSerializer(serializers.ModelSerializer):
 
    class Meta:
       model = Profile
-      fields = '__all__'
+      fields = ['user', 'tags', 'tags_ids', 'vote_count', 'comments',
+               'current_user_vote', 'user_type', 'first_name', 'last_name',
+               'street_address', 'city', 'state', 'country',
+               'phone_number', 'years_of_experience', 'description',
+               'profile_picture']
+
+   def to_representation(self, instance):
+      # Add profile_id to context for TagSerializer
+      self.context['profile_id'] = instance.user.id
+      return super().to_representation(instance)
 
    def create(self, validated_data):
       user_data = validated_data.pop('user')
-      tag_data = validated_data.pop('tags', [])
+      tags = validated_data.pop('tags', [])
       user = User.objects.create_user(**user_data)
       profile = Profile.objects.create(user=user, **validated_data)
-      profile.tags.set(tag_data)
+      if tags:
+         profile.tags.set(tags)
       return profile
 
    def update(self, instance, validated_data):
       user_data = validated_data.pop('user', None)
-      tag_data = validated_data.pop('tags', None)
+      tags = validated_data.pop('tags', None)
 
-      # Update user fields if provided
       if user_data:
          user_instance = instance.user
          for key, value in user_data.items():
-            if key != 'password':  # Don't update password through this method
+            if key != 'password':
                setattr(user_instance, key, value)
          user_instance.save()
 
-      # Update all profile fields
       for key, value in validated_data.items():
-         if hasattr(instance, key):  # Only set if the field exists
+         if hasattr(instance, key):
             setattr(instance, key, value)
       instance.save()
 
       # Update tags if provided
-      if tag_data is not None:
-         instance.tags.set(tag_data)
+      if tags is not None:
+         instance.tags.set(tags)
 
       return instance
 
@@ -157,6 +183,7 @@ class NotificationSerializer(serializers.ModelSerializer):
                                               read_only=True)
    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S",
                                           read_only=True)
+
 
    class Meta:
       model = Notification
@@ -261,3 +288,15 @@ class AdminProfileSerializer(serializers.ModelSerializer):
          }
          for tag in obj.tags.all()
       ]
+    
+class SearchProfileSerializer(serializers.ModelSerializer):
+   user = UserSerializer(read_only=True)
+   tags = TagSerializer(many=True, read_only=True)
+
+   class Meta:
+      model = Profile
+      fields = [
+         'id', 'user', 'user_type', 'city', 'state', 'country',
+         'denomination', 'tags', 'created_at', 'updated_at'
+      ]
+      read_only_fields = ['id', 'created_at', 'updated_at']
