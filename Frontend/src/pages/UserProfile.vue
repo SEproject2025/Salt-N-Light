@@ -56,7 +56,7 @@
 
 <style scoped>
 .profile-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 2rem 1rem;
   min-height: 100vh;
@@ -67,25 +67,29 @@
 }
 
 .content-wrapper {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 350px;
   gap: 2rem;
   margin-top: 2rem;
-  align-items: flex-start;
+  align-items: start;
 }
 
 .main-content {
-  flex: 3;
-  padding: 20px;
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  padding-right: 2rem;
 }
 
 .side-panel {
-  flex: 1;
-  max-width: 350px;
   position: sticky;
   top: 20px;
 }
 
 .notification-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   padding: 20px;
 }
 
@@ -135,18 +139,17 @@
 
 @media (max-width: 1200px) {
   .content-wrapper {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 
   .side-panel {
+    position: static;
     width: 100%;
     max-width: none;
-    position: static;
   }
 
-  .main-content,
-  .notification-card {
-    padding: 15px;
+  .main-content {
+    padding-right: 0;
   }
 }
 
@@ -419,13 +422,11 @@ export default {
 
         try {
           await this.sendProfileUpdate(profileId, changedFields);
-          alert("Profile updated successfully!");
           this.editing = false;
           this.fetchProfile();
         } catch (err) {
           if (err.response?.status === 401 && (await this.refreshToken())) {
             await this.sendProfileUpdate(profileId, changedFields);
-            alert("Profile updated successfully!");
             this.editing = false;
             this.fetchProfile();
           } else {
@@ -452,6 +453,7 @@ export default {
         "first_name",
         "last_name",
         "user_type",
+        "denomination",
         "phone_number",
         "street_address",
         "city",

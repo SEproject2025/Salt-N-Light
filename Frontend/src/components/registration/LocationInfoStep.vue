@@ -117,6 +117,8 @@
 </template>
 
 <script>
+/* global google */
+
 export default {
   name: "LocationInfoStep",
   props: {
@@ -129,7 +131,7 @@ export default {
       required: true,
     },
   },
-  emits: ["update:locationData", "validation"],
+  emits: ["update:locationData", "validation-status"],
   data() {
     return {
       localData: {
@@ -157,69 +159,151 @@ export default {
         { code: "BR", name: "Brazil" },
         { code: "ZA", name: "South Africa" },
       ],
+      autocompleteService: null,
+      placesService: null,
       countryError: "",
     };
   },
-  computed: {
-    isCountryValid() {
-      if (this.localData.country === "Other") {
-        return this.localData.other_country.trim() !== "";
-      }
-      return this.localData.country.trim() !== "";
-    },
+  mounted() {
+    this.initGooglePlaces();
+  },
+  beforeUnmount() {
+    // Clean up event listeners
+    ["streetAddress", "city", "state"].forEach((field) => {
+      this.$refs[`${field}Input`]?.removeEventListener("input", (e) =>
+        this.handleInput(e, field)
+      );
+    });
   },
   methods: {
     /* Updates parent with current location data values */
     updateData() {
-      this.validateCountry();
       this.$emit("update:locationData", {
         ...this.locationData,
         ...this.localData,
       });
-      this.$emit("validation", {
-        isValid: this.isCountryValid,
-        error: this.countryError,
-      });
+      this.validateForm();
     },
+    validateForm() {
+      // Country is required in this step
+      let isValid = true;
 
-    validateCountry() {
       if (!this.localData.country) {
-        this.countryError = "Please select your country";
+        this.countryError = "Please select a country";
+        isValid = false;
       } else if (
         this.localData.country === "Other" &&
-        !this.localData.other_country.trim()
+        !this.localData.other_country
       ) {
         this.countryError = "Please specify your country";
+        isValid = false;
       } else {
         this.countryError = "";
       }
+
+      this.$emit("validation-status", isValid);
     },
 
-    handleCountryChange() {
-      if (this.localData.country !== "Other") {
-        this.localData.other_country = "";
+    /* Initializes Google Places API for address autocomplete */
+    initGooglePlaces() {
+      if (window.google && window.google.maps && window.google.maps.places) {
+        this.setupGooglePlacesServices();
+      } else {
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCzHCbngGLUj41VG6hmwFsAoUak7QwnX3k&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+          this.setupGooglePlacesServices();
+        };
+        document.head.appendChild(script);
       }
-      this.updateData();
     },
 
-    /* Handles address selection from suggestions */
+    /* Sets up Google Places services and input event listeners */
+    setupGooglePlacesServices() {
+      this.autocompleteService = new google.maps.places.AutocompleteService();
+      this.placesService = new google.maps.places.PlacesService(
+        document.createElement("div")
+      );
+
+      // Add input event listeners
+      ["streetAddress", "city", "state"].forEach((field) => {
+        this.$refs[`${field}Input`]?.addEventListener("input", (e) =>
+          this.handleInput(e, field)
+        );
+      });
+    },
+
+    /* Fetches and displays autocomplete suggestions based on user input */
+    async handleInput(event, field) {
+      const input = event.target.value;
+      if (input.length < 2) {
+        this.suggestions[field] = [];
+        return;
+      }
+
+      try {
+        const types = {
+          streetAddress: ["address"],
+          city: ["(cities)"],
+          state: ["administrative_area_level_1"],
+        };
+
+        const response = await this.autocompleteService.getPlacePredictions({
+          input,
+          types: types[field],
+        });
+        this.suggestions[field] = response.predictions;
+      } catch (error) {
+        console.error(`Error fetching ${field} suggestions:`, error);
+        this.suggestions[field] = [];
+      }
+    },
+
+    /* Updates address field and extracts city and state from selection */
     selectAddress(place) {
       this.suggestions.address = [];
       this.localData.street_address = place.description;
       this.updateData();
+
+      this.placesService.getDetails(
+        {
+          placeId: place.place_id,
+          fields: ["address_components"],
+        },
+        (result, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK) {
+            result.address_components.forEach((component) => {
+              const type = component.types[0];
+              if (type === "locality") {
+                this.localData.city = component.long_name;
+              }
+              if (type === "administrative_area_level_1") {
+                this.localData.state = component.long_name;
+              }
+            });
+            this.updateData();
+          }
+        }
+      );
     },
 
-    /* Handles city selection from suggestions */
+    /* Updates city field with selected suggestion */
     selectCity(suggestion) {
       this.suggestions.city = [];
       this.localData.city = suggestion.description;
       this.updateData();
     },
 
-    /* Handles state selection from suggestions */
+    /* Updates state field with selected suggestion */
     selectState(suggestion) {
       this.suggestions.state = [];
       this.localData.state = suggestion.description;
+      this.updateData();
+    },
+
+    handleCountryChange() {
       this.updateData();
     },
   },

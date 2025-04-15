@@ -8,8 +8,18 @@
         v-model="localData.description"
         placeholder="Tell us about yourself and your mission"
         rows="4"
-        @input="updateData"
+        maxlength="1000"
+        @input="handleDescriptionInput"
       ></textarea>
+      <div
+        class="char-counter"
+        :class="{
+          'near-limit': localData.description?.length > 800,
+          'at-limit': localData.description?.length >= 1000,
+        }"
+      >
+        {{ localData.description?.length || 0 }}/1000
+      </div>
 
       <label for="tags">Select some tags that describe your ministry:</label>
       <div class="tags-container">
@@ -40,7 +50,7 @@ export default {
       required: true,
     },
   },
-  emits: ["update:additionalData"],
+  emits: ["update:additionalData", "validation-status"],
   data() {
     return {
       localData: {
@@ -63,12 +73,24 @@ export default {
       }
       this.updateData();
     },
+    handleDescriptionInput() {
+      // Ensure the description doesn't exceed 1000 characters
+      if (this.localData.description?.length > 1000) {
+        this.localData.description = this.localData.description.slice(0, 1000);
+      }
+      this.updateData();
+    },
     /* Updates parent with current additional information values */
     updateData() {
       this.$emit("update:additionalData", {
         ...this.additionalData,
         ...this.localData,
       });
+      this.validateForm();
+    },
+    validateForm() {
+      // All fields are optional in this step
+      this.$emit("validation-status", true);
     },
 
     /* Fetches and filters predefined tags from the backend API */
@@ -106,6 +128,22 @@ export default {
 </script>
 
 <style scoped>
+.char-counter {
+  text-align: right;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.char-counter.near-limit {
+  color: #ff6b6b;
+}
+
+.char-counter.at-limit {
+  color: #ff0000;
+  font-weight: bold;
+}
+
 .tags-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

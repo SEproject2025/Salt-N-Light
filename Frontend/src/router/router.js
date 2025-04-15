@@ -7,7 +7,6 @@ import SearchPage from "@/pages/SearchPage.vue";
 import MatchmakingPage from "@/pages/MatchmakingPage.vue";
 import RegistrationPage from "@/pages/RegistrationPage.vue";
 import PublicProfile from "@/pages/PublicProfile.vue";
-import AdminDashboard from "@/pages/AdminDashboard.vue";
 import api from "@/api/axios.js";
 
 async function isAuthenticated() {
@@ -71,11 +70,6 @@ const routes = [
     path: "/profile/:id",
     name: "PublicProfile",
     component: PublicProfile,
-  },
-  {
-    path: "/admin",
-    component: AdminDashboard,
-    meta: { requiresAuth: true },
   },
 ];
 
