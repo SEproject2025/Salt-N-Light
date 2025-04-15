@@ -1,5 +1,7 @@
 # Standard library imports
 import logging
+import operator
+from functools import reduce
 
 # Third-party imports
 # pylint: disable=C0412
@@ -711,60 +713,51 @@ class ProfileSearchView(generics.ListAPIView):
 
 class DedicatedSearchView(generics.ListAPIView):
     serializer_class = SearchProfileSerializer
-    permission_classes = [AllowAny]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_class = ProfileFilter
-    search_fields = ['user_type', 'city', 'state', 'country', 'tags__tag_name']
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = PageNumberPagination
 
     def get_queryset(self):
-        try:
-            logger.info(f"Starting dedicated search with params: {self.request.query_params}")
-            queryset = Profile.objects.select_related('user').prefetch_related('tags').all()
-            # Filter out anonymous profiles
-            queryset = queryset.exclude(is_anonymous=True)
-            
-            # Log the initial queryset count
-            logger.info(f"Initial queryset count: {queryset.count()}")
-            
-            # Log search parameters if present
-            search_term = self.request.query_params.get('search', None)
-            if search_term:
-                logger.info(f"Search term: {search_term}")
-            
-            # Log filter parameters
-            for field in self.filterset_class.Meta.fields + ['tags']:
-                value = self.request.query_params.get(field)
-                if value:
-                    logger.info(f"Filter {field}: {value}")
-            
-            return queryset
-        except Exception as e:
-            logger.error(f"Error in DedicatedSearchView.get_queryset: {str(e)}", exc_info=True)
-            return Profile.objects.none()
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context['request'] = self.request
-        if self.request.user.is_authenticated:
-            try:
-                profile = Profile.objects.get(user=self.request.user)
-                context['profile_id'] = profile.user.id
-                logger.info(f"Added profile_id {profile.user.id} to context for user {self.request.user.id}")
-            except ObjectDoesNotExist:
-                logger.warning(f"Profile not found for user {self.request.user.id}")
-            except Exception as e:
-                logger.error(f"Error in DedicatedSearchView.get_serializer_context: {str(e)}", exc_info=True)
-        return context
-
-    def list(self, request, *args, **kwargs):
-        try:
-            logger.info(f"Starting dedicated search request from IP: {request.META.get('REMOTE_ADDR')}")
-            response = super().list(request, *args, **kwargs)
-            logger.info(f"Dedicated search completed. Results count: {len(response.data)}")
-            return response
-        except Exception as e:
-            logger.error(f"Error in DedicatedSearchView.list: {str(e)}", exc_info=True)
-            return Response(
-                {"error": f"An error occurred during dedicated search: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        """Get the queryset for the dedicated search view"""
+        queryset = Profile.objects.select_related('user').prefetch_related('tags').all()
+        
+        # Get search parameters
+        search_query = self.request.query_params.get('q', '')
+        user_type = self.request.query_params.get('user_type', '')
+        location = self.request.query_params.get('location', '')
+        city = self.request.query_params.get('city', '')
+        tags = self.request.query_params.getlist('tags', [])
+        
+        # Apply filters
+        if search_query:
+            search_terms = search_query.split()
+            name_filters = []
+            for term in search_terms:
+                name_filters.append(
+                    Q(first_name__icontains=term) |
+                    Q(last_name__icontains=term)
+                )
+            if name_filters:
+                queryset = queryset.filter(reduce(operator.and_, name_filters))
+        
+        if user_type:
+            queryset = queryset.filter(user_type=user_type)
+        
+        if location:
+            queryset = queryset.filter(
+                Q(city__icontains=location) |
+                Q(state__icontains=location) |
+                Q(country__icontains=location)
             )
+        
+        if city:
+            queryset = queryset.filter(city__icontains=city)
+        
+        if tags:
+            tag_objects = Tag.objects.filter(tag_name__in=tags)
+            if tag_objects.exists():
+                for tag in tag_objects:
+                    queryset = queryset.filter(tags=tag)
+                queryset = queryset.distinct()
+        
+        return queryset

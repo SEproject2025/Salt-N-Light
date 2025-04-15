@@ -266,11 +266,12 @@ class AdminProfileSerializer(serializers.ModelSerializer):
 class SearchProfileSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     tags = TagSerializer(many=True, read_only=True)
+    full_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
         fields = [
-            'user_id', 'user', 'user_type', 'first_name', 'last_name',
+            'user_id', 'user', 'user_type', 'first_name', 'last_name', 'full_name',
             'street_address', 'city', 'state', 'country',
             'phone_number', 'years_of_experience', 'description',
             'is_anonymous', 'tags'
@@ -283,13 +284,14 @@ class SearchProfileSerializer(serializers.ModelSerializer):
             return {
                 "id": obj.user.id,
                 "username": obj.user.username,
-                "email": obj.user.email,
-                "first_name": obj.user.first_name,
-                "last_name": obj.user.last_name
+                "email": obj.user.email
             }
         except Exception as e:
             logger.error(f"Failed to serialize user: {str(e)}")
             return {}
+
+    def get_full_name(self, obj):
+        return f"{obj.first_name or ''} {obj.last_name or ''}".strip()
 
 class ProfileEnrichedSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)

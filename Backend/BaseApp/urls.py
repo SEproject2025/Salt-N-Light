@@ -44,7 +44,7 @@ urlpatterns = [
    path('api/friendships/status/<int:profile_id>/',
         FriendshipViewSet.as_view({'get': 'status'}),
         name='friendship-status'),
-   path('api/search/', ProfileSearchView.as_view(),
+   path('api/search/', DedicatedSearchView.as_view(),
         name='profile-search'),
    path('api/dedicated-search/', DedicatedSearchView.as_view(),
         name='dedicated-search'),

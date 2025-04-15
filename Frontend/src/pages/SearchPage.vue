@@ -154,10 +154,10 @@
           <div class="results-grid">
             <UserCard
               v-for="profile in searchResults"
-              :key="profile.user.id"
-              :id="profile.user.id"
-              :first_name="profile.user.first_name"
-              :last_name="profile.user.last_name"
+              :key="profile.id"
+              :id="profile.id"
+              :first_name="profile.first_name"
+              :last_name="profile.last_name"
               :city="profile.city"
               :state="profile.state"
               :country="profile.country"
