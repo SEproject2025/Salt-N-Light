@@ -24,10 +24,6 @@
             <span class="value">{{ profile.user_type }}</span>
           </div>
           <div class="info-item">
-            <span class="label">Denomination</span>
-            <span class="value">{{ profile.denomination }}</span>
-          </div>
-          <div class="info-item">
             <span class="label">Phone</span>
             <span class="value">{{ profile.phone_number }}</span>
           </div>

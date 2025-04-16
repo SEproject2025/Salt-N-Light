@@ -158,7 +158,6 @@ export default {
         this.currentUser = response.data;
         return response.data;
       } catch (error) {
-        console.error("Failed to fetch current user:", error);
         return null;
       }
     },
@@ -187,19 +186,7 @@ export default {
             (comment) => comment.commenter_username === username
           );
         }
-
-        // Log the state for debugging
-        console.log("State updated:", {
-          currentUserVote: this.currentUserVote,
-          hasVoted: this.hasVoted,
-          hasCommented: this.hasCommented,
-          username: this.getCurrentUsername() || "Not logged in",
-          profileId: profile.user.id,
-          isSelfAdded: profile.is_self_added,
-        });
-      } catch (error) {
-        console.error("Error updating user state:", error);
-      }
+      } catch (error) {}
     },
     async refreshToken() {
       const refreshToken = localStorage.getItem("refresh_token");
@@ -214,7 +201,6 @@ export default {
         localStorage.setItem("access_token", response.data.access);
         return true;
       } catch (err) {
-        console.error("Token refresh failed", err);
         return false;
       }
     },
@@ -254,7 +240,6 @@ export default {
             return this.vote(isUpvote, false);
           }
         }
-        console.error("Voting failed:", error);
       }
     },
 
@@ -282,7 +267,6 @@ export default {
             return this.submitComment(false);
           }
         }
-        console.error("Comment submission failed:", error);
       }
     },
 
@@ -316,7 +300,6 @@ export default {
             return this.saveEdit(comment, false);
           }
         }
-        console.error("Comment update failed:", error);
       }
     },
 

@@ -256,7 +256,6 @@ export default {
         });
         this.suggestions[field] = response.predictions;
       } catch (error) {
-        console.error(`Error fetching ${field} suggestions:`, error);
         this.suggestions[field] = [];
       }
     },

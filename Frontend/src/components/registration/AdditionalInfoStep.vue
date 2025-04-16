@@ -101,13 +101,8 @@ export default {
             "Content-Type": "application/json",
           },
         });
-        console.log("Tags response:", response.data); // Add logging to debug
         this.availableTags = response.data;
       } catch (error) {
-        console.error(
-          "Failed to fetch tags:",
-          error.response?.data || error.message
-        );
         this.availableTags = []; // Ensure we reset to empty array on error
       }
     },

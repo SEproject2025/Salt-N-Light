@@ -206,7 +206,6 @@ export default {
             added_by: tag.added_by,
           }));
       } catch (error) {
-        console.error("Error fetching tags:", error.response?.data || error);
         this.error = "Error loading available tags";
       }
     },
@@ -273,7 +272,6 @@ export default {
         this.showTagDropdown = false;
         this.error = null;
       } catch (error) {
-        console.error("Error adding tag:", error.response || error);
         if (error.response?.status === 401) {
           localStorage.removeItem("access_token");
           this.error = "Your session has expired. Please log in again.";
@@ -343,7 +341,6 @@ export default {
         });
         this.error = null;
       } catch (error) {
-        console.error("Error removing tag:", error.response || error);
         if (error.response?.status === 401) {
           localStorage.removeItem("access_token");
           this.error = "Your session has expired. Please log in again.";
