@@ -71,7 +71,6 @@ class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
       context['profile_id'] = self.kwargs.get('pk')
       return context
 
-
 class MatchmakingResultsView(generics.ListAPIView):
    serializer_class = ProfileSerializer
    authentication_classes = [JWTAuthentication]
@@ -99,9 +98,8 @@ class MatchmakingResultsView(generics.ListAPIView):
 
       return matching_profiles.exclude(user_type=user_profile.user_type)
 
+
 # Tag viewset that performs CRUD operations
-
-
 class TagViewSet(ModelViewSet):
    filterset_fields = ['tag_name', 'tag_description', 'tag_is_predefined']
    queryset = Tag.objects.all()
@@ -114,7 +112,7 @@ class TagViewSet(ModelViewSet):
       return [AllowAny()]
 
    @action(detail=False, methods=['post'], url_path='add-to-profile',
-           url_name='add_to_profile')
+   url_name='add_to_profile')
    def add_to_profile(self, request):
       profile_id = request.data.get('profile_id')
       tag_id = request.data.get('tag_id')
@@ -160,7 +158,7 @@ class TagViewSet(ModelViewSet):
          }, status=status.HTTP_200_OK)
 
       except ObjectDoesNotExist:
-         return Response(  # pylint: disable=eval-used
+         return Response( # pylint: disable=eval-used
             {'error': 'Profile or Tag not found'},
             status=status.HTTP_404_NOT_FOUND
          )
@@ -172,7 +170,7 @@ class TagViewSet(ModelViewSet):
          )
 
    @action(detail=False, methods=['post'], url_path='remove-from-profile',
-           url_name='remove_from_profile')
+   url_name='remove_from_profile')
    # pylint: disable=too-many-return-statements
    def remove_from_profile(self, request):
       profile_id = request.data.get('profile_id')
@@ -216,7 +214,7 @@ class TagViewSet(ModelViewSet):
          if is_self_added and request.user.id != profile.user.id:
             return Response(
                {'error':
-                'Cannot remove tags that users added to their own profile'},
+               'Cannot remove tags that users added to their own profile'},
                status=status.HTTP_403_FORBIDDEN
             )
 
@@ -225,7 +223,7 @@ class TagViewSet(ModelViewSet):
             not is_self_added
             and added_by_id != request.user.id
             and request.user.id != profile.user.id
-            ):
+         ):
             return Response(
                {'error': 'You can only remove tags you added'},
                status=status.HTTP_403_FORBIDDEN
@@ -258,25 +256,22 @@ class TagViewSet(ModelViewSet):
             status=status.HTTP_403_FORBIDDEN
          )
 
+
 # Search history viewset that performs CRUD operations
-
-
 class SearchHistoryViewSet(ModelViewSet):
    queryset = SearchHistory.objects.all()
    serializer_class = SearchHistorySerializer
    permission_classes = [AllowAny]
 
+
 # External media viewset that performs CRUD operations
-
-
 class ExternalMediaViewSet(ModelViewSet):
    queryset = ExternalMedia.objects.all()
    serializer_class = ExternalMediaSerializer
    permission_classes = [AllowAny]
 
+
 # View for retrieving the currently logged in user
-
-
 class CurrentUserView(views.APIView):
    authentication_classes = [JWTAuthentication]
    permission_classes = [IsAuthenticated]
@@ -292,7 +287,6 @@ class CurrentUserView(views.APIView):
          return response.Response(serializer.data)
 
       return response.Response({"error": "Profile not found"}, status=404)
-
 
 class ProfileVoteView(generics.CreateAPIView, generics.UpdateAPIView):
    serializer_class = ProfileVoteSerializer
@@ -376,7 +370,6 @@ class ProfileCommentView(generics.CreateAPIView, generics.UpdateAPIView):
       self.perform_update(serializer)
 
       return response.Response(serializer.data)
-
 
 class ProfileVoteStatusView(views.APIView):
    authentication_classes = [JWTAuthentication]
@@ -496,9 +489,8 @@ class FriendshipViewSet(ModelViewSet):
          print(f"Error in status method: {str(e)}")  # Debug log
          return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
 # Admin API views
-
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def check_superuser(request):

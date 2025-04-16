@@ -71,7 +71,6 @@ export default {
           await this.loadData();
         }
       } catch (error) {
-        console.error("Error checking superuser status:", error);
         this.isSuperuser = false;
       } finally {
         this.isLoading = false;
@@ -79,15 +78,11 @@ export default {
     },
 
     async loadData() {
-      try {
-        // Only load data for the active tab
-        if (this.activeTab === "profiles") {
-          await this.loadProfiles();
-        } else if (this.activeTab === "comments") {
-          await this.loadComments();
-        }
-      } catch (error) {
-        console.error("Error loading data:", error);
+      // Only load data for the active tab
+      if (this.activeTab === "profiles") {
+        await this.loadProfiles();
+      } else if (this.activeTab === "comments") {
+        await this.loadComments();
       }
     },
 
@@ -118,7 +113,7 @@ export default {
         // Apply any existing search filter
         this.filterProfiles();
       } catch (error) {
-        console.error("Error loading profiles:", error);
+        null;
       } finally {
         this.profilesLoading = false;
       }
@@ -151,7 +146,7 @@ export default {
         // Apply any existing search filter
         this.filterComments();
       } catch (error) {
-        console.error("Error loading comments:", error);
+        null;
       } finally {
         this.commentsLoading = false;
       }
@@ -287,7 +282,6 @@ export default {
         this.deleteType = null;
         this.itemToDelete = null;
       } catch (error) {
-        console.error("Error deleting item:", error);
         alert("An error occurred while deleting. Please try again.");
       }
     },

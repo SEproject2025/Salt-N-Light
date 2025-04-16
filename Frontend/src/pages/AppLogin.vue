@@ -59,11 +59,9 @@ export default {
           username: this.username,
           password: this.password,
         });
-
         // Store tokens in local storage or Vuex
         localStorage.setItem("access_token", response.data.access);
         localStorage.setItem("refresh_token", response.data.refresh);
-
         // Redirect to dashboard or another page
         this.$router.push("/SearchPage");
       } catch (error) {

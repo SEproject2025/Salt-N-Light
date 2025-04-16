@@ -110,7 +110,6 @@ export default {
 
         this.profile = profileData;
       } catch (err) {
-        console.error("Failed to load profile:", err);
         this.error = "Failed to load profile data.";
       } finally {
         if (!this.redirecting) {
@@ -119,20 +118,12 @@ export default {
       }
     },
     async handleTagAdded() {
-      try {
-        // Refresh the profile data to show the new tag
-        await this.fetchProfile();
-      } catch (error) {
-        console.error("Error refreshing profile after tag addition:", error);
-      }
+      // Refresh the profile data to show the new tag
+      await this.fetchProfile();
     },
     async handleTagRemoved() {
-      try {
-        // Refresh the profile data to show the removed tag
-        await this.fetchProfile();
-      } catch (error) {
-        console.error("Error refreshing profile after tag removal:", error);
-      }
+      // Refresh the profile data to show the removed tag
+      await this.fetchProfile();
     },
   },
   beforeRouteEnter(to, from, next) {

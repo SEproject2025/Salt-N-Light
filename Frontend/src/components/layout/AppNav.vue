@@ -51,7 +51,6 @@ export default {
     checkAuthStatus() {
       const token = localStorage.getItem("access_token");
       this.isAuthenticated = !!token;
-
       if (this.isAuthenticated) {
         this.checkSuperuserStatus();
       }
@@ -65,7 +64,6 @@ export default {
         });
         this.isSuperuser = response.data.is_superuser;
       } catch (error) {
-        console.error("Error checking superuser status:", error);
         this.isSuperuser = false;
       }
     },

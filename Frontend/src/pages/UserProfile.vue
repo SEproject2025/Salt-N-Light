@@ -384,7 +384,6 @@ export default {
             }
         );
       } catch (err) {
-        console.error("Profile fetch error:", err);
         if (err.response?.status === 401 && retry) {
           try {
             const refreshed = await this.refreshToken();
@@ -395,7 +394,6 @@ export default {
               this.$router.push("/AppLogin");
             }
           } catch (refreshError) {
-            console.error("Token refresh error:", refreshError);
             this.error = "Session expired. Please log in again.";
             this.$router.push("/AppLogin");
           }
@@ -491,7 +489,6 @@ export default {
         localStorage.setItem("access_token", response.data.access);
         return true;
       } catch (err) {
-        console.error("Token refresh failed:", err);
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         return false;
