@@ -118,16 +118,12 @@ export default {
       }
     },
     async handleTagAdded() {
-      try {
-        // Refresh the profile data to show the new tag
-        await this.fetchProfile();
-      } catch (error) {}
+      // Refresh the profile data to show the new tag
+      await this.fetchProfile();
     },
     async handleTagRemoved() {
-      try {
-        // Refresh the profile data to show the removed tag
-        await this.fetchProfile();
-      } catch (error) {}
+      // Refresh the profile data to show the removed tag
+      await this.fetchProfile();
     },
   },
   beforeRouteEnter(to, from, next) {

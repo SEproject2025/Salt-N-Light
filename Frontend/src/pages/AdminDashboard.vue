@@ -78,14 +78,12 @@ export default {
     },
 
     async loadData() {
-      try {
-        // Only load data for the active tab
-        if (this.activeTab === "profiles") {
-          await this.loadProfiles();
-        } else if (this.activeTab === "comments") {
-          await this.loadComments();
-        }
-      } catch (error) {}
+      // Only load data for the active tab
+      if (this.activeTab === "profiles") {
+        await this.loadProfiles();
+      } else if (this.activeTab === "comments") {
+        await this.loadComments();
+      }
     },
 
     async loadProfiles() {
@@ -115,6 +113,7 @@ export default {
         // Apply any existing search filter
         this.filterProfiles();
       } catch (error) {
+        null;
       } finally {
         this.profilesLoading = false;
       }
@@ -147,6 +146,7 @@ export default {
         // Apply any existing search filter
         this.filterComments();
       } catch (error) {
+        null;
       } finally {
         this.commentsLoading = false;
       }

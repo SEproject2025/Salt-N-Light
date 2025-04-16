@@ -169,24 +169,21 @@ export default {
     async updateUserState(profile) {
       if (!profile || !profile.user) return;
 
-      try {
-        // Get current user's vote status
-        const voteResponse = await api.get(
-          `api/profiles/${profile.user.id}/vote-status/`,
-          { headers: this.getAuthHeader() }
+      const voteResponse = await api.get(
+        `api/profiles/${profile.user.id}/vote-status/`,
+        { headers: this.getAuthHeader() }
+      );
+
+      this.currentUserVote = voteResponse.data.is_upvote;
+      this.hasVoted = voteResponse.data.has_voted;
+
+      // Check if current user has commented
+      if (profile.comments) {
+        const username = this.getCurrentUsername();
+        this.hasCommented = profile.comments.some(
+          (comment) => comment.commenter_username === username
         );
-
-        this.currentUserVote = voteResponse.data.is_upvote;
-        this.hasVoted = voteResponse.data.has_voted;
-
-        // Check if current user has commented
-        if (profile.comments) {
-          const username = this.getCurrentUsername();
-          this.hasCommented = profile.comments.some(
-            (comment) => comment.commenter_username === username
-          );
-        }
-      } catch (error) {}
+      }
     },
     async refreshToken() {
       const refreshToken = localStorage.getItem("refresh_token");

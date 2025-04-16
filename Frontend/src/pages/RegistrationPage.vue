@@ -325,7 +325,7 @@ export default {
           profile_picture: null,
         };
 
-        const response = await api.post("api/profiles/", formData);
+        await api.post("api/profiles/", formData);
 
         this.message = "Registration successful!";
         this.isSuccess = true;
@@ -363,6 +363,7 @@ export default {
             document.createElement("div")
           );
         } else {
+          null;
         }
 
         // Add input event listeners
@@ -439,7 +440,9 @@ export default {
   },
   watch: {
     form: {
-      handler(newVal) {},
+      handler() {
+        null;
+      },
       deep: true,
     },
   },
