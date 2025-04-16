@@ -16,6 +16,7 @@ django-cors-headers==4.6.0
 django-filter==24.3
 djangorestframework==3.15.2
 djangorestframework_simplejwt==5.4.0
+Faker==37.1.0
 gunicorn==23.0.0
 iniconfig==2.0.0
 isort==5.13.2
