@@ -604,7 +604,7 @@ class AdminCommentDeleteView(generics.DestroyAPIView):
 class ProfileFilter(FilterSet):
    tags = CharFilter(method='filter_tags')
 
-   def filter_tags(self, queryset, name, value):
+   def filter_tags(self, queryset, value):
       if not value:
          return queryset
       tag_ids = [int(id) for id in value.split(',') if id.strip().isdigit()]
@@ -625,47 +625,40 @@ class ProfileSearchView(generics.ListAPIView):
    ]
 
    def get_queryset(self):
-      try:
-         logger.info(
-            f"Starting search with params: {self.request.query_params}")
+      logger.info("Starting search with params: %s",
+                  self.request.query_params)
 
-         # Log all query parameters
-         for key, value in self.request.query_params.items():
-            logger.info(f"Query param - {key}: {value}")
+      # Log all query parameters
+      for key, value in self.request.query_params.items():
+         logger.info("Query param - %s: %s", key, value)
 
-         # Build queryset with detailed logging
-         logger.info("Building base queryset...")
-         queryset = Profile.objects.select_related('user').prefetch_related(
-            'tags'
-         )
-         logger.info(f"Base queryset count: {queryset.count()}")
+      # Build queryset with detailed logging
+      logger.info("Building base queryset...")
+      queryset = Profile.objects.select_related('user').prefetch_related(
+         'tags'
+      )
+      logger.info("Base queryset count: %s", queryset.count())
 
-         # Apply anonymous filter
-         logger.info("Applying anonymous filter...")
-         queryset = queryset.exclude(is_anonymous=True)
-         logger.info(f"After anonymous filter count: {queryset.count()}")
+      # Apply anonymous filter
+      logger.info("Applying anonymous filter...")
+      queryset = queryset.exclude(is_anonymous=True)
+      logger.info("After anonymous filter count: %s", queryset.count())
 
-         # Log search parameters if present
-         search_term = self.request.query_params.get('search', None)
-         if search_term:
-            logger.info(f"Search term: {search_term}")
+      # Log search parameters if present
+      search_term = self.request.query_params.get('search', None)
+      if search_term:
+         logger.info("Search term: %s", search_term)
 
-         # Log filter parameters
-         for field in self.filterset_class.Meta.fields + ['tags']:
-            value = self.request.query_params.get(field)
-            if value:
-               logger.info(f"Filter {field}: {value}")
+      # Log filter parameters
+      for field in self.filterset_class.Meta.fields + ['tags']:
+         value = self.request.query_params.get(field)
+         if value:
+            logger.info("Filter %s: %s", field, value)
 
-         # Log final queryset SQL
-         logger.info(f"Final queryset SQL: {str(queryset.query)}")
+      # Log final queryset SQL
+      logger.info("Final queryset SQL: %s", str(queryset.query))
 
-         return queryset
-      except Exception as e:
-         logger.error(
-            f"Error in ProfileSearchView.get_queryset: {str(e)}", exc_info=True)
-         logger.error(
-            f"Query params that caused error: {self.request.query_params}")
-         return Profile.objects.none()
+      return queryset
 
    def get_serializer_context(self):
       context = super().get_serializer_context()
@@ -675,51 +668,38 @@ class ProfileSearchView(generics.ListAPIView):
             profile = Profile.objects.get(user=self.request.user)
             context['profile_id'] = profile.user.id
             logger.info(
-               f"Added profile_id {profile.user.id} to context for user {
-                  self.request.user.id}")
+               "Added profile_id %s to context for user %s",
+               profile.user.id, self.request.user.id)
          except ObjectDoesNotExist:
-            logger.warning(f"Profile not found for user {
-               self.request.user.id}")
-         except Exception as e:
-            logger.error(f"Error in ProfileSearchView.get_serializer_context: {str(e)}", exc_info=True)
+            logger.warning("Profile not found for user %s",
+               self.request.user.id)
       return context
 
    def list(self, request, *args, **kwargs):
-      try:
-         logger.info(f"Starting search request from IP: {
-            request.META.get('REMOTE_ADDR')}")
-         logger.info(f"Request headers: {request.headers}")
+      logger.info("Starting search request from IP: %s",
+         request.META.get('REMOTE_ADDR'))
+      logger.info("Request headers: %s", request.headers)
 
-         # Get the queryset
-         queryset = self.get_queryset()
-         logger.info(f"Queryset count before filtering: {queryset.count()}")
+      # Get the queryset
+      queryset = self.get_queryset()
+      logger.info("Queryset count before filtering: %s", queryset.count())
 
-         # Apply filters
-         queryset = self.filter_queryset(queryset)
-         logger.info(f"Queryset count after filtering: {queryset.count()}")
+      # Apply filters
+      queryset = self.filter_queryset(queryset)
+      logger.info("Queryset count after filtering: %s", queryset.count())
 
-         # Paginate
-         page = self.paginate_queryset(queryset)
-         if page is not None:
-            logger.info(f"Paginated results count: {len(page)}")
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+      # Paginate
+      page = self.paginate_queryset(queryset)
+      if page is not None:
+         logger.info("Paginated results count: %s", len(page))
+         serializer = self.get_serializer(page, many=True)
+         return self.get_paginated_response(serializer.data)
 
-         # Serialize
-         serializer = self.get_serializer(queryset, many=True)
-         logger.info(f"Serialized results count: {len(serializer.data)}")
+      # Serialize
+      serializer = self.get_serializer(queryset, many=True)
+      logger.info("Serialized results count: %s", len(serializer.data))
 
-         return Response(serializer.data)
-      except Exception as e:
-         logger.error(f"Error in ProfileSearchView.list: {str(e)}",
-                      exc_info=True)
-         logger.error(f"Request data that caused error: {request.data}")
-         logger.error(f"Query params that caused error: {
-            request.query_params}")
-         return Response(
-            {"error": f"An error occurred during search: {str(e)}"},
-             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-         )
+      return Response(serializer.data)
 
 class DedicatedSearchView(generics.ListAPIView):
    serializer_class = SearchProfileSerializer
@@ -741,15 +721,7 @@ class DedicatedSearchView(generics.ListAPIView):
 
       # Apply filters
       if search_query:
-         search_terms = search_query.split()
-         name_filters = []
-         for term in search_terms:
-            name_filters.append(
-               Q(first_name__icontains=term) |
-               Q(last_name__icontains=term)
-            )
-         if name_filters:
-            queryset = queryset.filter(reduce(operator.and_, name_filters))
+         queryset = apply_filters(search_query, queryset)
 
       if user_type:
          queryset = queryset.filter(user_type=user_type)
@@ -772,3 +744,16 @@ class DedicatedSearchView(generics.ListAPIView):
             queryset = queryset.distinct()
 
       return queryset
+
+def apply_filters(search_query, queryset):
+   search_terms = search_query.split()
+   name_filters = []
+   for term in search_terms:
+      name_filters.append(
+         Q(first_name__icontains=term) |
+         Q(last_name__icontains=term)
+      )
+   if name_filters:
+      queryset = queryset.filter(reduce(operator.and_, name_filters))
+
+   return queryset
