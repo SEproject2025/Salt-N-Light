@@ -125,11 +125,19 @@
 
       <div class="form-group full-width">
         <label>Tags</label>
-        <select v-model="formData.selectedTags" multiple class="tag-select">
-          <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">
-            {{ tag.name }}
-          </option>
-        </select>
+        <div class="tag-selection-container">
+          <div class="tag-list">
+            <div
+              v-for="tag in availableTags"
+              :key="tag.id"
+              class="tag-item"
+              :class="{ selected: formData.selectedTags.includes(tag.id) }"
+              @click="toggleTag(tag.id)"
+            >
+              {{ tag.name }}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="form-group full-width">
@@ -394,6 +402,15 @@ export default {
       };
       this.$emit("submit", formDataToSubmit);
     },
+
+    toggleTag(tagId) {
+      const index = this.formData.selectedTags.indexOf(tagId);
+      if (index === -1) {
+        this.formData.selectedTags.push(tagId);
+      } else {
+        this.formData.selectedTags.splice(index, 1);
+      }
+    },
   },
 };
 </script>
@@ -464,8 +481,41 @@ export default {
   outline: none;
 }
 
-.tag-select {
-  min-height: 100px;
+.tag-selection-container {
+  padding: 10px;
+  background: white;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 5px;
+}
+
+.tag-item {
+  padding: 6px 12px;
+  border-radius: 16px;
+  background-color: #f0f0f0;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.tag-item:hover {
+  background-color: #e0e0e0;
+}
+
+.tag-item.selected {
+  background-color: #3498db;
+  color: white;
+}
+
+.tag-item.selected:hover {
+  background-color: #2980b9;
 }
 
 .form-actions {
