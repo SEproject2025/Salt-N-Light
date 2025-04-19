@@ -27,6 +27,9 @@
           </li>
           <li v-if="isAuthenticated" class="nav-item">
             <a href="#" @click.prevent="logout" class="nav-link">Logout</a>
+          </li>
+        </ul>
+      </div>
 
       <div class="navbar-nav ml-auto">
         <div class="nav-item quick-search-wrapper">
@@ -36,8 +39,8 @@
         <ul class="navbar-nav">
           <li class="nav-item">
             <router-link to="/searchpage" class="nav-link">
-              <i class="fas fa-search"></i> Advanced Search
-            </router-link>
+              <i class="fas fa-search"></i> Advanced Search</router-link
+            >
           </li>
           <li class="nav-item">
             <router-link to="/AppLogin" class="nav-link">Login</router-link>
@@ -55,6 +58,7 @@
 
 <script>
 import api from "@/api/axios.js";
+import QuickSearch from "@/components/search/QuickSearch.vue";
 export default {
   name: "AppNav",
   data() {
@@ -89,8 +93,7 @@ export default {
       }
     },
     logout() {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+      localStorage.clear();
       this.isAuthenticated = false;
       this.isSuperuser = false;
       this.$router.push("/AppLogin");
@@ -100,7 +103,8 @@ export default {
     $route() {
       this.checkAuthStatus();
     },
-import QuickSearch from "@/components/search/QuickSearch.vue";
+  }
+}
 
 export default {
   name: "AppNav",
