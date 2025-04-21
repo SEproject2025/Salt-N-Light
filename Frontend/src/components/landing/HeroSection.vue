@@ -33,7 +33,7 @@ export default {
   methods: {
     getStarted() {
       // Redirect to RegistrationPagePage
-      this.$router.push("/AppLogin");
+      this.$router.push("/RegistrationPage");
     },
     learnMore() {
       // Scroll to the About Us section
