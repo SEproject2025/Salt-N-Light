@@ -131,31 +131,12 @@
               {{ totalResults }} Profile{{ totalResults !== 1 ? "s" : "" }}
               Found
             </h2>
-            <div class="controls">
-              <div class="sort-controls">
-                <label>Sort by:</label>
-                <select v-model="sortBy" @change="handleSort">
-                  <option value="recent">Most Recent</option>
-                  <option value="name">Name (A-Z)</option>
-                  <option value="location">Location</option>
-                </select>
-              </div>
-              <div class="page-size-controls">
-                <label>Show:</label>
-                <select v-model="pageSize" @change="handlePageSizeChange">
-                  <option value="all">Show All</option>
-                  <option value="12">12 per page</option>
-                  <option value="24">24 per page</option>
-                  <option value="48">48 per page</option>
-                </select>
-              </div>
-            </div>
           </div>
           <div class="results-grid">
             <UserCard
               v-for="profile in searchResults"
               :key="profile.id"
-              :id="profile.id"
+              :id="profile.user_id"
               :first_name="profile.first_name"
               :last_name="profile.last_name"
               :city="profile.city"
@@ -309,6 +290,7 @@ export default {
 
           if (results.length > 0) {
             this.searchResults = results;
+            console.log(results);
             this.totalResults = response.count || results.length;
             this.totalPages = Math.ceil(
               this.totalResults /
