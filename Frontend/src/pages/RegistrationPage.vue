@@ -188,7 +188,6 @@ export default {
           response.data.map((profile) => profile.user.email.toLowerCase())
         );
       } catch (error) {
-        console.error("Error fetching existing users:", error);
         // Don't show error to user, just log it
       }
     },
@@ -230,7 +229,6 @@ export default {
             try {
               await this.fetchExistingUsers();
             } catch (error) {
-              console.error("Failed to fetch existing users:", error);
               // Continue anyway, we'll handle missing data gracefully
             }
           }
@@ -257,8 +255,6 @@ export default {
           this.message = "";
           this.currentStep++;
         } catch (error) {
-          console.error("Validation error:", error);
-
           if (error.code === "ECONNABORTED") {
             this.message =
               "Connection timed out. Please check your connection and try again.";
@@ -296,7 +292,6 @@ export default {
           (tag) => tag.tag_is_predefined
         );
       } catch (error) {
-        console.error("Failed to fetch tags:", error);
         // Don't show error to user, just log it
       }
     },
@@ -330,25 +325,16 @@ export default {
           profile_picture: null,
         };
 
-        // Log the data being sent
-        console.log("Registration data being sent:", formData);
-
-        const response = await api.post("api/profiles/", formData);
-        console.log("Registration response:", response.data);
+        await api.post("api/profiles/", formData);
 
         this.message = "Registration successful!";
         this.isSuccess = true;
         setTimeout(() => this.$router.push("/AppLogin"), 1000);
       } catch (error) {
-        console.error("Registration failed:", error);
-
         if (error.code === "ECONNABORTED") {
           this.message =
             "Registration timed out. Please check your connection and try again.";
         } else if (error.response) {
-          // Log the full error response for debugging
-          console.error("Error response:", error.response);
-
           this.message =
             error.response?.data?.detail ||
             error.response?.data?.user?.username?.[0] ||
@@ -377,7 +363,7 @@ export default {
             document.createElement("div")
           );
         } else {
-          console.error("Google Places API failed to load.");
+          null;
         }
 
         // Add input event listeners
@@ -410,7 +396,6 @@ export default {
         });
         this.suggestions[field] = response.predictions;
       } catch (error) {
-        console.error(`Error fetching ${field} suggestions:`, error);
         this.suggestions[field] = [];
       }
     },
@@ -452,12 +437,11 @@ export default {
     this.fetchTags();
     this.initGooglePlaces();
     this.fetchExistingUsers();
-    console.log("RegistrationPage component mounted");
   },
   watch: {
     form: {
-      handler(newVal) {
-        console.log("Form data updated:", newVal);
+      handler() {
+        null;
       },
       deep: true,
     },

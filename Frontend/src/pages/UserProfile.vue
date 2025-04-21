@@ -56,7 +56,7 @@
 
 <style scoped>
 .profile-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1rem;
   min-height: 100vh;
@@ -67,29 +67,25 @@
 }
 
 .content-wrapper {
-  display: grid;
-  grid-template-columns: 1fr 350px;
+  display: flex;
   gap: 2rem;
   margin-top: 2rem;
-  align-items: start;
+  align-items: flex-start;
 }
 
 .main-content {
-  display: flex;
-  justify-content: flex-end;
-  width: 100%;
-  padding-right: 2rem;
+  flex: 3;
+  padding: 20px;
 }
 
 .side-panel {
+  flex: 1;
+  max-width: 350px;
   position: sticky;
   top: 20px;
 }
 
 .notification-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   padding: 20px;
 }
 
@@ -139,17 +135,18 @@
 
 @media (max-width: 1200px) {
   .content-wrapper {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .side-panel {
-    position: static;
     width: 100%;
     max-width: none;
+    position: static;
   }
 
-  .main-content {
-    padding-right: 0;
+  .main-content,
+  .notification-card {
+    padding: 15px;
   }
 }
 
@@ -387,7 +384,6 @@ export default {
             }
         );
       } catch (err) {
-        console.error("Profile fetch error:", err);
         if (err.response?.status === 401 && retry) {
           try {
             const refreshed = await this.refreshToken();
@@ -398,7 +394,6 @@ export default {
               this.$router.push("/AppLogin");
             }
           } catch (refreshError) {
-            console.error("Token refresh error:", refreshError);
             this.error = "Session expired. Please log in again.";
             this.$router.push("/AppLogin");
           }
@@ -422,11 +417,13 @@ export default {
 
         try {
           await this.sendProfileUpdate(profileId, changedFields);
+          alert("Profile updated successfully!");
           this.editing = false;
           this.fetchProfile();
         } catch (err) {
           if (err.response?.status === 401 && (await this.refreshToken())) {
             await this.sendProfileUpdate(profileId, changedFields);
+            alert("Profile updated successfully!");
             this.editing = false;
             this.fetchProfile();
           } else {
@@ -453,7 +450,6 @@ export default {
         "first_name",
         "last_name",
         "user_type",
-        "denomination",
         "phone_number",
         "street_address",
         "city",
@@ -493,7 +489,6 @@ export default {
         localStorage.setItem("access_token", response.data.access);
         return true;
       } catch (err) {
-        console.error("Token refresh failed:", err);
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         return false;

@@ -12,7 +12,7 @@
       <div
         v-for="notification in notifications"
         :key="notification.id"
-        :class="['notification-item', { unread: !notification.is_read }]"
+        class="notification-item"
       >
         <div class="notification-content">
           <div class="notification-header">
@@ -26,6 +26,32 @@
             }}</span>
           </div>
           <div class="notification-message">{{ notification.message }}</div>
+          <div
+            v-if="notification.notification_type === 'friend_request'"
+            class="friend-request-actions"
+          >
+            <template v-if="!respondedRequests.has(notification.id)">
+              <button
+                class="accept-btn"
+                @click="respondToFriendRequest(notification, 'accept')"
+              >
+                Accept
+              </button>
+              <button
+                class="reject-btn"
+                @click="respondToFriendRequest(notification, 'reject')"
+              >
+                Reject
+              </button>
+            </template>
+            <div
+              v-else
+              class="expanded-button"
+              :class="getResponseClass(notification)"
+            >
+              {{ getResponseText(notification) }}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -42,6 +68,7 @@ export default {
       notifications: [],
       loading: false,
       error: null,
+      respondedRequests: new Map(),
     };
   },
   methods: {
@@ -64,59 +91,67 @@ export default {
       this.error = null;
 
       try {
-        const token = localStorage.getItem("access_token");
-        if (!token) {
-          this.error = "Please log in to view notifications";
-          return;
-        }
-
         const response = await api.get("api/notifications", {
           headers: this.getAuthHeader(),
         });
-
-        console.log("Notifications response:", response.data);
-        this.notifications = response.data;
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-        if (error.response?.status === 401) {
-          // Try to refresh the token
-          try {
-            const refreshToken = localStorage.getItem("refresh_token");
-            if (!refreshToken) {
-              throw new Error("No refresh token");
+        // Load stored responses first
+        const responses = JSON.parse(
+          localStorage.getItem("notificationResponses") || "{}"
+        );
+        // Filter out notifications that have been responded to
+        this.notifications = response.data.filter((notification) => {
+          if (notification.notification_type === "friend_request") {
+            const hasResponded = responses[notification.id];
+            if (hasResponded) {
+              // Don't show notifications that have been responded to
+              this.respondedRequests.set(notification.id, hasResponded);
+              return false;
             }
-
-            const refreshResponse = await api.post("api/token/refresh/", {
-              refresh: refreshToken,
-            });
-
-            localStorage.setItem("access_token", refreshResponse.data.access);
-
-            // Retry the original request with new token
-            const response = await api.get("api/notifications/", {
-              headers: {
-                Authorization: `Bearer ${refreshResponse.data.access}`,
-              },
-            });
-
-            this.notifications = response.data;
-          } catch (refreshError) {
-            console.error("Token refresh failed:", refreshError);
-            this.error = "Session expired. Please log in again.";
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
           }
-        } else {
-          this.error = "Failed to load notifications";
-        }
+          return true;
+        });
+      } catch (error) {
+        this.error = "Failed to load notifications";
       } finally {
         this.loading = false;
       }
     },
   },
+  async respondToFriendRequest(notification, action) {
+    try {
+      await api.post(
+        `api/friendships/${notification.related_object_id}/respond/`,
+        { action: action },
+        { headers: this.getAuthHeader() }
+      );
+      // Store the response in localStorage
+      const responses = JSON.parse(
+        localStorage.getItem("notificationResponses") || "{}"
+      );
+      responses[notification.id] = action;
+      localStorage.setItem("notificationResponses", JSON.stringify(responses));
+      this.respondedRequests.set(notification.id, action);
+    } catch (error) {
+      this.error = "Failed to respond to friend request.";
+    }
+  },
+  getResponseClass(notification) {
+    const action = this.respondedRequests.get(notification.id);
+    return action === "reject" ? "reject" : "accept";
+  },
+  getResponseText(notification) {
+    const action = this.respondedRequests.get(notification.id);
+    return action === "reject" ? "Rejected" : "Accepted";
+  },
   mounted() {
-    console.log("NotificationList component mounted");
     this.fetchNotifications();
+    // Load stored responses
+    const responses = JSON.parse(
+      localStorage.getItem("notificationResponses") || "{}"
+    );
+    Object.entries(responses).forEach(([id, action]) => {
+      this.respondedRequests.set(parseInt(id), action);
+    });
   },
 };
 </script>

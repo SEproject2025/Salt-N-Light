@@ -11,6 +11,8 @@
           <PublicProfileView
             :profile="profile"
             :is-own-profile="isOwnProfile"
+            :current-user-id="getCurrentUserId()"
+            v-model:friendshipStatus="friendshipStatus"
             @tag-added="handleTagAdded"
             @tag-removed="handleTagRemoved"
           />
@@ -43,6 +45,7 @@ export default {
       loading: true,
       error: null,
       isOwnProfile: false,
+      friendshipStatus: null,
     };
   },
   methods: {
@@ -107,7 +110,6 @@ export default {
 
         this.profile = profileData;
       } catch (err) {
-        console.error("Failed to load profile:", err);
         this.error = "Failed to load profile data.";
       } finally {
         if (!this.redirecting) {
@@ -116,20 +118,12 @@ export default {
       }
     },
     async handleTagAdded() {
-      try {
-        // Refresh the profile data to show the new tag
-        await this.fetchProfile();
-      } catch (error) {
-        console.error("Error refreshing profile after tag addition:", error);
-      }
+      // Refresh the profile data to show the new tag
+      await this.fetchProfile();
     },
     async handleTagRemoved() {
-      try {
-        // Refresh the profile data to show the removed tag
-        await this.fetchProfile();
-      } catch (error) {
-        console.error("Error refreshing profile after tag removal:", error);
-      }
+      // Refresh the profile data to show the removed tag
+      await this.fetchProfile();
     },
   },
   beforeRouteEnter(to, from, next) {
@@ -180,6 +174,12 @@ export default {
   display: flex;
   gap: 2rem;
   margin-top: 2rem;
+  width: 100%;
+}
+
+.content-wrapper > :first-child {
+  flex: 1;
+  min-width: 0; /* Prevents flex items from overflowing */
 }
 
 .back-btn {
@@ -240,6 +240,10 @@ export default {
 @media (max-width: 1200px) {
   .content-wrapper {
     flex-direction: column;
+  }
+
+  .content-wrapper > * {
+    width: 100%;
   }
 }
 </style>

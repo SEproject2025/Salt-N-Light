@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Tag, SearchHistory, \
-    ExternalMedia, Profile, ProfileVote, ProfileComment, Notification
+    ExternalMedia, Profile, ProfileVote, ProfileComment, \
+    Notification, Friendship
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -144,5 +145,104 @@ class NotificationSerializer(serializers.ModelSerializer):
                                           read_only=True)
    class Meta:
       model = Notification
-      fields = '__all__'
+      fields = ['id', 'recipient', 'recipient_username', 'notification_type',
+                'message', 'created_at', 'is_read', 'related_object_id']
       read_only_fields = ['created_at']
+
+
+# Special serializer for admin dashboard
+class AdminProfileCommentSerializer(serializers.ModelSerializer):
+   commenter = UserSerializer(read_only=True)
+   profile_detail = serializers.SerializerMethodField(read_only=True)
+
+   class Meta:
+      model = ProfileComment
+      fields = ['id', 'commenter', 'profile', 'profile_detail',
+                'comment', 'created_at', 'updated_at']
+      read_only_fields = ['commenter', 'created_at', 'updated_at']
+
+   def get_profile_detail(self, obj):
+      # Return the profile with nested user data
+      try:
+         # Get the profile object safely
+         profile = obj.profile
+
+         # Check if we have a valid profile and user
+         if not profile:
+            return {
+               'id': None,
+               'user': {
+                  'id': None,
+                  'username': 'Unknown',
+                  'email': ''
+               },
+               'user_type': 'Unknown'
+            }
+
+         # Access the profile's user object
+         profile_user = profile.user
+
+         # Return the needed fields
+         return {
+            # Access the profile's user ID directly
+            'id': profile_user.id,
+            'user': {
+               'id': profile_user.id,
+               'username': profile_user.username,
+               'email': profile_user.email
+            },
+            'user_type': getattr(profile, 'user_type', 'Unknown')
+         }
+      except AttributeError as e:
+         print(f"AttributeError in get_profile_detail: {str(e)}")
+         # Return fallback data for UI display
+         return {
+            'id': None,
+            'user': {
+               'id': None,
+               'username': 'Profile Error',
+               'email': ''
+            },
+            'user_type': 'Unknown'
+         }
+
+
+class FriendshipSerializer(serializers.ModelSerializer):
+   sender_username = serializers.CharField(source='sender.username',
+                                           read_only=True)
+   receiver_username = serializers.CharField(source='receiver.username',
+                                             read_only=True)
+
+   class Meta:
+      model = Friendship
+      fields = ['id', 'sender', 'receiver',
+                'status', 'created_at', 'sender_username', 'receiver_username']
+      read_only_fields = ['id', 'created_at',
+                          'sender_username', 'receiver_username', 'sender']
+
+   def create(self, validated_data):
+      # Automatically set the sender to the current user
+      validated_data['sender'] = self.context['request'].user
+      return super().create(validated_data)
+
+
+# Special serializer for admin dashboard
+class AdminProfileSerializer(serializers.ModelSerializer):
+   user = UserSerializer()  # Nested User serializer
+   tags = serializers.SerializerMethodField()
+
+   class Meta:
+      model = Profile
+      fields = '__all__'
+
+   def get_tags(self, obj):
+      # Return complete tag data instead of just IDs
+      return [
+         {
+            'id': tag.id,
+            'name': tag.tag_name,
+            'tag_name': tag.tag_name,
+            'description': tag.tag_description
+         }
+         for tag in obj.tags.all()
+      ]
