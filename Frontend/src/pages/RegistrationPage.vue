@@ -2,92 +2,90 @@
   <div class="registration-container">
     <div class="registration-card">
       <h1>Create Your Account</h1>
-      <form @submit.prevent="registerUser">
-        <div class="form-group">
-          <!-- User fields for registration form  -->
-          <label for="username">Username:</label>
-          <input
-            type="text"
-            id="username"
-            v-model="form.user.username"
-            required
-          />
 
-          <label for="email">Email:</label>
-          <input type="email" id="email" v-model="form.user.email" required />
+      <!-- Progress Bar Component -->
+      <ProgressBar :steps="steps" :currentStep="currentStep" />
 
-          <label for="password">Password:</label>
-          <input
-            type="password"
-            id="password"
-            v-model="form.user.password"
-            required
-          />
+      <form>
+        <!-- Step 1: Account Information -->
+        <AccountInfoStep
+          v-show="currentStep === 0"
+          v-model:userData="form.user"
+          @update:userData="updateUserData"
+          @password-validation="handlePasswordValidation"
+          @validation-status="handleValidationStatus"
+        />
 
-          <!-- Other fields for registration form -->
-          <label for="tags">Select Tags:</label>
-          <select id="tags" v-model="form.tags" multiple>
-            <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">
-              {{ tag.tag_name }}
-            </option>
-          </select>
+        <!-- Step 2: Personal Information -->
+        <PersonalInfoStep
+          v-show="currentStep === 1"
+          v-model:personalData="form"
+          @validation-status="handlePersonalInfoValidation"
+        />
 
-          <label for="userType">User Type:</label>
-          <input type="text" id="userType" v-model="form.user_type" />
+        <!-- Step 3: Location Information -->
+        <LocationInfoStep
+          v-show="currentStep === 2"
+          v-model:locationData="form"
+          :isAnonymous="form.is_anonymous"
+          @validation-status="handleLocationInfoValidation"
+        />
 
-          <label for="firstName">First Name:</label>
-          <input type="text" id="firstName" v-model="form.first_name" />
+        <!-- Step 4: Additional Information -->
+        <AdditionalInfoStep
+          v-show="currentStep === 3"
+          v-model:additionalData="form"
+          @validation-status="handleAdditionalInfoValidation"
+        />
 
-          <label for="lastName">Last Name:</label>
-          <input type="text" id="lastName" v-model="form.last_name" />
-
-          <label for="denomination">Denomination:</label>
-          <input type="text" id="denomination" v-model="form.denomination" />
-
-          <label for="streetAddress">Street Address:</label>
-          <input type="text" id="streetAddress" v-model="form.street_address" />
-
-          <label for="city">City:</label>
-          <input type="text" id="city" v-model="form.city" />
-
-          <label for="state">State:</label>
-          <input type="text" id="state" v-model="form.state" />
-
-          <label for="country">Country:</label>
-          <input type="text" id="country" v-model="form.country" />
-
-          <label for="phoneNumber">Phone Number:</label>
-          <input type="text" id="phoneNumber" v-model="form.phone_number" />
-
-          <label for="yearsOfExperience">Years of Experience:</label>
-          <input
-            type="number"
-            id="yearsOfExperience"
-            v-model="form.years_of_experience"
-          />
-
-          <label for="description">Description:</label>
-          <textarea id="description" v-model="form.description"></textarea>
-
-          <label for="profilePicture">Profile Picture URL:</label>
-          <input
-            type="text"
-            id="profilePicture"
-            v-model="form.profile_picture"
-          />
+        <!-- Error Message -->
+        <div
+          v-if="message"
+          :class="[
+            'message-container',
+            { 'error-message': !isSuccess, 'success-message': isSuccess },
+          ]"
+        >
+          <span class="message-icon">{{ !isSuccess ? "⚠️" : "✅" }}</span>
+          {{ message }}
         </div>
-        <button type="submit">Sign Up</button>
+
+        <!-- Navigation Buttons -->
+        <NavigationButtons
+          :currentStep="currentStep"
+          :steps="steps"
+          :isStepOneValid="isStepOneValid()"
+          :isFormValid="isFormValid"
+          :isCurrentStepValid="isCurrentStepValid"
+          @prev-step="prevStep"
+          @next-step="nextStep"
+          @submit="registerUser"
+        />
       </form>
-      <p v-if="message">{{ message }}</p>
     </div>
   </div>
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api/axios.js";
+import ProgressBar from "@/components/registration/ProgressBar.vue";
+import AccountInfoStep from "@/components/registration/AccountInfoStep.vue";
+import PersonalInfoStep from "@/components/registration/PersonalInfoStep.vue";
+import LocationInfoStep from "@/components/registration/LocationInfoStep.vue";
+import AdditionalInfoStep from "@/components/registration/AdditionalInfoStep.vue";
+import NavigationButtons from "@/components/registration/NavigationButtons.vue";
+
+/* global google */
 
 export default {
-  // Format of data sent to the backend
+  components: {
+    ProgressBar,
+    AccountInfoStep,
+    PersonalInfoStep,
+    LocationInfoStep,
+    AdditionalInfoStep,
+    NavigationButtons,
+  },
   data() {
     return {
       form: {
@@ -100,60 +98,368 @@ export default {
         user_type: "",
         first_name: "",
         last_name: "",
-        denomination: "",
         street_address: "",
         city: "",
         state: "",
         country: "",
+        other_country: "",
         phone_number: "",
         years_of_experience: null,
         description: "",
-        profile_picture: "",
+        is_anonymous: false,
       },
+      passwordsDoNotMatch: false,
       message: "",
+      isSuccess: false,
       availableTags: [],
+      suggestions: {
+        address: [],
+        city: [],
+        state: [],
+      },
+      autocompleteService: null,
+      placesService: null,
+      currentStep: 0,
+      steps: [
+        { label: "Account" },
+        { label: "Personal" },
+        { label: "Location" },
+        { label: "Additional" },
+      ],
+      validationStatus: {
+        isValid: false,
+        errors: {},
+      },
+      existingUsernames: new Set(),
+      existingEmails: new Set(),
+      stepValidation: {
+        0: false, // Account step
+        1: false, // Personal step
+        2: false, // Location step
+        3: false, // Additional step
+      },
     };
   },
+  computed: {
+    // Ensures that only required fields must be filled
+    isFormValid() {
+      const username = this.form?.user?.username || "";
+      const email = this.form?.user?.email || "";
+      const password = this.form?.user?.password || "";
+
+      const isValid =
+        username.trim() &&
+        email.trim() &&
+        password.trim() &&
+        !this.passwordsDoNotMatch;
+      return isValid;
+    },
+    isCurrentStepValid() {
+      return this.stepValidation[this.currentStep];
+    },
+  },
   methods: {
+    updateUserData(updatedUserData) {
+      this.form.user = { ...this.form.user, ...updatedUserData };
+    },
+    handlePasswordValidation(isValid) {
+      this.passwordsDoNotMatch = !isValid;
+    },
+    handleValidationStatus(status) {
+      this.validationStatus = status;
+      this.stepValidation[0] = status.isValid;
+    },
+    handlePersonalInfoValidation(isValid) {
+      this.stepValidation[1] = isValid;
+    },
+    handleLocationInfoValidation(isValid) {
+      this.stepValidation[2] = isValid;
+    },
+    handleAdditionalInfoValidation(isValid) {
+      this.stepValidation[3] = isValid;
+    },
+    async fetchExistingUsers() {
+      try {
+        const response = await api.get("api/profiles/");
+        this.existingUsernames = new Set(
+          response.data.map((profile) => profile.user.username.toLowerCase())
+        );
+        this.existingEmails = new Set(
+          response.data.map((profile) => profile.user.email.toLowerCase())
+        );
+      } catch (error) {
+        // Don't show error to user, just log it
+      }
+    },
+    isStepOneValid() {
+      const username = this.form?.user?.username || "";
+      const email = this.form?.user?.email || "";
+      const password = this.form?.user?.password || "";
+
+      const isValid =
+        username.trim() &&
+        email.trim() &&
+        password.trim() &&
+        !this.passwordsDoNotMatch &&
+        this.validationStatus.isValid;
+
+      if (!isValid) {
+        this.isSuccess = false;
+      }
+
+      return isValid;
+    },
+    // Navigation methods
+    async nextStep() {
+      if (this.currentStep === 0) {
+        if (!this.isStepOneValid()) {
+          return;
+        }
+
+        try {
+          // Clear any existing messages
+          this.message = "";
+          this.isSuccess = false;
+
+          // If we don't have the existing users data yet, try to fetch it
+          if (
+            this.existingUsernames.size === 0 ||
+            this.existingEmails.size === 0
+          ) {
+            try {
+              await this.fetchExistingUsers();
+            } catch (error) {
+              // Continue anyway, we'll handle missing data gracefully
+            }
+          }
+
+          // Check if username exists (case-insensitive comparison)
+          if (
+            this.existingUsernames.has(this.form.user.username.toLowerCase())
+          ) {
+            this.message =
+              "This username is already taken. Please choose another one.";
+            this.isSuccess = false;
+            return;
+          }
+
+          // Check if email exists (case-insensitive comparison)
+          if (this.existingEmails.has(this.form.user.email.toLowerCase())) {
+            this.message =
+              "This email is already registered. Please use a different email address.";
+            this.isSuccess = false;
+            return;
+          }
+
+          // Username and email are available, proceed to next step
+          this.message = "";
+          this.currentStep++;
+        } catch (error) {
+          if (error.code === "ECONNABORTED") {
+            this.message =
+              "Connection timed out. Please check your connection and try again.";
+          } else {
+            this.message =
+              "Error checking username and email availability. Please try again.";
+          }
+
+          this.isSuccess = false;
+          return;
+        }
+      } else if (this.currentStep < this.steps.length - 1) {
+        this.message = ""; // Clear message when moving to next step
+        this.currentStep++;
+      }
+    },
+    prevStep() {
+      if (this.currentStep > 0) {
+        this.message = ""; // Clear message when moving to previous step
+        this.currentStep--;
+      }
+    },
+    goToStep(step) {
+      // Only allow going to completed steps or the next available step
+      if (step <= this.currentStep + 1) {
+        this.currentStep = step;
+      }
+    },
+
     // Fetches predefined tags from the backend
     async fetchTags() {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/tag/");
+        const response = await api.get("tag/");
         this.availableTags = response.data.filter(
           (tag) => tag.tag_is_predefined
         );
       } catch (error) {
-        console.error("Failed to fetch tags:", error.response?.data);
+        // Don't show error to user, just log it
       }
     },
+
     // Calls the profiles endpoint to register the user
     async registerUser() {
       try {
-        const response = await axios.post(
-          "http://127.0.0.1:8000/api/profiles/",
-          this.form
-        );
-        this.message = "Registration successful!";
-        console.log("Registration response:", response.data);
+        // Create the data in the nested format expected by the backend
+        const formData = {
+          user: {
+            username: this.form.user.username,
+            email: this.form.user.email,
+            password: this.form.user.password,
+          },
+          tags: this.form.tags,
+          user_type: this.form.user_type
+            ? this.form.user_type.toLowerCase()
+            : null,
+          first_name: this.form.first_name || null,
+          last_name: this.form.last_name || null,
+          street_address: this.form.street_address || null,
+          city: this.form.city || null,
+          state: this.form.state || null,
+          country:
+            this.form.country === "Other"
+              ? this.form.other_country
+              : this.form.country || null,
+          phone_number: this.form.phone_number || null,
+          years_of_experience: this.form.years_of_experience || null,
+          description: this.form.description || null,
+          profile_picture: null,
+        };
 
-        // Redirects to login page after successful registration
-        setTimeout(() => {
-          this.$router.push("/AppLogin");
-        }, 1000); // Optional delay for user to read the success message
+        await api.post("api/profiles/", formData);
+
+        this.message = "Registration successful!";
+        this.isSuccess = true;
+        setTimeout(() => this.$router.push("/AppLogin"), 1000);
       } catch (error) {
-        console.error("Registration failed:", error.response?.data);
-        this.message = "Registration failed. Please try again.";
+        if (error.code === "ECONNABORTED") {
+          this.message =
+            "Registration timed out. Please check your connection and try again.";
+        } else if (error.response) {
+          this.message =
+            error.response?.data?.detail ||
+            error.response?.data?.user?.username?.[0] ||
+            error.response?.data?.user?.email?.[0] ||
+            "Registration failed. Please try again.";
+        } else {
+          this.message =
+            "Registration failed. Please check your connection and try again.";
+        }
+
+        this.isSuccess = false;
       }
+    },
+
+    // Google Places API for Address Autocomplete
+    initGooglePlaces() {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCzHCbngGLUj41VG6hmwFsAoUak7QwnX3k&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        if (google && google.maps && google.maps.places) {
+          this.autocompleteService =
+            new google.maps.places.AutocompleteService();
+          this.placesService = new google.maps.places.PlacesService(
+            document.createElement("div")
+          );
+        } else {
+          null;
+        }
+
+        // Add input event listeners
+        ["streetAddress", "city", "state"].forEach((field) => {
+          this.$refs[`${field}Input`]?.addEventListener("input", (e) =>
+            this.handleInput(e, field)
+          );
+        });
+      };
+      document.head.appendChild(script);
+    },
+
+    async handleInput(event, field) {
+      const input = event.target.value;
+      if (input.length < 2) {
+        this.suggestions[field] = [];
+        return;
+      }
+
+      try {
+        const types = {
+          streetAddress: ["address"],
+          city: ["(cities)"],
+          state: ["administrative_area_level_1"],
+        };
+
+        const response = await this.autocompleteService.getPlacePredictions({
+          input,
+          types: types[field],
+        });
+        this.suggestions[field] = response.predictions;
+      } catch (error) {
+        this.suggestions[field] = [];
+      }
+    },
+
+    selectAddress(place) {
+      this.suggestions.address = [];
+      this.form.street_address = place.description;
+
+      this.placesService.getDetails(
+        {
+          placeId: place.place_id,
+          fields: ["address_components"],
+        },
+        (result, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK) {
+            result.address_components.forEach((component) => {
+              const type = component.types[0];
+              if (type === "locality") this.form.city = component.long_name;
+              if (type === "administrative_area_level_1")
+                this.form.state = component.long_name;
+            });
+          }
+        }
+      );
+    },
+
+    selectCity(suggestion) {
+      this.suggestions.city = [];
+      this.form.city = suggestion.description;
+    },
+
+    selectState(suggestion) {
+      this.suggestions.state = [];
+      this.form.state = suggestion.description;
     },
   },
   // Fetches all the predefined tags on page load
   mounted() {
     this.fetchTags();
+    this.initGooglePlaces();
+    this.fetchExistingUsers();
+  },
+  watch: {
+    form: {
+      handler() {
+        null;
+      },
+      deep: true,
+    },
+  },
+  beforeUnmount() {
+    // Clean up event listeners
+    ["streetAddress", "city", "state"].forEach((field) => {
+      this.$refs[`${field}Input`]?.removeEventListener("input", (e) =>
+        this.handleInput(e, field)
+      );
+    });
   },
 };
 </script>
 
 <style scoped>
+@import "../components/registration/styles.css";
+
 .registration-container {
   display: flex;
   justify-content: center;
@@ -162,79 +468,69 @@ export default {
   width: 100%;
   background: #f4f7fc;
   padding: 20px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .registration-card {
   background: white;
   padding: 40px;
   border-radius: 16px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 500px;
+  max-width: 600px;
   text-align: center;
 }
 
-.form-title {
-  text-align: center;
-  margin-bottom: 15px;
-  font-size: 1rem;
-  font-weight: bold;
-}
-
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  text-align: left;
-}
-
-label {
-  font-weight: bold;
-  margin-bottom: 8px;
-}
-
-input,
-select,
-textarea {
-  width: 100%;
-  padding: 14px;
-  border: 2.3px solid #ccc;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border 0.3s ease-in-out;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: black;
-  outline: none;
-}
-
-button {
-  background-color: black;
-  color: white;
-  padding: 15px 25px;
-  border: 2px solid black;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  margin-top: 30px;
-}
-
-button:hover {
-  background-color: white;
-  color: black;
-  border-color: black;
-}
-
-button:active {
-  transform: translateY(1px);
-}
-
-.message {
-  margin-top: 15px;
-  font-weight: bold;
+h1 {
+  margin-bottom: 30px;
   color: #333;
+  font-weight: 600;
+  font-size: 2rem;
+}
+
+@media (max-width: 768px) {
+  .registration-card {
+    padding: 25px;
+  }
+}
+
+.message-container {
+  margin: 15px 0;
+  padding: 15px;
+  border-radius: 8px;
+  font-weight: 500;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-icon {
+  font-size: 1.2rem;
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  border-left: 4px solid #f44336;
+}
+
+.success-message {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-left: 4px solid #4caf50;
 }
 </style>

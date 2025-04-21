@@ -15,7 +15,9 @@
     <nav class="nav-links">
       <a href="/SearchPage" class="nav-link">Explore</a>
       <a href="/RegistrationPage" class="nav-link">Sign Up</a>
-      <!--<a href="/UserProfile" class="nav-link">Profile Page</a>-->
+      <a @click="navigateToProfile" class="nav-link" style="cursor: pointer"
+        >Profile</a
+      >
       <div>
         <button @click="logout">Logout</button>
       </div>
@@ -29,11 +31,19 @@ export default {
   methods: {
     logout() {
       // Clear tokens from localStorage
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+      localStorage.clear();
 
       // Redirect to login
       this.$router.push("/");
+    },
+    navigateToProfile() {
+      // Check if user is logged in by looking for access token
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        this.$router.push("/UserProfile");
+      } else {
+        this.$router.push("/AppLogin");
+      }
     },
   },
 };

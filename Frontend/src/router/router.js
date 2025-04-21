@@ -6,7 +6,9 @@ import LandingPage from "@/pages/LandingPage.vue";
 import SearchPage from "@/pages/SearchPage.vue";
 import MatchmakingPage from "@/pages/MatchmakingPage.vue";
 import RegistrationPage from "@/pages/RegistrationPage.vue";
-import axios from "axios"; // Needed for refreshing tokens
+import PublicProfile from "@/pages/PublicProfile.vue";
+import AdminDashboard from "@/pages/AdminDashboard.vue";
+import api from "@/api/axios.js";
 
 async function isAuthenticated() {
   const token = localStorage.getItem("access_token");
@@ -31,12 +33,9 @@ async function isAuthenticated() {
 
 async function refreshAccessToken() {
   try {
-    const response = await axios.post(
-      "http://127.0.0.1:8000/api/token/refresh/",
-      {
-        refresh: localStorage.getItem("refresh_token"),
-      }
-    );
+    const response = await api.post("api/token/refresh/", {
+      refresh: localStorage.getItem("refresh_token"),
+    });
 
     localStorage.setItem("access_token", response.data.access);
     return true;
@@ -54,6 +53,7 @@ const routes = [
   { path: "/Matchmaking", component: MatchmakingPage },
   { path: "/LandingPage", component: LandingPage },
   { path: "/RegistrationPage", component: RegistrationPage },
+  { path: "/UserProfile", component: UserProfile },
 
   // Protected routes (require authentication)
   {
@@ -65,6 +65,16 @@ const routes = [
   {
     path: "/UserProfile",
     component: UserProfile,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/profile/:id",
+    name: "PublicProfile",
+    component: PublicProfile,
+  },
+  {
+    path: "/admin",
+    component: AdminDashboard,
     meta: { requiresAuth: true },
   },
 ];

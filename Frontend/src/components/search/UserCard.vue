@@ -16,7 +16,7 @@
             <p>{{ description }}</p>
           </v-card-text>
         </v-card>
-        <button class="button" @click="showModal = true">View Profile</button>
+        <button class="button" @click="viewProfile">View Profile</button>
       </div>
     </v-col>
   </v-row>
@@ -79,12 +79,21 @@ export default {
       type: String,
       required: true,
     },
+    id: {
+      type: Number,
+      required: true,
+    },
   },
   data() {
     return {
       userImage: userImage,
       showModal: false,
     };
+  },
+  methods: {
+    viewProfile() {
+      this.$router.push(`/profile/${this.id}`);
+    },
   },
 };
 </script>
