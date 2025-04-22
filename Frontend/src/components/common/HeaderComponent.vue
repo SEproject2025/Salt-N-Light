@@ -16,14 +16,42 @@
 
     <!-- Navigation Links -->
     <nav class="nav-links">
-      <a href="/SearchPage" class="nav-link">Explore</a>
-      <a href="/RegistrationPage" class="nav-link">Sign Up</a>
-      <a @click="navigateToProfile" class="nav-link" style="cursor: pointer"
-        >Profile</a
+      <!-- Explore -->
+      <a
+        href="/SearchPage"
+        class="flex flex-col items-center hover:text-blue-500 transition-colors duration-200"
       >
-      <div>
-        <button @click="logout">Logout</button>
-      </div>
+        <span class="material-symbols-outlined"> travel_explore </span>
+        <span>Explore</span>
+      </a>
+
+      <!-- Sign Up -->
+      <a
+        href="/RegistrationPage"
+        class="flex flex-col items-center hover:text-blue-500 transition-colors duration-200"
+      >
+        <span class="material-symbols-outlined"> how_to_reg </span>
+        <span>Sign Up</span>
+      </a>
+
+      <!-- Profile -->
+      <a
+        @click="navigateToProfile"
+        class="flex flex-col items-center hover:text-blue-500 transition-colors duration-200"
+        style="cursor: pointer"
+      >
+        <span class="material-symbols-outlined">account_circle</span>
+        <span>Me</span>
+      </a>
+
+      <!-- Logout -->
+      <a
+        @click="logout"
+        class="flex flex-col items-center hover:text-blue-500 transition-colors duration-200 text-gray-300"
+      >
+        <span class="material-symbols-outlined text-3xl mb-1">logout</span>
+        <span>Logout</span>
+      </a>
     </nav>
   </header>
 </template>
@@ -86,7 +114,7 @@ export default {
   margin-right: 50px;
   display: flex;
   gap: 20px;
-  font-size: 18px;
+  font-size: 15px;
   text-align: center;
   align-items: center;
 }
@@ -101,7 +129,7 @@ export default {
   color: #007bff;
 }
 
-/* Logout Button Styling */
+/* Logout Button Styling 
 .header-banner button {
   background-color: #333;
   color: #fff;
@@ -111,7 +139,7 @@ export default {
   font-size: 14px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-}
+}*/
 
 .header-banner button:hover {
   background-color: #0056b3;
