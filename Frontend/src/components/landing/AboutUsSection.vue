@@ -15,7 +15,7 @@
         <!-- <button class="cta-btn" @click="scrollToBenefits">See Benefits</button> -->
       </div>
       <div class="image-container">
-        <img src="@/assets/pictures/hug.jpg" alt="Missionary group image" />
+        <img src="@/assets/pictures/praying.jpg" alt="Missionary group image" />
       </div>
     </div>
   </section>

@@ -1,9 +1,7 @@
 <template>
-  <footer class="bg-gray-900 text-gray-300 px-6 py-8 text-lg">
-    <div
-      class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0"
-    >
-      <!-- Site Logo / Title -->
+  <footer class="bg-gray-900 text-gray-300 px-6 py-8 text-lg relative">
+    <div class="max-w-6xl mx-auto flex items-center justify-between relative">
+      <!-- Left: Site Logo -->
       <div class="site-logo">
         <a href="/LandingPage">
           <img
@@ -14,8 +12,8 @@
         </a>
       </div>
 
-      <!--Router Links-->
-      <div class="flex space-x-6">
+      <!-- Center: Navigation Links (Absolutely centered) -->
+      <div class="absolute left-1/2 transform -translate-x-1/2 flex space-x-6">
         <router-link to="/LandingPage" class="hover:text-white"
           >About</router-link
         >
@@ -27,29 +25,15 @@
         >
       </div>
 
-      <!-- Social Media Links -->
+      <!-- Right: Social Icons -->
       <div class="flex space-x-4">
-        <a
-          href="@/pages/UserProfile.vue
-          blank"
-          class="hover:text-white"
-          >🔔</a
-        >
-        <a
-          href="@/pages/SearchPage.vue"
-          target="_blank"
-          class="hover:text-white"
-          >🔍</a
-        >
-        <a
-          href="@/pages/UserProfile.vue"
-          target="_blank"
-          class="hover:text-white"
-          >👤</a
-        >
+        <a href="#" class="hover:text-white">🔔</a>
+        <a href="#" class="hover:text-white">🔍</a>
+        <a href="#" class="hover:text-white">👤</a>
       </div>
     </div>
 
+    <!-- Footer Bottom -->
     <div class="mt-6 text-center text-sm text-gray-500">
       &copy; 2025 Evangelium. All rights reserved.
     </div>
@@ -57,12 +41,9 @@
 </template>
 
 <style scoped>
-/* Site Logo */
 .site-logo .logo {
-  margin-left: 50px;
   height: auto;
   width: 165px;
-  border-radius: 0;
   object-fit: contain;
 }
 </style>
