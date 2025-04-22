@@ -11,6 +11,7 @@ import {
   faThumbsDown,
   faSave,
 } from "@fortawesome/free-solid-svg-icons";
+import "@/assets/tailwind.css";
 
 // Add the icons to the library
 library.add(faEdit, faTimes, faThumbsUp, faThumbsDown, faSave);

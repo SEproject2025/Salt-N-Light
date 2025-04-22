@@ -1,14 +1,17 @@
 <template>
   <header class="header-banner">
-    <!-- Site Icon -->
-    <div class="site-icon">
-      <a href="/LandingPage" title="SaltnLife">
-        <img
-          src="@\assets\pictures\saltnlightlogo1.webp"
-          alt="SaltnLight Logo"
-          class="icon"
-        />
-      </a>
+    <!-- Site Branding -->
+    <div class="site-branding">
+      <!-- Site Logo -->
+      <div class="site-logo">
+        <a href="/LandingPage">
+          <img
+            src="@/assets/pictures/Evangelium-Logo-01.png"
+            alt="Evangelium Logo"
+            class="logo"
+          />
+        </a>
+      </div>
     </div>
 
     <!-- Navigation Links -->
@@ -55,24 +58,37 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 70px;
   padding: 10px 20px;
   background-color: #f9f9f9;
   border-bottom: 1px solid #ddd;
   font-family: Arial, sans-serif;
 }
 
-/* Site Icon */
-.site-icon .icon {
-  height: 40px;
-  width: 40px;
-  border-radius: 50%;
-  object-fit: cover;
+/* Site Branding */
+.site-branding {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* adjust spacing between icon and logo */
+}
+
+/* Site Logo */
+.site-logo .logo {
+  margin-left: 50px;
+  height: auto;
+  width: 185px;
+  border-radius: 0;
+  object-fit: contain;
 }
 
 /* Navigation Links */
 .nav-links {
+  margin-right: 50px;
   display: flex;
   gap: 20px;
+  font-size: 18px;
+  text-align: center;
+  align-items: center;
 }
 
 .nav-link {
