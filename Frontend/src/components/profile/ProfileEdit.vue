@@ -490,17 +490,29 @@ export default {
 }
 
 .save-btn {
-  background: #0056b3;
+  background: #3498db;
   color: white;
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 .save-btn:hover {
-  background: #0056b3;
+  background: #3498db;
 }
 
 .cancel-btn {
   background: #e74c3c;
   color: white;
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 .cancel-btn:hover {

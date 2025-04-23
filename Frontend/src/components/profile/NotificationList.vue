@@ -159,6 +159,8 @@ export default {
 
 <style scoped>
 .notifications-container {
+  position: relative;
+  overflow: auto;
   background-color: white;
   border-radius: 8px;
   padding: 20px;
@@ -185,6 +187,7 @@ export default {
   font-size: 1.55rem;
   font-weight: 600;
   margin-bottom: 1rem;
+  color: #2c3e50;
 }
 
 .notification-item {
