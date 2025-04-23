@@ -32,8 +32,8 @@ export default {
   name: "HeroSection",
   methods: {
     getStarted() {
-      // Redirect to RegistrationPagePage
-      this.$router.push("/AppLogin");
+      // Redirect to RegistrationPage
+      this.$router.push("/RegistrationPage");
     },
     learnMore() {
       // Scroll to the About Us section
