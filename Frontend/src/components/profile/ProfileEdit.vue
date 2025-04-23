@@ -61,7 +61,7 @@
         </div>
 
         <div class="form-group">
-          <label for="streetAddress">Street Address</label>
+          <label for="streetAddress">Street Address:</label>
           <input
             id="streetAddress"
             name="streetAddress"
@@ -72,7 +72,7 @@
         </div>
 
         <div class="form-group">
-          <label for="city">City</label>
+          <label for="city">City:</label>
           <input
             id="city"
             name="city"
@@ -83,7 +83,7 @@
         </div>
 
         <div class="form-group">
-          <label for="state">State</label>
+          <label for="state">State:</label>
           <input
             id="state"
             name="state"
@@ -148,12 +148,12 @@
 
       <div class="form-group full-width">
         <label for="tags">Select some tags that describe your ministry:</label>
-        <div class="tag-selection-container">
-          <div class="tag-list">
+        <div class="tags-container">
+          <div class="tags-grid">
             <div
               v-for="tag in availableTags"
               :key="tag.id"
-              class="tag-item"
+              class="tag-option"
               :class="{ selected: formData.selectedTags.includes(tag.id) }"
               @click="toggleTag(tag.id)"
             >
@@ -163,8 +163,8 @@
         </div>
       </div>
 
-      <div class="form-group full-width">
-        <label for="description">Description</label>
+      <div class="form-group full-width description-section">
+        <label for="description">Description:</label>
         <textarea
           id="description"
           name="description"
@@ -469,41 +469,34 @@ export default {
   outline: none;
 }
 
-.tag-selection-container {
-  padding: 10px;
-  background: white;
+.tags-container {
+  margin-top: 5px;
 }
 
-.tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-  padding: 5px;
+.tags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 5px;
+  margin-top: 5px;
 }
 
-.tag-item {
-  padding: 6px 12px;
-  border-radius: 16px;
-  background-color: #f0f0f0;
-  color: #333;
+.tag-option {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
   cursor: pointer;
+  text-align: center;
   transition: all 0.2s ease;
-  user-select: none;
 }
 
-.tag-item:hover {
-  background-color: #e0e0e0;
+.tag-option:hover {
+  background-color: #f0f0f0;
 }
 
-.tag-item.selected {
-  background-color: #3498db;
-  color: white;
-}
-
-.tag-item.selected:hover {
-  background-color: #2980b9;
+.tag-option.selected {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+  color: #1976d2;
 }
 
 .form-actions {
@@ -617,6 +610,10 @@ export default {
 .other-country-input input:focus {
   border-color: #3498db;
   outline: none;
+}
+
+.description-section {
+  margin-top: 2rem;
 }
 
 @media (max-width: 768px) {
