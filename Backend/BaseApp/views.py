@@ -1,5 +1,7 @@
 # Standard library imports
 import logging
+import operator
+from functools import reduce
 
 # Third-party imports
 # pylint: disable=C0412
@@ -10,6 +12,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
+from django_filters import FilterSet, CharFilter
 # pylint: enable=C0412
 
 # Django imports
@@ -25,7 +29,8 @@ from .serializer import TagSerializer, SearchHistorySerializer, \
     ExternalMediaSerializer, \
     ProfileSerializer, ProfileVoteSerializer, \
     ProfileCommentSerializer, NotificationSerializer, FriendshipSerializer, \
-    AdminProfileCommentSerializer, AdminProfileSerializer
+    AdminProfileCommentSerializer, AdminProfileSerializer, \
+    SearchProfileSerializer
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -587,3 +592,160 @@ class AdminCommentDeleteView(generics.DestroyAPIView):
              {'error': f'Database error: {str(e)}'},
              status=status.HTTP_500_INTERNAL_SERVER_ERROR
          )
+
+class ProfileFilter(FilterSet):
+   tags = CharFilter(method='filter_tags')
+
+   def filter_tags(self, queryset, value):
+      if not value:
+         return queryset
+      tag_ids = [int(id) for id in value.split(',') if id.strip().isdigit()]
+      return queryset.filter(tags__id__in=tag_ids)
+
+   class Meta:
+      model = Profile
+      fields = ['user_type', 'city', 'state', 'country']
+
+class ProfileSearchView(generics.ListAPIView):
+   serializer_class = SearchProfileSerializer
+   permission_classes = [AllowAny]
+   filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+   filterset_class = ProfileFilter
+   search_fields = [
+      'user_type', 'city', 'state', 'country', 'tags__tag_name',
+      'first_name', 'last_name', 'description'
+   ]
+
+   def get_queryset(self):
+      logger.info("Starting search with params: %s",
+                  self.request.query_params)
+
+      # Log all query parameters
+      for key, value in self.request.query_params.items():
+         logger.info("Query param - %s: %s", key, value)
+
+      # Build queryset with detailed logging
+      logger.info("Building base queryset...")
+      queryset = Profile.objects.select_related('user').prefetch_related(
+         'tags'
+      )
+      logger.info("Base queryset count: %s", queryset.count())
+
+      # Apply anonymous filter
+      logger.info("Applying anonymous filter...")
+      queryset = queryset.exclude(is_anonymous=True)
+      logger.info("After anonymous filter count: %s", queryset.count())
+
+      # Log search parameters if present
+      search_term = self.request.query_params.get('search', None)
+      if search_term:
+         logger.info("Search term: %s", search_term)
+
+      # Log filter parameters
+      for field in self.filterset_class.Meta.fields + ['tags']:
+         value = self.request.query_params.get(field)
+         if value:
+            logger.info("Filter %s: %s", field, value)
+
+      # Log final queryset SQL
+      logger.info("Final queryset SQL: %s", str(queryset.query))
+
+      return queryset
+
+   def get_serializer_context(self):
+      context = super().get_serializer_context()
+      context['request'] = self.request
+      if self.request.user.is_authenticated:
+         try:
+            profile = Profile.objects.get(user=self.request.user)
+            context['profile_id'] = profile.user.id
+            logger.info(
+               "Added profile_id %s to context for user %s",
+               profile.user.id, self.request.user.id)
+         except ObjectDoesNotExist:
+            logger.warning("Profile not found for user %s",
+               self.request.user.id)
+      return context
+
+   def list(self, request, *args, **kwargs):
+      logger.info("Starting search request from IP: %s",
+         request.META.get('REMOTE_ADDR'))
+      logger.info("Request headers: %s", request.headers)
+
+      # Get the queryset
+      queryset = self.get_queryset()
+      logger.info("Queryset count before filtering: %s", queryset.count())
+
+      # Apply filters
+      queryset = self.filter_queryset(queryset)
+      logger.info("Queryset count after filtering: %s", queryset.count())
+
+      # Paginate
+      page = self.paginate_queryset(queryset)
+      if page is not None:
+         logger.info("Paginated results count: %s", len(page))
+         serializer = self.get_serializer(page, many=True)
+         return self.get_paginated_response(serializer.data)
+
+      # Serialize
+      serializer = self.get_serializer(queryset, many=True)
+      logger.info("Serialized results count: %s", len(serializer.data))
+
+      return Response(serializer.data)
+
+class DedicatedSearchView(generics.ListAPIView):
+   serializer_class = SearchProfileSerializer
+   authentication_classes = [JWTAuthentication]
+   permission_classes = [IsAuthenticated]
+   pagination_class = PageNumberPagination
+
+   def get_queryset(self):
+      """Get the queryset for the dedicated search view"""
+      queryset = Profile.objects.select_related(
+         'user').prefetch_related('tags').all()
+
+      # Get search parameters
+      search_query = self.request.query_params.get('q', '')
+      user_type = self.request.query_params.get('user_type', '')
+      location = self.request.query_params.get('location', '')
+      city = self.request.query_params.get('city', '')
+      tags = self.request.query_params.getlist('tags', [])
+
+      # Apply filters
+      if search_query:
+         queryset = apply_filters(search_query, queryset)
+
+      if user_type:
+         queryset = queryset.filter(user_type=user_type)
+
+      if location:
+         queryset = queryset.filter(
+         Q(city__icontains=location) |
+         Q(state__icontains=location) |
+         Q(country__icontains=location)
+         )
+
+      if city:
+         queryset = queryset.filter(city__icontains=city)
+
+      if tags:
+         tag_objects = Tag.objects.filter(tag_name__in=tags)
+         if tag_objects.exists():
+            for tag in tag_objects:
+               queryset = queryset.filter(tags=tag)
+            queryset = queryset.distinct()
+
+      return queryset
+
+def apply_filters(search_query, queryset):
+   search_terms = search_query.split()
+   name_filters = []
+   for term in search_terms:
+      name_filters.append(
+         Q(first_name__icontains=term) |
+         Q(last_name__icontains=term)
+      )
+   if name_filters:
+      queryset = queryset.filter(reduce(operator.and_, name_filters))
+
+   return queryset

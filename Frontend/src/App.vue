@@ -4,7 +4,7 @@
     <HeaderComponent />
     <div class="auth-wrapper">
       <div class="auth-inner">
-        <router-view />
+        <router-view :key="$route.fullPath" />
       </div>
     </div>
     <FooterComponent />

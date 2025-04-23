@@ -1,14 +1,19 @@
+import logging
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from django.db.models import Q
 from .models import Tag, SearchHistory, \
     ExternalMedia, Profile, ProfileVote, ProfileComment, \
     Notification, Friendship
+
+logger = logging.getLogger(__name__)
 
 
 class UserSerializer(serializers.ModelSerializer):
    class Meta:
       model = User
-      fields = ['id', 'username', 'email', 'password']
+      fields = ['id', 'username', 'email', 'first_name', 'last_name',
+                'password']
       extra_kwargs = {
          'password': {'write_only': True},
          'id': {'read_only': True}
@@ -246,3 +251,66 @@ class AdminProfileSerializer(serializers.ModelSerializer):
          }
          for tag in obj.tags.all()
       ]
+
+
+class SearchProfileSerializer(serializers.ModelSerializer):
+   user = serializers.SerializerMethodField()
+   tags = TagSerializer(many=True, read_only=True)
+   full_name = serializers.SerializerMethodField()
+
+   class Meta:
+      model = Profile
+      fields = [
+         'user_id', 'user', 'user_type', 'first_name', 'last_name',
+         'full_name',
+         'street_address', 'city', 'state', 'country',
+         'phone_number', 'years_of_experience', 'description',
+         'is_anonymous', 'tags'
+      ]
+
+   def get_user(self, obj):
+      if not obj.user:
+         return {}
+      return {
+         "id": obj.user.id,
+         "username": obj.user.username,
+         "email": obj.user.email
+      }
+
+   def get_full_name(self, obj):
+      return f"{obj.first_name or ''} {obj.last_name or ''}".strip()
+
+class ProfileEnrichedSerializer(serializers.ModelSerializer):
+   user = UserSerializer(read_only=True)
+   tags = TagSerializer(many=True, read_only=True)
+   vote_count = serializers.SerializerMethodField()
+   comment_count = serializers.SerializerMethodField()
+   friendship_status = serializers.SerializerMethodField()
+
+   class Meta:
+      model = Profile
+      fields = [
+         'id', 'user', 'user_type', 'first_name', 'last_name',
+         'street_address', 'city', 'state', 'country', 'phone_number',
+         'years_of_experience', 'description', 'is_anonymous',
+         'tags', 'vote_count', 'comment_count', 'friendship_status',
+         'created_at', 'updated_at'
+      ]
+      read_only_fields = ['id', 'created_at', 'updated_at']
+
+   def get_vote_count(self, obj):
+      return ProfileVote.objects.filter(profile=obj).count()
+
+   def get_comment_count(self, obj):
+      return ProfileComment.objects.filter(profile=obj).count()
+
+   def get_friendship_status(self, obj):
+      request = self.context.get('request')
+      if not request or not request.user.is_authenticated:
+         return None
+
+      friendship = Friendship.objects.filter(
+         Q(sender=request.user, receiver=obj.user) |
+         Q(sender=obj.user, receiver=request.user)
+      ).first()
+      return friendship.status if friendship else None
