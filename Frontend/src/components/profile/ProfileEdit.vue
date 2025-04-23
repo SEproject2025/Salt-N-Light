@@ -17,6 +17,8 @@
             v-model="formData.first_name"
             type="text"
             required
+            maxlength="35"
+            placeholder="Enter your first name"
           />
         </div>
 
@@ -28,6 +30,8 @@
             v-model="formData.last_name"
             type="text"
             required
+            maxlength="35"
+            placeholder="Enter your last name"
           />
         </div>
 
@@ -51,7 +55,12 @@
             name="phoneNumber"
             v-model="formData.phone_number"
             type="text"
+            @input="validatePhoneNumber"
+            @keypress="validatePhoneDigits"
           />
+          <p v-if="phoneNumberError" class="error-message">
+            {{ phoneNumberError }}
+          </p>
         </div>
 
         <div class="form-group">
@@ -91,7 +100,12 @@
             name="yearsOfExperience"
             v-model="formData.years_of_experience"
             type="number"
+            min="0"
+            max="500"
+            @input="validateYearsOfExperience"
+            @keypress="validateDigits"
           />
+          <p v-if="yearsError" class="error-message">{{ yearsError }}</p>
         </div>
       </div>
 
@@ -119,7 +133,19 @@
           name="description"
           v-model="formData.description"
           rows="4"
+          maxlength="1000"
+          placeholder="Tell us about yourself and your mission"
+          @input="handleDescriptionInput"
         ></textarea>
+        <div
+          class="char-counter"
+          :class="{
+            'near-limit': formData.description?.length > 800,
+            'at-limit': formData.description?.length >= 1000,
+          }"
+        >
+          {{ formData.description?.length || 0 }}/1000
+        </div>
       </div>
 
       <div class="form-actions">
@@ -164,6 +190,8 @@ export default {
         description: "",
         selectedTags: [],
       },
+      yearsError: "",
+      phoneNumberError: "",
     };
   },
   created() {
@@ -176,7 +204,75 @@ export default {
     this.formData.selectedTags = [...this.selectedTags];
   },
   methods: {
+    validateDigits(event) {
+      // Allow only digits and control keys
+      if (
+        !/[0-9]/.test(event.key) &&
+        event.key !== "Backspace" &&
+        event.key !== "Delete" &&
+        event.key !== "ArrowLeft" &&
+        event.key !== "ArrowRight" &&
+        event.key !== "Tab"
+      ) {
+        event.preventDefault();
+      }
+    },
+    validateYearsOfExperience() {
+      const years = this.formData.years_of_experience;
+      if (years === null || years === "") {
+        this.yearsError = "";
+        return;
+      }
+
+      const numYears = Number(years);
+      if (isNaN(numYears) || numYears < 0) {
+        this.yearsError = "Please enter a valid number";
+      } else if (!Number.isInteger(numYears)) {
+        this.yearsError = "Please enter a whole number";
+      } else if (numYears > 500) {
+        this.yearsError = "Years of experience cannot exceed 500";
+      } else {
+        this.yearsError = "";
+      }
+    },
+    validatePhoneDigits(event) {
+      // Allow only digits and control keys
+      if (
+        !/[0-9]/.test(event.key) &&
+        event.key !== "Backspace" &&
+        event.key !== "Delete" &&
+        event.key !== "ArrowLeft" &&
+        event.key !== "ArrowRight" &&
+        event.key !== "Tab"
+      ) {
+        event.preventDefault();
+      }
+    },
+    validatePhoneNumber() {
+      const value = this.formData.phone_number;
+      // Remove any non-digit characters
+      const digitsOnly = value.replace(/\D/g, "");
+
+      // Update the input value to only contain digits
+      this.formData.phone_number = digitsOnly;
+
+      // If the field is empty, no validation needed
+      if (!digitsOnly) {
+        this.phoneNumberError = "";
+      } else if (digitsOnly.length < 10) {
+        this.phoneNumberError = "Phone number must be at least 10 digits";
+      } else if (digitsOnly.length > 15) {
+        this.phoneNumberError = "Phone number must not exceed 15 digits";
+      } else {
+        this.phoneNumberError = "";
+      }
+    },
     handleSubmit() {
+      // Only proceed if there are no validation errors
+      if (this.yearsError || this.phoneNumberError) {
+        return;
+      }
+
       // Filter out any undefined or null values from selectedTags
       const validTags = this.formData.selectedTags.filter(
         (tag) => tag !== undefined && tag !== null
@@ -205,6 +301,12 @@ export default {
         this.formData.selectedTags.push(tagId);
       } else {
         this.formData.selectedTags.splice(index, 1);
+      }
+    },
+    handleDescriptionInput() {
+      // Ensure the description doesn't exceed 1000 characters
+      if (this.formData.description?.length > 1000) {
+        this.formData.description = this.formData.description.slice(0, 1000);
       }
     },
   },
@@ -349,6 +451,28 @@ export default {
 
 .cancel-btn:hover {
   background: #c0392b;
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  border-radius: 1px;
+}
+
+.char-counter {
+  text-align: right;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.char-counter.near-limit {
+  color: #ff6b6b;
+}
+
+.char-counter.at-limit {
+  color: #ff0000;
+  font-weight: bold;
 }
 
 @media (max-width: 768px) {
