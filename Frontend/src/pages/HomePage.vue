@@ -94,19 +94,17 @@
               <UserCard
                 v-for="friend in friends"
                 :key="friend.id"
+                :user="friend"
                 :first_name="friend.name"
                 :last_name="''"
                 :city="friend.city"
                 :state="friend.state"
                 :country="friend.country"
                 :description="friend.description"
-                :id="friend.id"
-                :tags="
-                  friend.tags.map((tag) => ({
-                    ...tag,
-                    tag_name: tag.tag_name || tag.name || 'Unknown Tag',
-                  }))
-                "
+                :tags="friend.tags.map((tag) => ({
+                  ...tag,
+                  tag_name: tag.tag_name || tag.name || 'Unknown Tag',
+                }))"
                 :user_type="'Friend'"
               />
             </div>
@@ -129,19 +127,17 @@
             <UserCard
               v-for="church in recommendations"
               :key="church.id"
+              :user="church"
               :first_name="church.name"
               :last_name="''"
               :city="getCity(church.location)"
               :state="''"
               :country="getCountry(church.location)"
               :description="church.description"
-              :id="church.id"
-              :tags="
-                church.tags.map((tag) => ({
-                  ...tag,
-                  tag_name: tag.tag_name || tag.name || 'Unknown Tag',
-                }))
-              "
+              :tags="church.tags.map((tag) => ({
+                ...tag,
+                tag_name: tag.tag_name || tag.name || 'Unknown Tag',
+              }))"
               :user_type="'Church'"
             />
           </div>
