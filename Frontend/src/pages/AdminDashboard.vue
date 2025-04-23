@@ -7,7 +7,7 @@ export default {
     return {
       isLoading: true,
       isSuperuser: false,
-      activeTab: "profiles",
+      activeTab: "users",
       profiles: [],
       comments: [],
       profileSearchQuery: "",
@@ -83,6 +83,8 @@ export default {
         await this.loadProfiles();
       } else if (this.activeTab === "comments") {
         await this.loadComments();
+      } else if (this.activeTab === "users") {
+        await this.loadUsers();
       }
     },
 
@@ -152,6 +154,39 @@ export default {
       }
     },
 
+    async loadUsers() {
+      try {
+        this.profilesLoading = true;
+        // Clear previous results while loading
+        this.profiles = [];
+        this.filteredProfiles = [];
+
+        const profilesResponse = await api.get("api/admin/profiles/", {
+          params: {
+            page: this.profilesCurrentPage,
+            page_size: this.itemsPerPage,
+          },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+
+        // Extract pagination information
+        this.profiles = profilesResponse.data.results;
+        this.profilesTotalCount = profilesResponse.data.count;
+        this.profilesTotalPages = Math.ceil(
+          this.profilesTotalCount / this.itemsPerPage
+        );
+
+        // Apply any existing search filter
+        this.filterProfiles();
+      } catch (error) {
+        null;
+      } finally {
+        this.profilesLoading = false;
+      }
+    },
+
     async changePage(type, newPage) {
       if (type === "profiles") {
         this.profilesCurrentPage = newPage;
@@ -159,6 +194,9 @@ export default {
       } else if (type === "comments") {
         this.commentsCurrentPage = newPage;
         await this.loadComments();
+      } else if (type === "users") {
+        this.profilesCurrentPage = newPage;
+        await this.loadUsers();
       }
     },
 
@@ -180,7 +218,6 @@ export default {
         const city = (profile.city || "").toLowerCase();
         const state = (profile.state || "").toLowerCase();
         const country = (profile.country || "").toLowerCase();
-        const denomination = (profile.denomination || "").toLowerCase();
         const description = (profile.description || "").toLowerCase();
 
         return (
@@ -194,7 +231,6 @@ export default {
           city.includes(query) ||
           state.includes(query) ||
           country.includes(query) ||
-          denomination.includes(query) ||
           description.includes(query)
         );
       });
@@ -305,6 +341,8 @@ export default {
         await this.loadProfiles();
       } else if (tabName === "comments") {
         await this.loadComments();
+      } else if (tabName === "users") {
+        await this.loadUsers();
       }
     },
   },
@@ -342,6 +380,12 @@ export default {
         >
           Comments
         </button>
+        <button
+          :class="{ active: activeTab === 'users' }"
+          @click="changeTab('users')"
+        >
+          Users
+        </button>
       </div>
 
       <div class="tab-content">
@@ -368,15 +412,11 @@ export default {
           <table v-else>
             <thead>
               <tr>
-                <th width="60">Details</th>
+                <th width="80">Details</th>
                 <th>username</th>
-                <th>user_type</th>
-                <th>first_name / last_name</th>
-                <th>email / phone_number</th>
                 <th>location</th>
-                <th>denomination</th>
-                <th>years_of_experience</th>
-                <th>description</th>
+                <th width="100">years_of_experience</th>
+                <th width="500">description</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -388,14 +428,6 @@ export default {
                   </button>
                 </td>
                 <td>{{ profile.user.username }}</td>
-                <td>{{ profile.user_type || "-" }}</td>
-                <td>
-                  {{ profile.first_name || "" }} {{ profile.last_name || "" }}
-                </td>
-                <td>
-                  <div>{{ profile.user.email || "-" }}</div>
-                  <div>{{ profile.phone_number || "-" }}</div>
-                </td>
                 <td>
                   <div>{{ profile.street_address || "-" }}</div>
                   <div>
@@ -405,7 +437,6 @@ export default {
                   </div>
                   <div>{{ profile.country || "-" }}</div>
                 </td>
-                <td>{{ profile.denomination || "-" }}</td>
                 <td>
                   {{
                     profile.years_of_experience
@@ -555,6 +586,93 @@ export default {
             </button>
           </div>
         </div>
+
+        <!-- Users Tab -->
+        <div v-if="activeTab === 'users'" class="users-tab">
+          <div class="search-box">
+            <input
+              type="text"
+              v-model="profileSearchQuery"
+              placeholder="Search users..."
+              @input="filterProfiles"
+            />
+          </div>
+
+          <div v-if="profilesLoading" class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p>Loading users...</p>
+          </div>
+
+          <div v-else-if="filteredProfiles.length === 0" class="no-results">
+            <p>No users found</p>
+          </div>
+
+          <table v-else>
+            <thead>
+              <tr>
+                <th width="60">Details</th>
+                <th>username</th>
+                <th>user_type</th>
+                <th>first_name</th>
+                <th>last_name</th>
+                <th>email</th>
+                <th>phone_number</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="profile in filteredProfiles" :key="profile.user.id">
+                <td>
+                  <button class="view-btn" @click="viewProfileDetails(profile)">
+                    View
+                  </button>
+                </td>
+                <td>{{ profile.user.username }}</td>
+                <td>{{ profile.user_type || "-" }}</td>
+                <td>{{ profile.first_name || "" }}</td>
+                <td>{{ profile.last_name || "" }}</td>
+                <td>{{ profile.user.email || "-" }}</td>
+                <td>{{ profile.phone_number || "-" }}</td>
+                <td>
+                  <button
+                    class="delete-btn"
+                    @click="confirmDelete('profile', profile)"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Pagination Controls for Users -->
+          <div
+            v-if="!profilesLoading && filteredProfiles.length > 0"
+            class="pagination-controls"
+          >
+            <button
+              :disabled="profilesCurrentPage === 1 || profilesLoading"
+              @click="changePage('profiles', profilesCurrentPage - 1)"
+              class="pagination-btn"
+            >
+              Previous
+            </button>
+            <span class="page-info"
+              >Page {{ profilesCurrentPage }} of {{ profilesTotalPages }}</span
+            >
+            <button
+              :disabled="
+                profilesCurrentPage === profilesTotalPages ||
+                profilesTotalPages === 0 ||
+                profilesLoading
+              "
+              @click="changePage('profiles', profilesCurrentPage + 1)"
+              class="pagination-btn"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -612,12 +730,6 @@ export default {
             <div class="detail-label">Last Name:</div>
             <div class="detail-value">
               {{ selectedProfile.last_name || "N/A" }}
-            </div>
-          </div>
-          <div class="detail-row">
-            <div class="detail-label">Denomination:</div>
-            <div class="detail-value">
-              {{ selectedProfile.denomination || "N/A" }}
             </div>
           </div>
           <div class="detail-row">
@@ -817,8 +929,15 @@ table td {
   vertical-align: top;
 }
 
-.description-cell {
-  max-width: 200px;
+.description-cell .truncate-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  max-width: 500px;
 }
 
 .truncate-text {
