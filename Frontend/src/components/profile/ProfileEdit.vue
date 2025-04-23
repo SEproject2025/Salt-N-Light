@@ -10,7 +10,7 @@
     <form @submit.prevent="handleSubmit" class="edit-form">
       <div class="form-grid">
         <div class="form-group">
-          <label for="firstName">First Name</label>
+          <label for="firstName">First Name:</label>
           <input
             id="firstName"
             name="firstName"
@@ -23,7 +23,7 @@
         </div>
 
         <div class="form-group">
-          <label for="lastName">Last Name</label>
+          <label for="lastName">Last Name:</label>
           <input
             id="lastName"
             name="lastName"
@@ -36,7 +36,7 @@
         </div>
 
         <div class="form-group">
-          <label for="userType">User Type</label>
+          <label for="userType">User Type:</label>
           <select
             id="userType"
             name="userType"
@@ -49,7 +49,7 @@
         </div>
 
         <div class="form-group">
-          <label for="phoneNumber">Phone Number</label>
+          <label for="phoneNumber">Phone Number:</label>
           <input
             id="phoneNumber"
             name="phoneNumber"
@@ -57,6 +57,7 @@
             type="text"
             @input="validatePhoneNumber"
             @keypress="validatePhoneDigits"
+            placeholder="Enter your phone number"
           />
           <p v-if="phoneNumberError" class="error-message">
             {{ phoneNumberError }}
@@ -70,17 +71,30 @@
             name="streetAddress"
             v-model="formData.street_address"
             type="text"
+            placeholder="Enter your street address"
           />
         </div>
 
         <div class="form-group">
           <label for="city">City</label>
-          <input id="city" name="city" v-model="formData.city" type="text" />
+          <input
+            id="city"
+            name="city"
+            v-model="formData.city"
+            type="text"
+            placeholder="Enter your city"
+          />
         </div>
 
         <div class="form-group">
           <label for="state">State</label>
-          <input id="state" name="state" v-model="formData.state" type="text" />
+          <input
+            id="state"
+            name="state"
+            v-model="formData.state"
+            type="text"
+            placeholder="Enter your state"
+          />
         </div>
 
         <div class="form-group">
@@ -90,11 +104,17 @@
             name="country"
             v-model="formData.country"
             type="text"
+            placeholder="Enter your country"
           />
         </div>
 
         <div class="form-group">
-          <label for="yearsOfExperience">Years of Experience</label>
+          <label for="yearsOfExperience"
+            >Years in Ministry:
+            <span class="required-text"
+              >If it's less than one year, please leave this field blank</span
+            ></label
+          >
           <input
             id="yearsOfExperience"
             name="yearsOfExperience"
@@ -104,13 +124,14 @@
             max="500"
             @input="validateYearsOfExperience"
             @keypress="validateDigits"
+            placeholder="Enter the # of years in the ministry"
           />
           <p v-if="yearsError" class="error-message">{{ yearsError }}</p>
         </div>
       </div>
 
       <div class="form-group full-width">
-        <label for="tags">Tags</label>
+        <label for="tags">Select some tags that describe your ministry:</label>
         <div class="tag-selection-container">
           <div class="tag-list">
             <div
