@@ -3,7 +3,7 @@ import axios from "axios";
 
 // Set the base URL for all API requests
 const api = axios.create({
-  baseURL: "https://evangelium.app",
+  baseURL: "https://api.evangelium.app",
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",
