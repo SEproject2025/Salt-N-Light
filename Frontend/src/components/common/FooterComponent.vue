@@ -27,15 +27,28 @@
 
       <!-- Right: Social Icons -->
       <div class="flex space-x-4">
-        <a href="#" class="hover:text-white">🔔</a>
-        <a href="#" class="hover:text-white">🔍</a>
-        <a href="#" class="hover:text-white">👤</a>
+        <a
+          href="https://www.instagram.com/evangelium.app?igsh=MWo0aWQ2a3R3Ym96bg=="
+          target="_blank"
+          class="hover:text-pink-600"
+        >
+          <span class="hover:text-white material-symbols-outlined"
+            >photo_camera</span
+          >
+        </a>
       </div>
     </div>
 
     <!-- Footer Bottom -->
     <div class="mt-6 text-center text-sm text-gray-500">
-      &copy; 2025 Evangelium. All rights reserved.
+      &copy; 2025 Evangelium. All rights reserved.<br />All photos were obtained
+      from
+      <a
+        href="https://unsplash.com/"
+        target="_blank"
+        class="text-gray-400 hover:text-white"
+        >Unsplash</a
+      >.
     </div>
   </footer>
 </template>

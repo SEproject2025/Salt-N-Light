@@ -416,6 +416,8 @@ export default {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 2px solid #f0f0f0;
+  font-weight: 600;
+  margin-bottom: 1rem;
 }
 
 .profile-header h1 {
@@ -488,12 +490,12 @@ export default {
 }
 
 .save-btn {
-  background: #2ecc71;
+  background: #0056b3;
   color: white;
 }
 
 .save-btn:hover {
-  background: #27ae60;
+  background: #0056b3;
 }
 
 .cancel-btn {

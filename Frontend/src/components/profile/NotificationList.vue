@@ -1,6 +1,7 @@
 <template>
   <div class="notifications-container">
-    <h3>Notifications</h3>
+    <h3 class="notifications-title">Notifications</h3>
+
     <div v-if="loading" class="loading">Loading notifications...</div>
     <div v-else-if="error" class="error-message">
       {{ error }}
@@ -178,6 +179,12 @@ export default {
 
 .error-message {
   color: #dc3545;
+}
+
+.notifications-title {
+  font-size: 1.55rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
 }
 
 .notification-item {

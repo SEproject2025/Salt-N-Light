@@ -164,4 +164,23 @@ export default {
   border-color: #2196f3;
   color: #1976d2;
 }
+
+.step-title {
+  font-size: 1.55rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+#description {
+  width: 630px;
+  height: 150px;
+  padding: 1rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  color: #333;
+  border-radius: 6px;
+  resize: vertical;
+  box-sizing: border-box;
+  margin-bottom: 1rem;
+}
 </style>

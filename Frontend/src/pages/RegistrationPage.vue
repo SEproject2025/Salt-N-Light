@@ -1,67 +1,81 @@
 <template>
-  <div class="registration-container">
-    <div class="registration-card">
-      <h1>Create Your Account</h1>
+  <div class="split-container">
+    <!-- Left side with image -->
+    <div class="split-left">
+      <img
+        src="@/assets/pictures/signup.jpg"
+        alt="Sign up"
+        class="signup-image"
+      />
+    </div>
 
-      <!-- Progress Bar Component -->
-      <ProgressBar :steps="steps" :currentStep="currentStep" />
+    <!-- Right side with registration form -->
+    <div class="split-right">
+      <div class="registration-card">
+        <h1 class="text-[38px] font-bold mt-4 mb-4 text-center">
+          Create Your Account
+        </h1>
 
-      <form>
-        <!-- Step 1: Account Information -->
-        <AccountInfoStep
-          v-show="currentStep === 0"
-          v-model:userData="form.user"
-          @update:userData="updateUserData"
-          @password-validation="handlePasswordValidation"
-          @validation-status="handleValidationStatus"
-        />
+        <!-- Progress Bar Component -->
+        <ProgressBar :steps="steps" :currentStep="currentStep" />
 
-        <!-- Step 2: Personal Information -->
-        <PersonalInfoStep
-          v-show="currentStep === 1"
-          v-model:personalData="form"
-          @validation-status="handlePersonalInfoValidation"
-        />
+        <form>
+          <!-- Step 1: Account Information -->
+          <AccountInfoStep
+            v-show="currentStep === 0"
+            v-model:userData="form.user"
+            @update:userData="updateUserData"
+            @password-validation="handlePasswordValidation"
+            @validation-status="handleValidationStatus"
+          />
 
-        <!-- Step 3: Location Information -->
-        <LocationInfoStep
-          v-show="currentStep === 2"
-          v-model:locationData="form"
-          :isAnonymous="form.is_anonymous"
-          @validation-status="handleLocationInfoValidation"
-        />
+          <!-- Step 2: Personal Information -->
+          <PersonalInfoStep
+            v-show="currentStep === 1"
+            v-model:personalData="form"
+            @validation-status="handlePersonalInfoValidation"
+          />
 
-        <!-- Step 4: Additional Information -->
-        <AdditionalInfoStep
-          v-show="currentStep === 3"
-          v-model:additionalData="form"
-          @validation-status="handleAdditionalInfoValidation"
-        />
+          <!-- Step 3: Location Information -->
+          <LocationInfoStep
+            v-show="currentStep === 2"
+            v-model:locationData="form"
+            :isAnonymous="form.is_anonymous"
+            @validation-status="handleLocationInfoValidation"
+          />
 
-        <!-- Error Message -->
-        <div
-          v-if="message"
-          :class="[
-            'message-container',
-            { 'error-message': !isSuccess, 'success-message': isSuccess },
-          ]"
-        >
-          <span class="message-icon">{{ !isSuccess ? "⚠️" : "✅" }}</span>
-          {{ message }}
-        </div>
+          <!-- Step 4: Additional Information -->
+          <AdditionalInfoStep
+            v-show="currentStep === 3"
+            v-model:additionalData="form"
+            @validation-status="handleAdditionalInfoValidation"
+          />
 
-        <!-- Navigation Buttons -->
-        <NavigationButtons
-          :currentStep="currentStep"
-          :steps="steps"
-          :isStepOneValid="isStepOneValid()"
-          :isFormValid="isFormValid"
-          :isCurrentStepValid="isCurrentStepValid"
-          @prev-step="prevStep"
-          @next-step="nextStep"
-          @submit="registerUser"
-        />
-      </form>
+          <!-- Error Message -->
+          <div
+            v-if="message"
+            :class="[
+              'message-container',
+              { 'error-message': !isSuccess, 'success-message': isSuccess },
+            ]"
+          >
+            <span class="message-icon">{{ !isSuccess ? "⚠️" : "✅" }}</span>
+            {{ message }}
+          </div>
+
+          <!-- Navigation Buttons -->
+          <NavigationButtons
+            :currentStep="currentStep"
+            :steps="steps"
+            :isStepOneValid="isStepOneValid()"
+            :isFormValid="isFormValid"
+            :isCurrentStepValid="isCurrentStepValid"
+            @prev-step="prevStep"
+            @next-step="nextStep"
+            @submit="registerUser"
+          />
+        </form>
+      </div>
     </div>
   </div>
 </template>
@@ -458,46 +472,54 @@ export default {
 </script>
 
 <style scoped>
-@import "../components/registration/styles.css";
-
-.registration-container {
+.split-container {
   display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
   width: 100%;
-  background: #f4f7fc;
-  padding: 20px;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.split-left {
+  flex: 1;
+  overflow: hidden;
+}
+
+.signup-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.split-right {
+  flex: 1;
+  background: #ffffff;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem;
+  padding-top: 1.5rem;
+  overflow-y: auto;
 }
 
 .registration-card {
-  background: white;
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 600px;
-  text-align: center;
+  max-width: 800px;
+  background: white;
+  padding: 2rem;
+  padding-top: 1rem;
 }
 
-h1 {
-  margin-bottom: 30px;
-  color: #333;
+.registration-card h1 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-top: 0;
+  margin-bottom: 2rem;
+  text-align: left;
   font-weight: 600;
-  font-size: 2rem;
-}
-
-@media (max-width: 768px) {
-  .registration-card {
-    padding: 25px;
-  }
 }
 
 .message-container {
   margin: 15px 0;
   padding: 15px;
-  border-radius: 8px;
   font-weight: 500;
   text-align: left;
   display: flex;
@@ -532,5 +554,27 @@ h1 {
   background-color: #e8f5e9;
   color: #2e7d32;
   border-left: 4px solid #4caf50;
+}
+
+@media (max-width: 1024px) {
+  .split-container {
+    flex-direction: column;
+  }
+
+  .split-left {
+    height: 200px;
+  }
+
+  .split-right {
+    padding: 1rem;
+  }
+
+  .registration-card {
+    padding: 1rem;
+  }
+
+  .registration-card h1 {
+    font-size: 2rem;
+  }
 }
 </style>

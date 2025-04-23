@@ -422,4 +422,26 @@ export default {
 .suggestion-item:last-child {
   border-bottom: none;
 }
+
+.step-title {
+  font-size: 1.55rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.form-group input {
+  width: 470px;
+  max-width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-bottom: 1rem;
+}
+
+.address-section label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
 </style>
