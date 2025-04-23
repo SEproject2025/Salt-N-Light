@@ -7,7 +7,7 @@
           <input
             type="text"
             v-model="searchParams.q"
-            placeholder="Search by name, location, description, or tags..."
+            placeholder="Search by name..."
             @input="handleSearch"
           />
           <div class="search-icon">
