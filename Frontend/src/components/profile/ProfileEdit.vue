@@ -98,14 +98,30 @@
             <span class="required">*</span> Country:
             <span class="required-text">required</span>
           </label>
-          <input
+          <select
             id="country"
-            name="country"
             v-model="formData.country"
-            type="text"
+            class="country-select"
             required
-            placeholder="Enter your country"
-          />
+            @change="handleCountryChange"
+          >
+            <option
+              v-for="country in commonCountries"
+              :key="country.code"
+              :value="country.name"
+            >
+              {{ country.name }}
+            </option>
+            <option value="Other">Other (specify below)</option>
+          </select>
+          <div v-if="formData.country === 'Other'" class="other-country-input">
+            <input
+              type="text"
+              v-model="formData.other_country"
+              placeholder="Enter your country"
+              required
+            />
+          </div>
         </div>
 
         <div class="form-group">
@@ -207,12 +223,25 @@ export default {
         city: "",
         state: "",
         country: "",
+        other_country: "",
         years_of_experience: "",
         description: "",
         selectedTags: [],
       },
       yearsError: "",
       phoneNumberError: "",
+      commonCountries: [
+        { code: "US", name: "United States" },
+        { code: "CA", name: "Canada" },
+        { code: "GB", name: "United Kingdom" },
+        { code: "AU", name: "Australia" },
+        { code: "NZ", name: "New Zealand" },
+        { code: "IN", name: "India" },
+        { code: "PH", name: "Philippines" },
+        { code: "SG", name: "Singapore" },
+        { code: "MY", name: "Malaysia" },
+        { code: "ID", name: "Indonesia" },
+      ],
     };
   },
   computed: {
@@ -235,6 +264,23 @@ export default {
       }
     });
     this.formData.selectedTags = [...this.selectedTags];
+
+    // Handle country initialization
+    if (this.profile.country) {
+      // Check if the country is in our common countries list
+      const isCommonCountry = this.commonCountries.some(
+        (country) => country.name === this.profile.country
+      );
+
+      if (!isCommonCountry) {
+        // If it's not a common country, set it as "Other" and put the value in other_country
+        this.formData.country = "Other";
+        this.formData.other_country = this.profile.country;
+      } else {
+        // If it is a common country, set it directly
+        this.formData.country = this.profile.country;
+      }
+    }
   },
   methods: {
     validateDigits(event) {
@@ -300,6 +346,11 @@ export default {
         this.phoneNumberError = "";
       }
     },
+    handleCountryChange() {
+      if (this.formData.country !== "Other") {
+        this.formData.other_country = "";
+      }
+    },
     handleSubmit() {
       // Only proceed if there are no validation errors
       if (this.yearsError || this.phoneNumberError) {
@@ -311,6 +362,12 @@ export default {
         (tag) => tag !== undefined && tag !== null
       );
 
+      // Handle country value - if "Other" is selected, use other_country value
+      const countryValue =
+        this.formData.country === "Other"
+          ? this.formData.other_country
+          : this.formData.country;
+
       const formDataToSubmit = {
         first_name: this.formData.first_name,
         last_name: this.formData.last_name,
@@ -319,7 +376,7 @@ export default {
         street_address: this.formData.street_address || null,
         city: this.formData.city || null,
         state: this.formData.state || null,
-        country: this.formData.country || null,
+        country: countryValue || null,
         years_of_experience: this.formData.years_of_experience || 0,
         description: this.formData.description || null,
         tags: validTags,
@@ -524,6 +581,42 @@ export default {
   font-size: 0.8rem;
   margin-left: 4px;
   font-style: italic;
+}
+
+.country-select {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  background-color: white;
+  cursor: pointer;
+}
+
+.country-select:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.other-country-input {
+  margin-top: 0.5rem;
+}
+
+.other-country-input input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.other-country-input input:focus {
+  border-color: #3498db;
+  outline: none;
 }
 
 @media (max-width: 768px) {
