@@ -7,9 +7,10 @@ export default {
     return {
       isLoading: true,
       isSuperuser: false,
-      activeTab: "users",
+      activeTab: "profiles",
       profiles: [],
       comments: [],
+      tags: [],
       profileSearchQuery: "",
       commentSearchQuery: "",
       filteredProfiles: [],
@@ -28,6 +29,7 @@ export default {
       // Loading states for pagination
       profilesLoading: false,
       commentsLoading: false,
+      tagsLoading: false,
 
       // Pagination data for profiles
       profilesCurrentPage: 1,
@@ -85,6 +87,8 @@ export default {
         await this.loadComments();
       } else if (this.activeTab === "users") {
         await this.loadUsers();
+      } else if (this.activeTab === "tags") {
+        await this.loadTags();
       }
     },
 
@@ -187,6 +191,30 @@ export default {
       }
     },
 
+    async loadTags() {
+      try {
+        this.tagsLoading = true;
+        // Clear previous results while loading
+        this.tags = [];
+
+        const tagsResponse = await api.get("tag", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+
+        console.log("Response: ", tagsResponse.data);
+
+        // Extract pagination information
+        this.tags = tagsResponse.data;
+        console.log("Tags: ", this.tags);
+      } catch (error) {
+        null;
+      } finally {
+        this.tagsLoading = false;
+      }
+    },
+
     async changePage(type, newPage) {
       if (type === "profiles") {
         this.profilesCurrentPage = newPage;
@@ -197,6 +225,9 @@ export default {
       } else if (type === "users") {
         this.profilesCurrentPage = newPage;
         await this.loadUsers();
+      } else if (type === "tags") {
+        this.tagsCurrentPage = newPage;
+        await this.loadTags();
       }
     },
 
@@ -287,6 +318,9 @@ export default {
             ? item.profile_detail.user.username
             : "Unknown user";
         this.deleteModalMessage = `Are you sure you want to delete the comment by ${username} on ${profileUsername}'s profile?`;
+      } else if (type === "tag") {
+        const tag = item;
+        this.deleteModalMessage = `Are you sure you want to delete the tag ${tag.tag_name}?`;
       }
 
       this.showDeleteModal = true;
@@ -312,6 +346,15 @@ export default {
 
           // Reload current page after deletion
           await this.loadComments();
+        } else if (this.deleteType === "tag") {
+          await api.delete(`tag/${this.itemToDelete.id}/`, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          });
+
+          // Reload current page after deletion
+          await this.loadTags();
         }
 
         this.showDeleteModal = false;
@@ -343,6 +386,8 @@ export default {
         await this.loadComments();
       } else if (tabName === "users") {
         await this.loadUsers();
+      } else if (tabName === "tags") {
+        await this.loadTags();
       }
     },
   },
@@ -385,6 +430,12 @@ export default {
           @click="changeTab('users')"
         >
           Users
+        </button>
+        <button
+          :class="{ active: activeTab === 'tags' }"
+          @click="changeTab('tags')"
+        >
+          Tags
         </button>
       </div>
 
@@ -672,6 +723,39 @@ export default {
               Next
             </button>
           </div>
+        </div>
+
+        <!-- Tags Tab -->
+        <div v-if="activeTab === 'tags'" class="tags-tab">
+          <div v-if="tagsLoading" class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p>Loading tags...</p>
+          </div>
+
+          <div v-else-if="tags.length === 0" class="no-results">
+            <p>No tags found</p>
+          </div>
+
+          <table v-else>
+            <thead>
+              <tr>
+                <th>tag_name</th>
+                <th>tag_description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="tag in tags" :key="tag.id">
+                <td>{{ tag.tag_name }}</td>
+                <td>{{ tag.tag_description || "-" }}</td>
+                <td>
+                  <button class="delete-btn" @click="confirmDelete('tag', tag)">
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
