@@ -736,6 +736,7 @@ export default {
             <div class="detail-value">
               {{ formatDate(selectedComment.created_at) }}
             </div>
+            <div></div>
           </div>
           <div class="detail-row">
             <div class="detail-label">Updated At:</div>
