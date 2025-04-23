@@ -77,8 +77,6 @@ SESSION_SAVE_EVERY_REQUEST = True
 #   'http://127.0.0.1:8080',
 #   'http://api.evangelium.app',
 #   'https://api.evangelium.app',
-#   'http://baptist.coffee',
-#   'https://baptist.coffee',
 #   'http://evangelium.app',
 #   'https://evangelium.app',
 #   'http://localhost:8000',
@@ -97,7 +95,6 @@ REST_FRAMEWORK = {
 ALLOWED_HOSTS = [
    '127.0.0.1',
    'api.evangelium.app',
-   'baptist.coffee',
    'evangelium.app',
    'localhost'
    'www.evangelium.app',
@@ -108,8 +105,6 @@ CORS_ALLOWED_ORIGINS = [
    'http://127.0.0.1:8080',
    'http://api.evangelium.app',
    'https://api.evangelium.app',
-   'http://baptist.coffee',
-   'https://baptist.coffee',
    'http://evangelium.app',
    'https://evangelium.app',
    'http://localhost:8000',
@@ -144,12 +139,12 @@ WSGI_APPLICATION = 'saltnlight.wsgi.application'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(default=os.getenv("DATABASE_URL"),
-                                      conn_max_age=600, ssl_require=True)
-#    'default': {
-#        'ENGINE': 'django.db.backends.sqlite3',
-#        'NAME': BASE_DIR / 'db.sqlite3',
-#    }
+   'default': dj_database_url.config(default=os.getenv("DATABASE_URL"),
+                                     conn_max_age=600, ssl_require=True)
+    #    'default': {
+    #        'ENGINE': 'django.db.backends.sqlite3',
+    #        'NAME': BASE_DIR / 'db.sqlite3',
+    #    }
 }
 
 # Password validation

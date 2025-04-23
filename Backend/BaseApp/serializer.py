@@ -23,13 +23,15 @@ class UserSerializer(serializers.ModelSerializer):
       return User.objects.create_user(**validated_data)
 
 # Serializer class for Tags
+
+
 class TagSerializer(serializers.ModelSerializer):
    is_self_added = serializers.SerializerMethodField()
 
    class Meta:
       model = Tag
       fields = ['id', 'tag_name', 'tag_description',
-      'tag_is_predefined', 'is_self_added']
+                'tag_is_predefined', 'is_self_added']
 
    def get_is_self_added(self, obj):
       request = self.context.get('request')
@@ -38,8 +40,9 @@ class TagSerializer(serializers.ModelSerializer):
          return False
       tagging = obj.profiletagging_set.filter(
          profile_id=profile_id
-               ).first()
+          ).first()
       return tagging.is_self_added if tagging else False
+
 
 class ProfileVoteSerializer(serializers.ModelSerializer):
    voter_username = serializers.CharField(
@@ -132,22 +135,28 @@ class ProfileSerializer(serializers.ModelSerializer):
       return None
 
 # Serializer class for Search History
+
+
 class SearchHistorySerializer(serializers.ModelSerializer):
    class Meta:
       model = SearchHistory
       fields = '__all__'
 
 # Serializer class for External Media
+
+
 class ExternalMediaSerializer(serializers.ModelSerializer):
    class Meta:
       model = ExternalMedia
       fields = '__all__'
+
 
 class NotificationSerializer(serializers.ModelSerializer):
    recipient_username = serializers.CharField(source='recipient.username',
                                               read_only=True)
    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S",
                                           read_only=True)
+
    class Meta:
       model = Notification
       fields = ['id', 'recipient', 'recipient_username', 'notification_type',
@@ -279,6 +288,7 @@ class SearchProfileSerializer(serializers.ModelSerializer):
 
    def get_full_name(self, obj):
       return f"{obj.first_name or ''} {obj.last_name or ''}".strip()
+
 
 class ProfileEnrichedSerializer(serializers.ModelSerializer):
    user = UserSerializer(read_only=True)
