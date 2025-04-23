@@ -8,6 +8,7 @@ import MatchmakingPage from "@/pages/MatchmakingPage.vue";
 import RegistrationPage from "@/pages/RegistrationPage.vue";
 import PublicProfile from "@/pages/PublicProfile.vue";
 import AdminDashboard from "@/pages/AdminDashboard.vue";
+import HomePage from "@/pages/HomePage.vue";
 import api from "@/api/axios.js";
 
 async function isAuthenticated() {
@@ -77,6 +78,7 @@ const routes = [
     component: AdminDashboard,
     meta: { requiresAuth: true },
   },
+  { path: "/home", component: HomePage, meta: { requiresAuth: true } },
 ];
 
 const router = createRouter({

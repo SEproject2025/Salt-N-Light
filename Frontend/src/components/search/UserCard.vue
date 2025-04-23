@@ -1,288 +1,452 @@
 <template>
-  <v-row align="center" justify="center" dense>
-    <v-col cols="auto" md="6">
-      <div class="card_container">
-        <v-card class="mx-auto">
-          <v-card-title class="d-flex align-center">
-            <v-avatar size="5">
-              <img :src="userImage" alt="profile_image" class="profile_image" />
-            </v-avatar>
-          </v-card-title>
-          <v-card-text>
-            <h2>
-              <span>{{ first_name }} {{ last_name }}</span>
-            </h2>
-            <p>{{ city }}, {{ state }}</p>
-            <p>{{ description }}</p>
-          </v-card-text>
-        </v-card>
-        <button class="button" @click="viewProfile">View Profile</button>
-      </div>
-    </v-col>
-  </v-row>
+  <div class="user-card-row" role="article">
+    <div class="user-card-col">
+      <div class="card" :class="{ 'is-loading': isLoading }">
+        <div class="card-header">
+          <div class="header-content">
+            <h2 class="church-name">{{ first_name }} {{ last_name }}</h2>
+            <p class="location">{{ city }}, {{ country }}</p>
+            <p class="profile-type">{{ user_type }}</p>
+          </div>
+          <button
+            class="bookmark-btn"
+            @click="toggleBookmark"
+            :aria-label="isBookmarked ? 'Remove bookmark' : 'Add bookmark'"
+            :title="isBookmarked ? 'Remove bookmark' : 'Add bookmark'"
+          >
+            <font-awesome-icon
+              :icon="['far', 'bookmark']"
+              v-if="!isBookmarked"
+            />
+            <font-awesome-icon :icon="['fas', 'bookmark']" v-else />
+          </button>
+        </div>
 
-  <div id="ProfileWindow">
-    <transition name="fade" appear>
-      <div
-        class="modal-overlay"
-        v-if="showModal"
-        @click="showModal = false"
-      ></div>
-    </transition>
-    <transition name="slide" appear>
-      <div class="modal" v-if="showModal">
-        <v-avatar size="50">
-          <img :src="userImage" alt="profile_image" class="profile_image" />
-        </v-avatar>
-        <h1>
-          <span>{{ first_name }} {{ last_name }}</span>
-        </h1>
-        <p>
-          <span>{{ city }}, {{ state }}, {{ country }}</span>
-        </p>
-        <p>
-          {{ description }}
-        </p>
-        <button class="button" @click="showModal = false">Close Profile</button>
+        <div class="card-content">
+          <p class="description" :title="description">{{ description }}</p>
+
+          <div class="tags-container" role="list" aria-label="Profile tags">
+            <template v-if="tags && tags.length">
+              <span
+                v-for="(tag, index) in displayedTags"
+                :key="index"
+                class="tag"
+                :title="tag.tag_description || tag.description"
+                role="listitem"
+              >
+                {{ tag.tag_name || tag.name || "Untagged" }}
+              </span>
+              <button
+                v-if="hasMoreTags"
+                class="more-tags"
+                @click="showAllTags = !showAllTags"
+                :aria-expanded="showAllTags"
+                :aria-label="
+                  showAllTags
+                    ? 'Show fewer tags'
+                    : `Show ${hiddenTagsCount} more tags`
+                "
+              >
+                {{ showAllTags ? "Show less" : `${hiddenTagsCount} more` }}
+              </button>
+            </template>
+            <span v-else class="no-tags" role="listitem">No tags</span>
+          </div>
+
+          <button
+            class="view-profile-btn"
+            @click="viewProfile"
+            :disabled="isLoading"
+            :aria-busy="isLoading"
+          >
+            <span
+              v-if="isLoading"
+              class="loading-spinner"
+              aria-hidden="true"
+            ></span>
+            <span v-else>View Profile</span>
+          </button>
+        </div>
       </div>
-    </transition>
+    </div>
   </div>
 </template>
 
 <script>
-import userImage from "@/assets/pictures/missionaryprof.jpeg";
 export default {
-  el: "#UserProfile",
   name: "UserCard",
   props: {
     first_name: {
       type: String,
       required: true,
+      validator: (value) => value.trim().length > 0,
     },
     last_name: {
       type: String,
       required: true,
+      validator: (value) => value.trim().length > 0,
     },
     city: {
       type: String,
-      required: true,
+      default: "",
     },
     state: {
       type: String,
-      required: true,
+      default: "",
     },
     country: {
       type: String,
-      required: true,
+      default: "",
     },
     description: {
       type: String,
-      required: true,
+      default: "",
     },
     id: {
       type: Number,
       required: true,
+      validator: (value) => value > 0,
+    },
+    tags: {
+      type: Array,
+      default: () => [],
+      validator: (value) => Array.isArray(value),
+    },
+    user_type: {
+      type: String,
+      default: "",
+      validator: (value) =>
+        ["Church", "Missionary", "Supporter", ""].includes(value),
+    },
+    user: {
+      type: Object,
+      default: () => null,
     },
   },
   data() {
     return {
-      userImage: userImage,
-      showModal: false,
+      isBookmarked: false,
+      showAllTags: false,
+      maxVisibleTags: 3,
+      isLoading: false,
     };
   },
-  methods: {
-    viewProfile() {
-      this.$router.push(`/profile/${this.id}`);
+  computed: {
+    displayedTags() {
+      if (!this.tags) return [];
+      return this.showAllTags
+        ? this.tags
+        : this.tags.slice(0, this.maxVisibleTags);
+    },
+    hasMoreTags() {
+      return this.tags && this.tags.length > this.maxVisibleTags;
+    },
+    hiddenTagsCount() {
+      return this.tags ? this.tags.length - this.maxVisibleTags : 0;
     },
   },
+  methods: {
+    async viewProfile() {
+      if (this.isLoading) return;
+
+      this.isLoading = true;
+      try {
+        const userId = this.id ?? this.user?.id;
+        if (!userId) {
+          console.warn("No valid ID for profile navigation.");
+          return;
+        }
+        await this.$router.push(`/profile/${userId}`);
+      } catch (error) {
+        console.error("Navigation failed:", error);
+        // You could emit an event here to show a toast notification
+        this.$emit("error", "Failed to navigate to profile");
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async toggleBookmark() {
+      if (this.isLoading) return;
+
+      this.isLoading = true;
+      try {
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        this.isBookmarked = !this.isBookmarked;
+        this.$emit("bookmark-toggled", {
+          id: this.id,
+          isBookmarked: this.isBookmarked,
+        });
+      } catch (error) {
+        console.error("Bookmark toggle failed:", error);
+        this.$emit("error", "Failed to update bookmark");
+      } finally {
+        this.isLoading = false;
+      }
+    },
+  },
+  emits: ["error", "bookmark-toggled"],
 };
 </script>
 
 <style scoped>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: "montserrat", sans-serif;
-}
-
-#UserProfile {
-  position: relative;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  width: 60vw;
-  min-height: 60vh;
-  overflow-x: hidden;
-}
-
-.button {
-  appearance: none;
-  outline: none;
-  border: none;
-  background: none;
-  cursor: pointer;
-
-  display: inline-block;
-  padding: 10px 15px;
-  background-image: linear-gradient(to right, #0a0a0a, #0e0e0e);
-  border-radius: 10px;
-
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-
-  box-shadow: 3px 3px rgba(0, 0, 0, 0.4);
-  transition: 0.4s ease-out;
-
-  &:hover {
-    box-shadow: 6px 6px rgba(0, 0, 0, 0.6);
-  }
-}
-
-.modal-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 98;
-  background-color: rgba(0, 0, 0, 0.3);
-}
-
-.modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 99;
-
-  width: 100%;
-  max-width: 400px;
-  background-color: #fff;
-  border-radius: 16px;
-
-  padding: 25px;
-
-  h1 {
-    color: #222;
-    font-size: 25px;
-    font-weight: 900;
-    margin-bottom: 15px;
-  }
-
-  p {
-    color: #666;
-    font-size: 18px;
-    font-weight: 400;
-    margin-bottom: 15px;
-  }
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s;
-}
-
-.fade-enter,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.slide-enter-active,
-.slide-leave-active {
-  transition: transform 0.5s;
-}
-
-.slide-enter,
-.slide-leave-to {
-  transform: translateY(-50%) translateX(100vw);
-}
-h2 {
+.user-card-row {
   display: flex;
   justify-content: flex-start;
-  align-items: center;
+  width: 100%;
 }
 
-h2 span {
+.user-card-col {
+  width: 100%;
+  max-width: 450px;
+}
+
+.card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  padding: 20px;
+  position: relative;
+}
+
+.card.is-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  width: 100%;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.church-name {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.location {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.profile-type {
+  font-size: 14px;
+  color: #1976d2;
+  margin: 0;
+  padding: 2px 8px;
+  background: #e3f2fd;
+  border-radius: 4px;
   display: inline-block;
-  margin-right: 5px;
+  text-transform: capitalize;
+}
+
+.bookmark-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  color: #666;
+  padding: 4px;
+  transition: color 0.2s;
+  min-width: 32px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bookmark-btn:hover {
+  color: #333;
+}
+
+.bookmark-btn:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+.card-content {
+  padding: 0;
+}
+
+.description {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+  max-height: 4.5em;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.description:hover {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  max-height: none;
+  cursor: pointer;
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.tag {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
-.card_container {
+.more-tags {
+  color: #666;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  padding: 4px 8px;
+}
+
+.more-tags:hover {
+  color: #333;
+}
+
+.more-tags:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+.view-profile-btn {
+  background: #1976d2;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+  margin-top: 20px;
+  position: relative;
+  min-height: 40px;
   display: flex;
-  width: 283px;
-  height: fit-content;
-  padding: 12px;
   align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  border-radius: 0;
-  background: #ffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.card_info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  align-self: stretch;
-}
-
-.card_picture {
-  display: flex;
-  width: 77px;
-  height: 70px;
-  align-items: left;
-}
-
-.card_tags-container {
-  display: flex;
-  align-items: center;
-  align-content: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-}
-
-.card_pills {
-  display: flex;
-  padding: 4px 4px;
   justify-content: center;
-  align-items: center;
-  border-radius: 100px;
 }
 
-.card-flag {
+.view-profile-btn:hover:not(:disabled) {
+  background: #1565c0;
+}
+
+.view-profile-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.view-profile-btn:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+.loading-spinner {
   width: 20px;
   height: 20px;
-  flex-shrink: 0;
-  fill: #d9d9d9;
-  stroke-width: 1px;
-  stroke: #fff;
-  font-size: 18px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
 }
 
-.profile_image {
-  max-width: 15%;
-  max-height: 15%;
-  border-radius: 15%;
-  object-fit: cover;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.v-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: 16px;
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .user-card-col {
+    max-width: 100%;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .church-name {
+    font-size: 20px;
+  }
+
+  .location {
+    font-size: 14px;
+  }
+
+  .profile-type {
+    font-size: 12px;
+  }
+
+  .description {
+    font-size: 14px;
+  }
+
+  .tag {
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+
+  .view-profile-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
 }
 
-.v-col {
-  width: 100%;
+/* High Contrast Mode */
+@media (forced-colors: active) {
+  .card {
+    border: 1px solid CanvasText;
+  }
+
+  .profile-type {
+    border: 1px solid CanvasText;
+  }
+
+  .tag {
+    border: 1px solid CanvasText;
+  }
+
+  .view-profile-btn {
+    border: 1px solid CanvasText;
+  }
 }
 </style>
