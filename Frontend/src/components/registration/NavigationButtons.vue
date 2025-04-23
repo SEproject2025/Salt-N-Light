@@ -13,15 +13,7 @@
       v-if="currentStep < steps.length - 1"
       type="button"
       class="btn-primary"
-      :class="{
-        'btn-disabled':
-          (isLocationStep && !isLocationValid) ||
-          (isAccountStep && !isAccountValid),
-      }"
-      :disabled="
-        (isLocationStep && !isLocationValid) ||
-        (isAccountStep && !isAccountValid)
-      "
+      :disabled="!isCurrentStepValid"
       @click="$emit('next-step')"
     >
       Next
@@ -58,32 +50,17 @@ export default {
       type: Boolean,
       required: true,
     },
-    isLocationValid: {
+    isCurrentStepValid: {
       type: Boolean,
-      default: true,
-    },
-    isAccountValid: {
-      type: Boolean,
-      default: true,
+      required: true,
     },
   },
   emits: ["prev-step", "next-step", "skip-to-final", "submit"],
-  computed: {
-    isLocationStep() {
-      return this.currentStep === 2;
-    },
-    isAccountStep() {
-      return this.currentStep === 0;
-    },
-  },
   methods: {
-    /* Logs validation status and emits submit event to parent */
     handleSubmit() {
-      console.log(
-        "NavigationButtons - Submit button clicked, isFormValid:",
-        this.isFormValid
-      );
-      this.$emit("submit");
+      if (this.isFormValid) {
+        this.$emit("submit");
+      }
     },
   },
 };

@@ -94,12 +94,10 @@ export default {
         const response = await api.get("api/notifications", {
           headers: this.getAuthHeader(),
         });
-
         // Load stored responses first
         const responses = JSON.parse(
           localStorage.getItem("notificationResponses") || "{}"
         );
-
         // Filter out notifications that have been responded to
         this.notifications = response.data.filter((notification) => {
           if (notification.notification_type === "friend_request") {
@@ -113,42 +111,37 @@ export default {
           return true;
         });
       } catch (error) {
-        console.error("Error fetching notifications:", error);
         this.error = "Failed to load notifications";
       } finally {
         this.loading = false;
       }
     },
-    async respondToFriendRequest(notification, action) {
-      try {
-        await api.post(
-          `api/friendships/${notification.related_object_id}/respond/`,
-          { action: action },
-          { headers: this.getAuthHeader() }
-        );
-        // Store the response in localStorage
-        const responses = JSON.parse(
-          localStorage.getItem("notificationResponses") || "{}"
-        );
-        responses[notification.id] = action;
-        localStorage.setItem(
-          "notificationResponses",
-          JSON.stringify(responses)
-        );
-        this.respondedRequests.set(notification.id, action);
-      } catch (error) {
-        console.error("Error responding to friend request:", error);
-        this.error = "Failed to respond to friend request.";
-      }
-    },
-    getResponseClass(notification) {
-      const action = this.respondedRequests.get(notification.id);
-      return action === "reject" ? "reject" : "accept";
-    },
-    getResponseText(notification) {
-      const action = this.respondedRequests.get(notification.id);
-      return action === "reject" ? "Rejected" : "Accepted";
-    },
+  },
+  async respondToFriendRequest(notification, action) {
+    try {
+      await api.post(
+        `api/friendships/${notification.related_object_id}/respond/`,
+        { action: action },
+        { headers: this.getAuthHeader() }
+      );
+      // Store the response in localStorage
+      const responses = JSON.parse(
+        localStorage.getItem("notificationResponses") || "{}"
+      );
+      responses[notification.id] = action;
+      localStorage.setItem("notificationResponses", JSON.stringify(responses));
+      this.respondedRequests.set(notification.id, action);
+    } catch (error) {
+      this.error = "Failed to respond to friend request.";
+    }
+  },
+  getResponseClass(notification) {
+    const action = this.respondedRequests.get(notification.id);
+    return action === "reject" ? "reject" : "accept";
+  },
+  getResponseText(notification) {
+    const action = this.respondedRequests.get(notification.id);
+    return action === "reject" ? "Rejected" : "Accepted";
   },
   mounted() {
     this.fetchNotifications();
@@ -176,27 +169,38 @@ export default {
   margin-top: 15px;
 }
 
+.loading,
+.error-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.error-message {
+  color: #dc3545;
+}
+
 .notification-item {
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 15px;
-  margin-bottom: 12px;
-  background-color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+  transition: background-color 0.2s;
 }
 
 .notification-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .notification-type {
-  font-weight: 599;
+  font-weight: bold;
   padding: 4px 8px;
-  border-radius: 20px;
-  font-size: 1em;
+  border-radius: 4px;
+  font-size: 0.9em;
 }
 
 .notification-type.friend_request {
@@ -211,93 +215,18 @@ export default {
 
 .notification-date {
   color: #666;
-  font-size: 0.85em;
+  font-size: 0.9em;
 }
 
 .notification-message {
   color: #333;
-  margin: 10px 0;
-  font-size: 1em;
-  line-height: 1.4;
-}
-
-.friend-request-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.accept-btn,
-.reject-btn {
-  flex: 1;
-  padding: 8px 20px;
-  border: none;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.9em;
-}
-
-.accept-btn {
-  background-color: #ffffff;
-  color: #43a047;
-  border: 1px solid #43a047;
-}
-
-.accept-btn:hover {
-  background-color: #43a047;
-  color: white;
-}
-
-.reject-btn {
-  background-color: #ffffff;
-  color: #f44336;
-  border: 1px solid #f44336;
-}
-
-.reject-btn:hover {
-  background-color: #f44336;
-  color: white;
-}
-
-.expanded-button {
-  width: 100%;
-  padding: 8px 20px;
-  border: none;
-  border-radius: 6px;
-  font-weight: 500;
-  text-align: center;
-  transition: all 0.3s ease;
-}
-
-.expanded-button.accept {
-  background-color: #43a047;
-  color: white;
-}
-
-.expanded-button.reject {
-  background-color: #f44336;
-  color: white;
-}
-
-.loading,
-.error-message {
-  text-align: center;
-  padding: 20px;
-  color: #666;
-}
-
-.error-message {
-  color: #f44336;
+  margin-top: 5px;
 }
 
 .no-notifications {
   text-align: center;
   color: #666;
-  padding: 30px;
+  padding: 20px;
   font-style: italic;
-  background-color: #f5f5f5;
-  border-radius: 8px;
 }
 </style>

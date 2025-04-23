@@ -17,6 +17,7 @@
             id="firstName"
             v-model="localData.first_name"
             placeholder="Enter your first name"
+            maxlength="35"
             @input="updateData"
           />
         </div>
@@ -27,6 +28,7 @@
             id="lastName"
             v-model="localData.last_name"
             placeholder="Enter your last name"
+            maxlength="35"
             @input="updateData"
           />
         </div>
@@ -34,12 +36,16 @@
 
       <label for="phoneNumber">Phone Number:</label>
       <input
-        type="text"
+        type="tel"
         id="phoneNumber"
         v-model="localData.phone_number"
         placeholder="Enter your phone number"
-        @input="updateData"
+        @input="validatePhoneNumber"
+        @keypress="validatePhoneDigits"
       />
+      <p v-if="phoneNumberError" class="error-message">
+        {{ phoneNumberError }}
+      </p>
 
       <label for="yearsOfExperience"
         >Years in Ministry:
@@ -52,7 +58,7 @@
         id="yearsOfExperience"
         v-model="localData.years_of_experience"
         min="0"
-        max="100"
+        max="500"
         placeholder="Enter the # of years in the ministry"
         @input="validateYearsOfExperience"
         @keypress="validateDigits"
@@ -88,7 +94,7 @@ export default {
       required: true,
     },
   },
-  emits: ["update:personalData"],
+  emits: ["update:personalData", "validation-status"],
   data() {
     return {
       localData: {
@@ -100,6 +106,9 @@ export default {
         is_anonymous: this.personalData.is_anonymous || false,
       },
       yearsError: "",
+      firstNameError: "",
+      lastNameError: "",
+      phoneNumberError: "",
     };
   },
   methods: {
@@ -119,7 +128,7 @@ export default {
     validateYearsOfExperience() {
       const years = this.localData.years_of_experience;
       if (years === null || years === "") {
-        this.localData.years_of_experience = null;
+        this.yearsError = "";
         this.updateData();
         return;
       }
@@ -127,15 +136,45 @@ export default {
       const numYears = Number(years);
       if (isNaN(numYears) || numYears < 0) {
         this.yearsError = "Please enter a valid number";
-        this.localData.years_of_experience = null;
-      } else if (numYears > 500) {
-        this.yearsError = "Number cannot exceed 500 years";
-        this.localData.years_of_experience = null;
       } else if (!Number.isInteger(numYears)) {
         this.yearsError = "Please enter a whole number";
-        this.localData.years_of_experience = null;
+      } else if (numYears > 500) {
+        this.yearsError = "Years of experience cannot exceed 500";
       } else {
         this.yearsError = "";
+      }
+      this.updateData();
+    },
+    validatePhoneDigits(event) {
+      // Allow only digits and control keys
+      if (
+        !/[0-9]/.test(event.key) &&
+        event.key !== "Backspace" &&
+        event.key !== "Delete" &&
+        event.key !== "ArrowLeft" &&
+        event.key !== "ArrowRight" &&
+        event.key !== "Tab"
+      ) {
+        event.preventDefault();
+      }
+    },
+    validatePhoneNumber() {
+      const value = this.localData.phone_number;
+      // Remove any non-digit characters
+      const digitsOnly = value.replace(/\D/g, "");
+
+      // Update the input value to only contain digits
+      this.localData.phone_number = digitsOnly;
+
+      // If the field is empty, no validation needed
+      if (!digitsOnly) {
+        this.phoneNumberError = "";
+      } else if (digitsOnly.length < 10) {
+        this.phoneNumberError = "Phone number must be at least 10 digits";
+      } else if (digitsOnly.length > 15) {
+        this.phoneNumberError = "Phone number must not exceed 15 digits";
+      } else {
+        this.phoneNumberError = "";
       }
       this.updateData();
     },
@@ -145,6 +184,11 @@ export default {
         ...this.personalData,
         ...this.localData,
       });
+      this.validateForm();
+    },
+    validateForm() {
+      const isValid = !this.phoneNumberError && !this.yearsError;
+      this.$emit("validation-status", isValid);
     },
   },
   watch: {
@@ -159,6 +203,7 @@ export default {
           years_of_experience: newValue.years_of_experience || null,
           is_anonymous: newValue.is_anonymous || false,
         };
+        this.validateForm();
       },
       deep: true,
     },
@@ -191,10 +236,6 @@ export default {
   }
 }
 
-.error-message {
-  color: #c62828;
-}
-
 .anonymous-option {
   margin: 20px 0;
   padding: 15px;
@@ -218,5 +259,15 @@ export default {
   margin-top: 5px;
   font-size: 0.9rem;
   color: #666;
+}
+
+.error {
+  border-color: #f44336;
+}
+
+.error-message {
+  color: #f44336;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
 }
 </style>
