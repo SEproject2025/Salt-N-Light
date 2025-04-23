@@ -4,22 +4,12 @@
       <div class="card">
         <div class="card-header">
           <div class="profile-section">
-            <div class="avatar">
-              <img :src="userImage" alt="profile_image" class="profile_image" />
-            </div>
             <div class="header-content">
               <h2 class="church-name">{{ first_name }} {{ last_name }}</h2>
               <p class="location">{{ city }}, {{ country }}</p>
               <p class="profile-type">{{ user_type }}</p>
             </div>
           </div>
-          <button class="bookmark-btn" @click="toggleBookmark">
-            <font-awesome-icon
-              :icon="['far', 'bookmark']"
-              v-if="!isBookmarked"
-            />
-            <font-awesome-icon :icon="['fas', 'bookmark']" v-else />
-          </button>
         </div>
 
         <div class="card-content">
@@ -260,6 +250,7 @@ body {
   border-radius: 4px;
   display: inline-block;
   text-transform: capitalize;
+  width: fit-content;
 }
 
 .bookmark-btn {
