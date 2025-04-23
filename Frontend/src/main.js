@@ -10,10 +10,21 @@ import {
   faThumbsUp,
   faThumbsDown,
   faSave,
+  faBookmark as fasBookmark,
 } from "@fortawesome/free-solid-svg-icons";
+import "@/assets/tailwind.css";
+import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 
 // Add the icons to the library
-library.add(faEdit, faTimes, faThumbsUp, faThumbsDown, faSave);
+library.add(
+  faEdit,
+  faTimes,
+  faThumbsUp,
+  faThumbsDown,
+  faSave,
+  fasBookmark,
+  farBookmark
+);
 
 const app = createApp(App);
 

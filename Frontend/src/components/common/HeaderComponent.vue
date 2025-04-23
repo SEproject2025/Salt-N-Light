@@ -1,33 +1,72 @@
 <template>
   <header class="header-banner">
-    <!-- Site Icon -->
-    <div class="site-icon">
-      <a href="/LandingPage" title="SaltnLife">
-        <img
-          src="@\assets\pictures\saltnlightlogo1.webp"
-          alt="SaltnLight Logo"
-          class="icon"
-        />
-      </a>
+    <!-- Site Branding -->
+    <div class="site-branding">
+      <!-- Site Logo -->
+      <div class="site-logo">
+        <a href="/LandingPage">
+          <img
+            src="@/assets/pictures/Evangelium-Logo-01.png"
+            alt="Evangelium Logo"
+            class="logo"
+          />
+        </a>
+      </div>
     </div>
+
+    <!-- Quick Search -->
+    <QuickSearch class="header-search" />
 
     <!-- Navigation Links -->
     <nav class="nav-links">
-      <a href="/SearchPage" class="nav-link">Explore</a>
-      <a href="/RegistrationPage" class="nav-link">Sign Up</a>
-      <a @click="navigateToProfile" class="nav-link" style="cursor: pointer"
-        >Profile</a
+      <!-- Explore -->
+      <a
+        href="/SearchPage"
+        class="flex flex-col items-center hover:text-blue-500 transition-colors duration-200"
       >
-      <div>
-        <button @click="logout">Logout</button>
-      </div>
+        <span class="material-symbols-outlined"> travel_explore </span>
+        <span>Explore</span>
+      </a>
+
+      <!-- Sign Up -->
+      <a
+        href="/RegistrationPage"
+        class="flex flex-col items-center hover:text-blue-500 transition-colors duration-200"
+      >
+        <span class="material-symbols-outlined"> how_to_reg </span>
+        <span>Sign Up</span>
+      </a>
+
+      <!-- Profile -->
+      <a
+        @click="navigateToProfile"
+        class="flex flex-col items-center hover:text-blue-500 transition-colors duration-200"
+        style="cursor: pointer"
+      >
+        <span class="material-symbols-outlined">account_circle</span>
+        <span>Me</span>
+      </a>
+
+      <!-- Logout -->
+      <a
+        @click="logout"
+        class="flex flex-col items-center hover:text-blue-500 transition-colors duration-200 text-gray-300"
+      >
+        <span class="material-symbols-outlined text-3xl mb-1">logout</span>
+        <span>Logout</span>
+      </a>
     </nav>
   </header>
 </template>
 
 <script>
+import QuickSearch from "@/components/search/QuickSearch.vue";
+
 export default {
   name: "HeaderComponent",
+  components: {
+    QuickSearch,
+  },
   methods: {
     logout() {
       // Clear tokens from localStorage
@@ -55,24 +94,38 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 70px;
   padding: 10px 20px;
   background-color: #f9f9f9;
   border-bottom: 1px solid #ddd;
   font-family: Arial, sans-serif;
+  position: relative;
 }
 
-/* Site Icon */
-.site-icon .icon {
-  height: 40px;
-  width: 40px;
-  border-radius: 50%;
-  object-fit: cover;
+/* Site Branding */
+.site-branding {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* adjust spacing between icon and logo */
+}
+
+/* Site Logo */
+.site-logo .logo {
+  margin-left: 50px;
+  height: auto;
+  width: 185px;
+  border-radius: 0;
+  object-fit: contain;
 }
 
 /* Navigation Links */
 .nav-links {
+  margin-right: 50px;
   display: flex;
   gap: 20px;
+  font-size: 15px;
+  text-align: center;
+  align-items: center;
 }
 
 .nav-link {
@@ -85,7 +138,7 @@ export default {
   color: #007bff;
 }
 
-/* Logout Button Styling */
+/* Logout Button Styling 
 .header-banner button {
   background-color: #333;
   color: #fff;
@@ -95,9 +148,28 @@ export default {
   font-size: 14px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-}
+}*/
 
 .header-banner button:hover {
   background-color: #0056b3;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-banner {
+    flex-wrap: wrap;
+    padding: 10px;
+  }
+
+  .header-search {
+    order: 3;
+    width: 100%;
+    margin: 10px 0;
+    max-width: none;
+  }
+
+  .nav-links {
+    gap: 10px;
+  }
 }
 </style>

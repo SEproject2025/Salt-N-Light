@@ -5,7 +5,7 @@
         <h2>About Us</h2>
         <h1>Uniting Churches and Missionaries for a Greater Purpose</h1>
         <p>
-          At SaltnLight, we believe in the power of meaningful connections to
+          At Evangelium, we believe in the power of meaningful connections to
           drive change and spread hope around the world.
         </p>
         <p>
@@ -15,10 +15,7 @@
         <!-- <button class="cta-btn" @click="scrollToBenefits">See Benefits</button> -->
       </div>
       <div class="image-container">
-        <img
-          src="@/assets/pictures/Africa-missionaries.jpg"
-          alt="Missionary group image"
-        />
+        <img src="@/assets/pictures/praying.jpg" alt="Missionary group image" />
       </div>
     </div>
   </section>

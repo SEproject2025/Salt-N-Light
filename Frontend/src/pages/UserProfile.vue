@@ -1,7 +1,6 @@
 <template>
   <div class="profile-container">
-    <div v-if="loading" class="loading-spinner">
-      <div class="spinner"></div>
+    <div v-if="loading">
       <p>Loading...</p>
     </div>
     <div v-else-if="error" class="error">{{ error }}</div>
@@ -87,32 +86,6 @@
 
 .notification-card {
   padding: 20px;
-}
-
-.loading-spinner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
 }
 
 .error {
@@ -406,42 +379,78 @@ export default {
     },
 
     async updateProfile(formData) {
+      console.log("Updating profile with data:", formData);
+
       try {
+        // Get the profile ID from the user object
         const profileId = this.profile.user.id;
-        const changedFields = this.getChangedFields(formData);
-
-        if (Object.keys(changedFields).length === 0) {
-          this.editing = false;
-          return;
+        if (!profileId) {
+          throw new Error("Profile ID not found");
         }
 
-        try {
-          await this.sendProfileUpdate(profileId, changedFields);
-          alert("Profile updated successfully!");
-          this.editing = false;
-          this.fetchProfile();
-        } catch (err) {
-          if (err.response?.status === 401 && (await this.refreshToken())) {
-            await this.sendProfileUpdate(profileId, changedFields);
-            alert("Profile updated successfully!");
-            this.editing = false;
-            this.fetchProfile();
-          } else {
-            this.error =
-              err.response?.status === 401
-                ? "Session expired. Please log in again."
-                : "Failed to update profile.";
+        console.log("Profile ID:", profileId);
+
+        // Make the API call to update the profile
+        const response = await api.patch(
+          `api/profiles/${profileId}/`,
+          formData,
+          {
+            headers: this.getAuthHeader(),
           }
-        }
-      } catch (err) {
-        this.error = "Failed to update profile.";
-      }
-    },
+        );
 
-    async sendProfileUpdate(profileId, data) {
-      return api.patch(`api/profiles/${profileId}/`, data, {
-        headers: this.getAuthHeader(),
-      });
+        if (response.status === 200) {
+          // Update was successful
+          this.editing = false;
+          await this.fetchProfile(); // Refresh the profile data
+          alert("Profile updated successfully!");
+        } else {
+          console.error("Unexpected response status:", response.status);
+          throw new Error("Failed to update profile");
+        }
+      } catch (error) {
+        console.error("Error updating profile:", error);
+
+        if (error.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          console.error("Error response data:", error.response.data);
+          console.error("Error response status:", error.response.status);
+
+          if (error.response.status === 401) {
+            // Token might be expired, try to refresh
+            try {
+              const refreshed = await this.refreshToken();
+              if (refreshed) {
+                // Retry the update with the new token
+                return this.updateProfile(formData);
+              } else {
+                this.error = "Session expired. Please log in again.";
+                this.$router.push("/AppLogin");
+              }
+            } catch (refreshError) {
+              this.error = "Session expired. Please log in again.";
+              this.$router.push("/AppLogin");
+            }
+          } else if (error.response.status === 400) {
+            // Bad request - show the error message from the server
+            const errorMessage =
+              error.response.data.detail ||
+              "Invalid data provided. Please check your input.";
+            this.error = errorMessage;
+          } else {
+            this.error = "Failed to update profile. Please try again.";
+          }
+        } else if (error.request) {
+          // The request was made but no response was received
+          console.error("No response received:", error.request);
+          this.error = "No response from server. Please try again.";
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          console.error("Error setting up request:", error.message);
+          this.error = "An error occurred. Please try again.";
+        }
+      }
     },
 
     getChangedFields(formData) {
@@ -457,21 +466,25 @@ export default {
         "country",
         "years_of_experience",
         "description",
+        "tags",
       ];
 
       fieldsToCheck.forEach((field) => {
-        if (formData[field] !== this.originalProfile[field]) {
-          changedFields[field] = formData[field];
+        const newValue = formData[field];
+        const oldValue = this.originalProfile[field];
+
+        // Handle arrays (like tags) differently
+        if (Array.isArray(newValue)) {
+          if (
+            JSON.stringify([...newValue].sort()) !==
+            JSON.stringify([...oldValue].sort())
+          ) {
+            changedFields[field] = newValue;
+          }
+        } else if (newValue !== oldValue) {
+          changedFields[field] = newValue;
         }
       });
-
-      const originalTagIds = this.originalProfile.tags.map((tag) => tag.id);
-      if (
-        JSON.stringify([...formData.tags].sort()) !==
-        JSON.stringify([...originalTagIds].sort())
-      ) {
-        changedFields.tags = formData.tags;
-      }
 
       return changedFields;
     },
