@@ -54,6 +54,10 @@ const routes = [
     component: LandingPage,
   },
   {
+    path: "/LandingPage",
+    redirect: "/",
+  },
+  {
     path: "/AppLogin",
     name: "AppLogin",
     component: AppLogin,
