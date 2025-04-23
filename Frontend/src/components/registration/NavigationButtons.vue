@@ -79,7 +79,7 @@ export default {
 }
 
 .btn-primary:hover {
-  background-color: #0056b3;
+  background-color: #007bff;
 }
 
 .btn-primary:disabled {
@@ -118,7 +118,7 @@ export default {
 }
 
 .btn-submit:hover {
-  background-color: #0056b3;
+  background-color: #007bff;
 }
 
 .btn-submit:disabled {
