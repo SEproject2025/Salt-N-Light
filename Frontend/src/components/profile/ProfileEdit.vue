@@ -10,76 +10,101 @@
     <form @submit.prevent="handleSubmit" class="edit-form">
       <div class="form-grid">
         <div class="form-group">
-          <label>First Name</label>
-          <input v-model="formData.first_name" type="text" maxlength="35" />
-          <span class="error-message" v-if="errors.first_name">{{
-            errors.first_name
-          }}</span>
+          <label for="firstName">First Name:</label>
+          <input
+            id="firstName"
+            name="firstName"
+            v-model="formData.first_name"
+            type="text"
+            maxlength="35"
+            placeholder="Enter your first name"
+          />
         </div>
 
         <div class="form-group">
-          <label>Last Name</label>
-          <input v-model="formData.last_name" type="text" maxlength="35" />
-          <span class="error-message" v-if="errors.last_name">{{
-            errors.last_name
-          }}</span>
+          <label for="lastName">Last Name:</label>
+          <input
+            id="lastName"
+            name="lastName"
+            v-model="formData.last_name"
+            type="text"
+            maxlength="35"
+            placeholder="Enter your last name"
+          />
         </div>
 
         <div class="form-group">
-          <label>User Type</label>
-          <select v-model="formData.user_type">
-            <option value="">Select User Type (optional)</option>
-            <option value="Missionary">Missionary</option>
-            <option value="Supporter">Supporter</option>
+          <label for="userType">User Type:</label>
+          <select id="userType" name="userType" v-model="formData.user_type">
+            <option value="" disabled selected>
+              Select user type (optional)
+            </option>
+            <option value="supporter">Supporter</option>
+            <option value="missionary">Missionary</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label>Phone Number</label>
+          <label for="phoneNumber">Phone Number:</label>
           <input
+            id="phoneNumber"
+            name="phoneNumber"
             v-model="formData.phone_number"
-            type="tel"
-            placeholder="Enter your phone number"
+            type="text"
             @input="validatePhoneNumber"
             @keypress="validatePhoneDigits"
+            placeholder="Enter your phone number"
           />
-          <span class="error-message" v-if="errors.phone_number">{{
-            errors.phone_number
-          }}</span>
+          <p v-if="phoneNumberError" class="error-message">
+            {{ phoneNumberError }}
+          </p>
         </div>
 
         <div class="form-group">
-          <label>Street Address</label>
-          <input v-model="formData.street_address" type="text" maxlength="65" />
-          <span class="error-message" v-if="errors.street_address">{{
-            errors.street_address
-          }}</span>
+          <label for="streetAddress">Street Address:</label>
+          <input
+            id="streetAddress"
+            name="streetAddress"
+            v-model="formData.street_address"
+            type="text"
+            placeholder="Enter your street address"
+          />
         </div>
 
         <div class="form-group">
-          <label>City</label>
-          <input v-model="formData.city" type="text" maxlength="35" />
-          <span class="error-message" v-if="errors.city">{{
-            errors.city
-          }}</span>
+          <label for="city">City:</label>
+          <input
+            id="city"
+            name="city"
+            v-model="formData.city"
+            type="text"
+            placeholder="Enter your city"
+          />
         </div>
 
         <div class="form-group">
-          <label>State</label>
-          <input v-model="formData.state" type="text" maxlength="35" />
-          <span class="error-message" v-if="errors.state">{{
-            errors.state
-          }}</span>
+          <label for="state">State:</label>
+          <input
+            id="state"
+            name="state"
+            v-model="formData.state"
+            type="text"
+            placeholder="Enter your state"
+          />
         </div>
 
         <div class="form-group">
-          <label>Country</label>
+          <label for="country">
+            <span class="required">*</span> Country:
+            <span class="required-text">required</span>
+          </label>
           <select
+            id="country"
             v-model="formData.country"
             class="country-select"
+            required
             @change="handleCountryChange"
           >
-            <option value="">Select your country</option>
             <option
               v-for="country in commonCountries"
               :key="country.code"
@@ -94,64 +119,74 @@
               type="text"
               v-model="formData.other_country"
               placeholder="Enter your country"
+              required
             />
           </div>
-          <span class="error-message" v-if="errors.country">{{
-            errors.country
-          }}</span>
         </div>
 
         <div class="form-group">
-          <label
+          <label for="yearsOfExperience"
             >Years in Ministry:
             <span class="required-text"
               >If it's less than one year, please leave this field blank</span
-            >
-          </label>
+            ></label
+          >
           <input
+            id="yearsOfExperience"
+            name="yearsOfExperience"
             v-model="formData.years_of_experience"
             type="number"
             min="0"
             max="500"
-            placeholder="Enter the # of years in the ministry"
             @input="validateYearsOfExperience"
             @keypress="validateDigits"
+            placeholder="Enter the # of years in the ministry"
           />
-          <span class="error-message" v-if="errors.years_of_experience">{{
-            errors.years_of_experience
-          }}</span>
+          <p v-if="yearsError" class="error-message">{{ yearsError }}</p>
         </div>
       </div>
 
       <div class="form-group full-width">
-        <label>Tags</label>
-        <select v-model="formData.selectedTags" multiple class="tag-select">
-          <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">
-            {{ tag.name }}
-          </option>
-        </select>
+        <label for="tags">Select some tags that describe your ministry:</label>
+        <div class="tags-container">
+          <div class="tags-grid">
+            <div
+              v-for="tag in availableTags"
+              :key="tag.id"
+              class="tag-option"
+              :class="{ selected: formData.selectedTags.includes(tag.id) }"
+              @click="toggleTag(tag.id)"
+            >
+              {{ tag.name }}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="form-group full-width">
-        <label>Description</label>
+      <div class="form-group full-width description-section">
+        <label for="description">Description:</label>
         <textarea
+          id="description"
+          name="description"
           v-model="formData.description"
           rows="4"
           maxlength="1000"
+          placeholder="Tell us about yourself and your mission"
+          @input="handleDescriptionInput"
         ></textarea>
         <div
           class="char-counter"
-          :class="{ 'near-limit': formData.description.length > 900 }"
+          :class="{
+            'near-limit': formData.description?.length > 800,
+            'at-limit': formData.description?.length >= 1000,
+          }"
         >
-          {{ formData.description.length }}/1000 characters
+          {{ formData.description?.length || 0 }}/1000
         </div>
-        <span class="error-message" v-if="errors.description">{{
-          errors.description
-        }}</span>
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="save-btn">
+        <button type="submit" class="save-btn" :disabled="!isFormValid">
           <i class="fas fa-save"></i> Save Changes
         </button>
       </div>
@@ -189,34 +224,37 @@ export default {
         state: "",
         country: "",
         other_country: "",
-        years_of_experience: null,
+        years_of_experience: "",
         description: "",
         selectedTags: [],
       },
-      errors: {
-        first_name: "",
-        last_name: "",
-        phone_number: "",
-        street_address: "",
-        city: "",
-        state: "",
-        country: "",
-        years_of_experience: "",
-        description: "",
-      },
+      yearsError: "",
+      phoneNumberError: "",
       commonCountries: [
         { code: "US", name: "United States" },
         { code: "CA", name: "Canada" },
         { code: "GB", name: "United Kingdom" },
         { code: "AU", name: "Australia" },
-        { code: "DE", name: "Germany" },
-        { code: "FR", name: "France" },
-        { code: "JP", name: "Japan" },
+        { code: "NZ", name: "New Zealand" },
         { code: "IN", name: "India" },
-        { code: "BR", name: "Brazil" },
-        { code: "ZA", name: "South Africa" },
+        { code: "PH", name: "Philippines" },
+        { code: "SG", name: "Singapore" },
+        { code: "MY", name: "Malaysia" },
+        { code: "ID", name: "Indonesia" },
       ],
     };
+  },
+  computed: {
+    isFormValid() {
+      // Check if there are any validation errors
+      const hasErrors = this.yearsError || this.phoneNumberError;
+
+      // Only check if country is filled
+      const hasRequiredFields = this.formData.country?.trim();
+
+      // Form is valid if there are no errors and country is filled
+      return !hasErrors && hasRequiredFields;
+    },
   },
   created() {
     // Initialize form data with profile data
@@ -226,26 +264,25 @@ export default {
       }
     });
     this.formData.selectedTags = [...this.selectedTags];
+
+    // Handle country initialization
+    if (this.profile.country) {
+      // Check if the country is in our common countries list
+      const isCommonCountry = this.commonCountries.some(
+        (country) => country.name === this.profile.country
+      );
+
+      if (!isCommonCountry) {
+        // If it's not a common country, set it as "Other" and put the value in other_country
+        this.formData.country = "Other";
+        this.formData.other_country = this.profile.country;
+      } else {
+        // If it is a common country, set it directly
+        this.formData.country = this.profile.country;
+      }
+    }
   },
   methods: {
-    validateFirstName() {
-      if (this.formData.first_name.length > 35) {
-        this.errors.first_name = "First name cannot exceed 35 characters";
-        return false;
-      }
-      this.errors.first_name = "";
-      return true;
-    },
-
-    validateLastName() {
-      if (this.formData.last_name.length > 35) {
-        this.errors.last_name = "Last name cannot exceed 35 characters";
-        return false;
-      }
-      this.errors.last_name = "";
-      return true;
-    },
-
     validateDigits(event) {
       // Allow only digits and control keys
       if (
@@ -257,6 +294,24 @@ export default {
         event.key !== "Tab"
       ) {
         event.preventDefault();
+      }
+    },
+    validateYearsOfExperience() {
+      const years = this.formData.years_of_experience;
+      if (years === null || years === "") {
+        this.yearsError = "";
+        return;
+      }
+
+      const numYears = Number(years);
+      if (isNaN(numYears) || numYears < 0) {
+        this.yearsError = "Please enter a valid number";
+      } else if (!Number.isInteger(numYears)) {
+        this.yearsError = "Please enter a whole number";
+      } else if (numYears > 500) {
+        this.yearsError = "Years of experience cannot exceed 500";
+      } else {
+        this.yearsError = "";
       }
     },
     validatePhoneDigits(event) {
@@ -282,32 +337,13 @@ export default {
 
       // If the field is empty, no validation needed
       if (!digitsOnly) {
-        this.errors.phone_number = "";
+        this.phoneNumberError = "";
       } else if (digitsOnly.length < 10) {
-        this.errors.phone_number = "Phone number must be at least 10 digits";
+        this.phoneNumberError = "Phone number must be at least 10 digits";
       } else if (digitsOnly.length > 15) {
-        this.errors.phone_number = "Phone number must not exceed 15 digits";
+        this.phoneNumberError = "Phone number must not exceed 15 digits";
       } else {
-        this.errors.phone_number = "";
-      }
-    },
-    validateYearsOfExperience() {
-      const years = this.formData.years_of_experience;
-      if (years === null || years === "") {
-        this.errors.years_of_experience = "";
-        return;
-      }
-
-      const numYears = Number(years);
-      if (isNaN(numYears) || numYears < 0) {
-        this.errors.years_of_experience = "Please enter a valid number";
-      } else if (!Number.isInteger(numYears)) {
-        this.errors.years_of_experience = "Please enter a whole number";
-      } else if (numYears > 500) {
-        this.errors.years_of_experience =
-          "Years of experience cannot exceed 500";
-      } else {
-        this.errors.years_of_experience = "";
+        this.phoneNumberError = "";
       }
     },
     handleCountryChange() {
@@ -315,84 +351,53 @@ export default {
         this.formData.other_country = "";
       }
     },
-
-    validateStreetAddress() {
-      if (!this.formData.street_address) {
-        this.errors.street_address = "";
-        return true;
-      }
-      if (this.formData.street_address.length > 65) {
-        this.errors.street_address = "Address cannot exceed 65 characters";
-        return false;
-      }
-      this.errors.street_address = "";
-      return true;
-    },
-
-    validateCity() {
-      if (!this.formData.city) {
-        this.errors.city = "";
-        return true;
-      }
-      if (this.formData.city.length > 35) {
-        this.errors.city = "City cannot exceed 35 characters";
-        return false;
-      }
-      this.errors.city = "";
-      return true;
-    },
-
-    validateState() {
-      if (!this.formData.state) {
-        this.errors.state = "";
-        return true;
-      }
-      if (this.formData.state.length > 35) {
-        this.errors.state = "State cannot exceed 35 characters";
-        return false;
-      }
-      this.errors.state = "";
-      return true;
-    },
-
-    validateDescription() {
-      if (!this.formData.description) {
-        this.errors.description = "";
-        return true;
-      }
-      if (this.formData.description.length > 1000) {
-        this.errors.description = "Description cannot exceed 1000 characters";
-        return false;
-      }
-      this.errors.description = "";
-      return true;
-    },
-
-    validateForm() {
-      return (
-        this.validateFirstName() &&
-        this.validateLastName() &&
-        this.validatePhoneNumber() &&
-        this.validateStreetAddress() &&
-        this.validateCity() &&
-        this.validateState() &&
-        this.validateYearsOfExperience() &&
-        this.validateDescription()
-      );
-    },
-
     handleSubmit() {
-      if (!this.validateForm()) {
+      // Only proceed if there are no validation errors
+      if (this.yearsError || this.phoneNumberError) {
         return;
       }
 
+      // Filter out any undefined or null values from selectedTags
+      const validTags = this.formData.selectedTags.filter(
+        (tag) => tag !== undefined && tag !== null
+      );
+
+      // Handle country value - if "Other" is selected, use other_country value
+      const countryValue =
+        this.formData.country === "Other"
+          ? this.formData.other_country
+          : this.formData.country;
+
       const formDataToSubmit = {
-        ...this.formData,
-        tags: this.formData.selectedTags,
+        first_name: this.formData.first_name,
+        last_name: this.formData.last_name,
         user_type: this.formData.user_type.toLowerCase(),
+        phone_number: this.formData.phone_number || null,
+        street_address: this.formData.street_address || null,
+        city: this.formData.city || null,
+        state: this.formData.state || null,
+        country: countryValue || null,
         years_of_experience: this.formData.years_of_experience || 0,
+        description: this.formData.description || null,
+        tags: validTags,
       };
+
+      console.log("Submitting form data:", formDataToSubmit);
       this.$emit("submit", formDataToSubmit);
+    },
+    toggleTag(tagId) {
+      const index = this.formData.selectedTags.indexOf(tagId);
+      if (index === -1) {
+        this.formData.selectedTags.push(tagId);
+      } else {
+        this.formData.selectedTags.splice(index, 1);
+      }
+    },
+    handleDescriptionInput() {
+      // Ensure the description doesn't exceed 1000 characters
+      if (this.formData.description?.length > 1000) {
+        this.formData.description = this.formData.description.slice(0, 1000);
+      }
     },
   },
 };
@@ -464,8 +469,34 @@ export default {
   outline: none;
 }
 
-.tag-select {
-  min-height: 100px;
+.tags-container {
+  margin-top: 5px;
+}
+
+.tags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.tag-option {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.tag-option:hover {
+  background-color: #f0f0f0;
+}
+
+.tag-option.selected {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+  color: #1976d2;
 }
 
 .form-actions {
@@ -496,6 +527,12 @@ export default {
   background: #27ae60;
 }
 
+.save-btn:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .cancel-btn {
   background: #e74c3c;
   color: white;
@@ -507,26 +544,76 @@ export default {
 
 .error-message {
   color: #e74c3c;
-  font-size: 0.8rem;
-  margin-top: 0.3rem;
-  display: block;
-}
-
-.form-group input.error,
-.form-group textarea.error {
-  border-color: #e74c3c;
+  font-size: 0.85rem;
+  border-radius: 1px;
 }
 
 .char-counter {
-  font-size: 0.8rem;
-  color: #757575;
   text-align: right;
-  margin-top: 5px;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
 }
 
 .char-counter.near-limit {
-  color: #ff9800;
-  font-weight: 500;
+  color: #ff6b6b;
+}
+
+.char-counter.at-limit {
+  color: #ff0000;
+  font-weight: bold;
+}
+
+.required {
+  color: #e74c3c;
+  margin-right: 4px;
+}
+
+.required-text {
+  color: #666;
+  font-size: 0.8rem;
+  margin-left: 4px;
+  font-style: italic;
+}
+
+.country-select {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  background-color: white;
+  cursor: pointer;
+}
+
+.country-select:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.other-country-input {
+  margin-top: 0.5rem;
+}
+
+.other-country-input input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.other-country-input input:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.description-section {
+  margin-top: 2rem;
 }
 
 @media (max-width: 768px) {

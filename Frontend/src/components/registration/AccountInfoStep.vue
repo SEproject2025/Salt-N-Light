@@ -150,6 +150,9 @@ export default {
           this.passwordError = "";
         }
       }
+
+      // After validating password format, check if it matches confirm password
+      this.validateConfirmPassword(this.confirmPassword);
       this.validateForm();
     },
     validateConfirmPassword(value) {
@@ -171,7 +174,8 @@ export default {
         this.localUserData.username.trim() !== "" &&
         this.localUserData.email.trim() !== "" &&
         this.localUserData.password.trim() !== "" &&
-        this.confirmPassword.trim() !== "";
+        this.confirmPassword.trim() !== "" &&
+        this.localUserData.password === this.confirmPassword;
 
       this.$emit("password-validation", isValid);
       this.$emit("validation-status", {
