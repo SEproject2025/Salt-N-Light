@@ -270,4 +270,32 @@ export default {
   font-size: 0.875rem;
   margin-top: 0.25rem;
 }
+
+.step-title {
+  font-size: 1.55rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.form-group input {
+  width: 470px;
+  max-width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-bottom: 1rem;
+}
+
+#userType {
+  width: 470px; /* Match other input widths */
+  max-width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+}
 </style>

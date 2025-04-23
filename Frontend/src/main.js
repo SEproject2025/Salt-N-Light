@@ -12,6 +12,7 @@ import {
   faSave,
   faBookmark as fasBookmark,
 } from "@fortawesome/free-solid-svg-icons";
+import "@/assets/tailwind.css";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 
 // Add the icons to the library

@@ -109,7 +109,7 @@ class ProfileSerializer(serializers.ModelSerializer):
       # Update all profile fields
       for key, value in validated_data.items():
          if hasattr(instance, key):  # Only set if the field exists
-            setattr(instance, key, value)
+         setattr(instance, key, value)
       instance.save()
 
       # Update tags if provided

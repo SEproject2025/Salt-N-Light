@@ -421,6 +421,8 @@ export default {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 2px solid #f0f0f0;
+  font-weight: 600;
+  margin-bottom: 1rem;
 }
 
 .profile-header h1 {
@@ -519,12 +521,18 @@ export default {
 }
 
 .save-btn {
-  background: #2ecc71;
+  background: #3498db;
   color: white;
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 .save-btn:hover {
-  background: #27ae60;
+  background: #3498db;
 }
 
 .save-btn:disabled {
@@ -536,6 +544,12 @@ export default {
 .cancel-btn {
   background: #e74c3c;
   color: white;
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 .cancel-btn:hover {
