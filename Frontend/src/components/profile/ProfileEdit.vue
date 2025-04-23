@@ -94,7 +94,10 @@
         </div>
 
         <div class="form-group">
-          <label for="country">Country:</label>
+          <label for="country">
+            <span class="required">*</span> Country:
+            <span class="required-text">required</span>
+          </label>
           <input
             id="country"
             name="country"
@@ -509,6 +512,18 @@ export default {
 .char-counter.at-limit {
   color: #ff0000;
   font-weight: bold;
+}
+
+.required {
+  color: #e74c3c;
+  margin-right: 4px;
+}
+
+.required-text {
+  color: #666;
+  font-size: 0.8rem;
+  margin-left: 4px;
+  font-style: italic;
 }
 
 @media (max-width: 768px) {
