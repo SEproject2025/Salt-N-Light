@@ -32,10 +32,6 @@
       </div>
 
       <div class="navbar-nav ml-auto">
-        <div class="nav-item quick-search-wrapper">
-          <QuickSearch />
-        </div>
-
         <ul class="navbar-nav">
           <li class="nav-item">
             <router-link to="/searchpage" class="nav-link">
@@ -58,7 +54,6 @@
 
 <script>
 import api from "@/api/axios.js";
-import QuickSearch from "@/components/search/QuickSearch.vue";
 export default {
   name: "AppNav",
   data() {
@@ -101,13 +96,6 @@ export default {
     $route() {
       this.checkAuthStatus();
     },
-  }
-}
-
-export default {
-  name: "AppNav",
-  components: {
-    QuickSearch,
   },
 };
 </script>
@@ -134,10 +122,6 @@ export default {
   color: #1976d2;
 }
 
-.quick-search-wrapper {
-  margin-right: 1rem;
-}
-
 .navbar-nav {
   display: flex;
   align-items: center;
@@ -149,11 +133,6 @@ export default {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .quick-search-wrapper {
-    margin: 0.5rem 0;
-    width: 100%;
-  }
-
   .navbar-nav {
     flex-direction: column;
     width: 100%;

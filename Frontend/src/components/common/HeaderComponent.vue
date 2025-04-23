@@ -14,9 +14,6 @@
       </div>
     </div>
 
-    <!-- Quick Search -->
-    <QuickSearch class="header-search" />
-
     <!-- Navigation Links -->
     <nav class="nav-links">
       <!-- Explore -->
@@ -60,13 +57,8 @@
 </template>
 
 <script>
-import QuickSearch from "@/components/search/QuickSearch.vue";
-
 export default {
   name: "HeaderComponent",
-  components: {
-    QuickSearch,
-  },
   methods: {
     logout() {
       // Clear tokens from localStorage
