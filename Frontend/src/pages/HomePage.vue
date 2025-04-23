@@ -101,10 +101,12 @@
                 :state="friend.state"
                 :country="friend.country"
                 :description="friend.description"
-                :tags="friend.tags.map((tag) => ({
-                  ...tag,
-                  tag_name: tag.tag_name || tag.name || 'Unknown Tag',
-                }))"
+                :tags="
+                  friend.tags.map((tag) => ({
+                    ...tag,
+                    tag_name: tag.tag_name || tag.name || 'Unknown Tag',
+                  }))
+                "
                 :user_type="'Friend'"
               />
             </div>
@@ -134,10 +136,12 @@
               :state="''"
               :country="getCountry(church.location)"
               :description="church.description"
-              :tags="church.tags.map((tag) => ({
-                ...tag,
-                tag_name: tag.tag_name || tag.name || 'Unknown Tag',
-              }))"
+              :tags="
+                church.tags.map((tag) => ({
+                  ...tag,
+                  tag_name: tag.tag_name || tag.name || 'Unknown Tag',
+                }))
+              "
               :user_type="'Church'"
             />
           </div>
