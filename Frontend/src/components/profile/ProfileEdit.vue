@@ -149,7 +149,7 @@
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="save-btn">
+        <button type="submit" class="save-btn" :disabled="!isFormValid">
           <i class="fas fa-save"></i> Save Changes
         </button>
       </div>
@@ -193,6 +193,21 @@ export default {
       yearsError: "",
       phoneNumberError: "",
     };
+  },
+  computed: {
+    isFormValid() {
+      // Check if there are any validation errors
+      const hasErrors = this.yearsError || this.phoneNumberError;
+
+      // Check if required fields are filled
+      const hasRequiredFields =
+        this.formData.first_name.trim() &&
+        this.formData.last_name.trim() &&
+        this.formData.user_type;
+
+      // Form is valid if there are no errors and required fields are filled
+      return !hasErrors && hasRequiredFields;
+    },
   },
   created() {
     // Initialize form data with profile data
@@ -442,6 +457,12 @@ export default {
 
 .save-btn:hover {
   background: #27ae60;
+}
+
+.save-btn:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .cancel-btn {
