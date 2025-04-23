@@ -16,7 +16,6 @@
             name="firstName"
             v-model="formData.first_name"
             type="text"
-            required
             maxlength="35"
             placeholder="Enter your first name"
           />
@@ -29,7 +28,6 @@
             name="lastName"
             v-model="formData.last_name"
             type="text"
-            required
             maxlength="35"
             placeholder="Enter your last name"
           />
@@ -37,12 +35,10 @@
 
         <div class="form-group">
           <label for="userType">User Type:</label>
-          <select
-            id="userType"
-            name="userType"
-            v-model="formData.user_type"
-            required
-          >
+          <select id="userType" name="userType" v-model="formData.user_type">
+            <option value="" disabled selected>
+              Select user type (optional)
+            </option>
             <option value="supporter">Supporter</option>
             <option value="missionary">Missionary</option>
           </select>
@@ -98,12 +94,13 @@
         </div>
 
         <div class="form-group">
-          <label for="country">Country</label>
+          <label for="country">Country:</label>
           <input
             id="country"
             name="country"
             v-model="formData.country"
             type="text"
+            required
             placeholder="Enter your country"
           />
         </div>
@@ -220,13 +217,10 @@ export default {
       // Check if there are any validation errors
       const hasErrors = this.yearsError || this.phoneNumberError;
 
-      // Check if required fields are filled
-      const hasRequiredFields =
-        this.formData.first_name.trim() &&
-        this.formData.last_name.trim() &&
-        this.formData.user_type;
+      // Only check if country is filled
+      const hasRequiredFields = this.formData.country?.trim();
 
-      // Form is valid if there are no errors and required fields are filled
+      // Form is valid if there are no errors and country is filled
       return !hasErrors && hasRequiredFields;
     },
   },
