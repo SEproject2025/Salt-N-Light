@@ -21,18 +21,26 @@ export default {
 
       // Handle both array and paginated responses
       if (Array.isArray(response.data)) {
+        // Filter out anonymous profiles
+        const filteredResults = response.data.filter(
+          (profile) => !profile.is_anonymous
+        );
         return {
-          count: response.data.length,
+          count: filteredResults.length,
           next: null,
           previous: null,
-          results: response.data,
+          results: filteredResults,
         };
       } else {
+        // Filter out anonymous profiles
+        const filteredResults = (response.data.results || []).filter(
+          (profile) => !profile.is_anonymous
+        );
         return {
-          count: response.data.count || response.data.results?.length || 0,
+          count: filteredResults.length,
           next: response.data.next,
           previous: response.data.previous,
-          results: response.data.results || [],
+          results: filteredResults,
         };
       }
     } catch (error) {

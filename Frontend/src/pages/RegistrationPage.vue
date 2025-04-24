@@ -337,6 +337,7 @@ export default {
           years_of_experience: this.form.years_of_experience || null,
           description: this.form.description || null,
           profile_picture: null,
+          is_anonymous: this.form.is_anonymous || false,
         };
 
         await api.post("api/profiles/", formData);
