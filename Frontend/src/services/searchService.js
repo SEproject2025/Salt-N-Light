@@ -39,22 +39,13 @@ export default {
       // Get current user's ID from JWT token
       const currentUserId = getUserIdFromToken();
 
-      // Handle both array and paginated responses
-      let results = Array.isArray(response.data)
-        ? response.data
-        : response.data.results || [];
-
-      // Filter out profiles without names
-      results = results.filter(
-        (profile) => profile.first_name || profile.last_name
-      );
-
       if (Array.isArray(response.data)) {
-        // Filter out anonymous profiles and current user's profile
+        // Filter out anonymous profiles, profiles without names, and current user's profile
         const filteredResults = response.data.filter(
           (profile) =>
             !profile.is_anonymous &&
-            (!currentUserId || profile.user.id !== currentUserId)
+            (!currentUserId || profile.user.id !== currentUserId) &&
+            (profile.first_name || profile.last_name)
         );
         return {
           count: filteredResults.length,
@@ -63,11 +54,12 @@ export default {
           results: filteredResults,
         };
       } else {
-        // Filter out anonymous profiles and current user's profile
+        // Filter out anonymous profiles, profiles without names, and current user's profile
         const filteredResults = (response.data.results || []).filter(
           (profile) =>
             !profile.is_anonymous &&
-            (!currentUserId || profile.user.id !== currentUserId)
+            (!currentUserId || profile.user.id !== currentUserId) &&
+            (profile.first_name || profile.last_name)
         );
         return {
           count: filteredResults.length,
