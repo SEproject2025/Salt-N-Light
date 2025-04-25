@@ -4,8 +4,10 @@
       <!-- Search Form -->
       <div class="search-form">
         <div class="search-input">
+          <label for="name-search" class="search-label">Name</label>
           <input
             type="text"
+            id="name-search"
             v-model="searchParams.q"
             placeholder="Search by name..."
             @input="handleSearch"
@@ -530,8 +532,8 @@ export default {
 }
 
 .clear-all:hover {
-  border-color: #dc3545;
-  color: #dc3545;
+  border-color: #1976d2;
+  color: #1976d2;
 }
 
 .search-results {
@@ -838,5 +840,18 @@ export default {
   .page-size-controls select {
     width: 100%;
   }
+}
+
+.search-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.search-input {
+  position: relative;
+  width: 100%;
 }
 </style>

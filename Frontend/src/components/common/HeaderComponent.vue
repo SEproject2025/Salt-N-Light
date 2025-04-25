@@ -54,10 +54,12 @@
 
       <!-- Logout -->
       <a
+        v-if="isLoggedIn"
         @click="logout"
-        class="flex flex-col items-center hover:text-blue-500 transition-colors duration-200 text-gray-300"
+        class="flex flex-col items-center hover:text-blue-500 transition-colors duration-200"
+        style="cursor: pointer"
       >
-        <span class="material-symbols-outlined text-3xl mb-1">logout</span>
+        <span class="material-symbols-outlined">logout</span>
         <span>Logout</span>
       </a>
     </nav>
@@ -65,13 +67,37 @@
 </template>
 
 <script>
+import { inject } from "vue";
+
 export default {
   name: "HeaderComponent",
+  setup() {
+    const isLoggedIn = inject("isLoggedIn");
+    const updateLoginState = inject("updateLoginState");
+
+    return {
+      isLoggedIn,
+      updateLoginState,
+    };
+  },
+  created() {
+    // Listen for storage events to detect login/logout
+    window.addEventListener("storage", this.handleStorageChange);
+  },
+  beforeUnmount() {
+    // Clean up event listener
+    window.removeEventListener("storage", this.handleStorageChange);
+  },
   methods: {
+    handleStorageChange(event) {
+      if (event.key === "access_token") {
+        this.updateLoginState(!!event.newValue);
+      }
+    },
     logout() {
       // Clear tokens from localStorage
       localStorage.clear();
-
+      this.updateLoginState(false);
       // Redirect to login
       this.$router.push("/");
     },
@@ -106,7 +132,7 @@ export default {
 .site-branding {
   display: flex;
   align-items: center;
-  gap: 10px; /* adjust spacing between icon and logo */
+  gap: 10px;
 }
 
 /* Site Logo */
@@ -157,19 +183,32 @@ export default {
 /* Responsive Design */
 @media (max-width: 768px) {
   .header-banner {
-    flex-wrap: wrap;
     padding: 10px;
+    height: auto;
+    flex-direction: column;
+    gap: 10px;
   }
 
-  .header-search {
-    order: 3;
-    width: 100%;
-    margin: 10px 0;
-    max-width: none;
+  .site-logo .logo {
+    margin-left: 0;
+    width: 150px;
   }
 
   .nav-links {
+    margin-right: 0;
+    width: 100%;
+    justify-content: space-around;
     gap: 10px;
+    font-size: 13px;
+  }
+
+  .nav-links a {
+    flex: 1;
+    max-width: 80px;
+  }
+
+  .material-symbols-outlined {
+    font-size: 20px;
   }
 }
 </style>

@@ -4,7 +4,7 @@
       <div class="profile-section">
         <div class="header-content">
           <h2 class="church-name">{{ first_name }} {{ last_name }}</h2>
-          <p class="location">{{ city }}, {{ country }}</p>
+          <p class="location">{{ formattedLocation }}</p>
           <p class="profile-type">{{ user_type }}</p>
         </div>
       </div>
@@ -134,6 +134,13 @@ export default {
     hiddenTagsCount() {
       return this.tags ? this.tags.length - this.maxVisibleTags : 0;
     },
+    formattedLocation() {
+      const parts = [];
+      if (this.city) parts.push(this.city);
+      if (this.state) parts.push(this.state);
+      if (this.country) parts.push(this.country);
+      return parts.join(", ");
+    },
   },
   methods: {
     viewProfile() {
@@ -167,15 +174,6 @@ body {
 .user-card-col {
   width: 100%;
   max-width: 450px; /* Limit card width to roughly half the header */
-}
-
-.card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1rem;
-  overflow: hidden;
-  padding: 20px;
 }
 
 .card-header {

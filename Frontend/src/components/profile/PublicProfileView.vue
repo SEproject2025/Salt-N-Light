@@ -21,10 +21,6 @@
             <span class="value">{{ profile.user_type }}</span>
           </div>
           <div class="info-item">
-            <span class="label">Denomination</span>
-            <span class="value">{{ profile.denomination }}</span>
-          </div>
-          <div class="info-item">
             <span class="label">Phone</span>
             <span class="value">{{ profile.phone_number }}</span>
           </div>
@@ -47,27 +43,6 @@
       <div class="profile-section">
         <div class="tag-header">
           <h3>Tags</h3>
-          <div class="tag-controls">
-            <div class="tag-dropdown">
-              <button
-                v-if="!isOwnProfile"
-                class="add-tag-btn"
-                @click="toggleTagDropdown"
-              >
-                <span class="plus-icon">+</span>
-              </button>
-              <div v-if="showTagDropdown" class="tag-dropdown-menu">
-                <div
-                  v-for="tag in availableTags"
-                  :key="tag.id"
-                  class="tag-dropdown-item"
-                  @click="handleAddTag(tag.id)"
-                >
-                  {{ tag.name }}
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
         <div class="tags">
           <span
@@ -78,14 +53,6 @@
             :title="getTagTitle(tag)"
           >
             {{ tag.name }}
-            <button
-              v-if="canRemoveTag(tag)"
-              class="remove-tag-btn"
-              @click="handleRemoveTag(tag.id)"
-              :title="getTagTitle(tag)"
-            >
-              ×
-            </button>
           </span>
         </div>
         <div v-if="error" class="error" role="alert">{{ error }}</div>
