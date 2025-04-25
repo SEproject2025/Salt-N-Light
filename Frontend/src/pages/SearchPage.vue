@@ -288,10 +288,19 @@ export default {
         if (response) {
           const results = response.results || [];
 
-          if (results.length > 0) {
-            this.searchResults = results;
-            console.log(results);
-            this.totalResults = response.count || results.length;
+          // Filter out profiles without names
+          const validResults = results.filter(
+            (profile) =>
+              profile.first_name &&
+              profile.last_name &&
+              profile.first_name.trim() &&
+              profile.last_name.trim()
+          );
+
+          if (validResults.length > 0) {
+            this.searchResults = validResults;
+            // Adjust total count to only include profiles with names
+            this.totalResults = validResults.length;
             this.totalPages = Math.ceil(
               this.totalResults /
                 (this.pageSize === "all"
