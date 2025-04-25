@@ -21,7 +21,8 @@
         href="/Matchmaking"
         class="flex flex-col items-center hover:text-blue-500 transition-colors duration-200"
       >
-        <span>Matches</span>
+        <span class="material-symbols-outlined">diversity_3</span>
+        <span>Connect</span>
       </a>
       <!-- Explore -->
       <a
