@@ -16,6 +16,13 @@
 
     <!-- Navigation Links -->
     <nav class="nav-links">
+      <!-- Matchmaking -->
+      <a
+        href="/Matchmaking"
+        class="flex flex-col items-center hover:text-blue-500 transition-colors duration-200"
+      >
+        <span>Matches</span>
+      </a>
       <!-- Explore -->
       <a
         href="/SearchPage"

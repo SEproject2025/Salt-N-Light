@@ -1,5 +1,5 @@
 <template>
-  <footer class="bg-gray-900 text-gray-300 px-6 py-8 text-lg relative">
+  <footer class="bg-gray-900 text-gray-300 px-6 py-8 text-lg">
     <div class="max-w-6xl mx-auto flex items-center justify-between relative">
       <!-- Left: Site Logo -->
       <div class="site-logo">
