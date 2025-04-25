@@ -768,7 +768,7 @@ export default {
 }
 
 .multiselect__option--selected.multiselect__option--highlight {
-  background: #dc3545;
+  background: #1976d2;
   color: white;
 }
 

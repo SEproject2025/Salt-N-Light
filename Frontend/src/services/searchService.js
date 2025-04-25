@@ -1,5 +1,22 @@
 import api from "@/api/axios";
 
+// Helper function to get user ID from JWT token
+function getUserIdFromToken() {
+  const token = localStorage.getItem("access_token");
+  if (!token) return null;
+
+  try {
+    // JWT tokens are base64 encoded and have 3 parts separated by dots
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(window.atob(base64));
+    return payload.user_id;
+  } catch (error) {
+    console.error("Error parsing JWT token:", error);
+    return null;
+  }
+}
+
 export default {
   async searchProfiles(params) {
     try {
@@ -19,20 +36,35 @@ export default {
 
       const response = await api.get(`/api/search/?${queryParams.toString()}`);
 
+      // Get current user's ID from JWT token
+      const currentUserId = getUserIdFromToken();
+
       // Handle both array and paginated responses
       if (Array.isArray(response.data)) {
+        // Filter out anonymous profiles and current user's profile
+        const filteredResults = response.data.filter(
+          (profile) =>
+            !profile.is_anonymous &&
+            (!currentUserId || profile.user.id !== currentUserId)
+        );
         return {
-          count: response.data.length,
+          count: filteredResults.length,
           next: null,
           previous: null,
-          results: response.data,
+          results: filteredResults,
         };
       } else {
+        // Filter out anonymous profiles and current user's profile
+        const filteredResults = (response.data.results || []).filter(
+          (profile) =>
+            !profile.is_anonymous &&
+            (!currentUserId || profile.user.id !== currentUserId)
+        );
         return {
-          count: response.data.count || response.data.results?.length || 0,
+          count: filteredResults.length,
           next: response.data.next,
           previous: response.data.previous,
-          results: response.data.results || [],
+          results: filteredResults,
         };
       }
     } catch (error) {
