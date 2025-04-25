@@ -704,6 +704,9 @@ class DedicatedSearchView(generics.ListAPIView):
       queryset = Profile.objects.select_related(
          'user').prefetch_related('tags').all()
 
+      # Always filter out anonymous profiles
+      queryset = queryset.filter(is_anonymous=False)
+
       # Get search parameters
       search_query = self.request.query_params.get('q', '')
       user_type = self.request.query_params.get('user_type', '')
