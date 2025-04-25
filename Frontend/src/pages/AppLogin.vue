@@ -43,8 +43,13 @@
 
 <script>
 import api from "@/api/axios.js";
+import { inject } from "vue";
 
 export default {
+  setup() {
+    const updateLoginState = inject("updateLoginState");
+    return { updateLoginState };
+  },
   data() {
     return {
       username: "",
@@ -70,6 +75,9 @@ export default {
         // Store tokens in local storage
         localStorage.setItem("access_token", response.data.access);
         localStorage.setItem("refresh_token", response.data.refresh);
+
+        // Update login state
+        this.updateLoginState(true);
 
         // Redirect to search page
         this.$router.push("/SearchPage");

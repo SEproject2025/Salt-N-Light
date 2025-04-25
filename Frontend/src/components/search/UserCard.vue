@@ -1,46 +1,49 @@
 <template>
-  <div class="card">
-    <div class="card-header">
-      <div class="profile-section">
-        <div class="header-content">
-          <h2 class="church-name">{{ first_name }} {{ last_name }}</h2>
-          <p class="location">{{ city }}, {{ country }}</p>
-          <p class="profile-type">{{ user_type }}</p>
+  <div class="user-card-row">
+    <div class="user-card-col">
+      <div class="card">
+        <div class="card-header">
+          <div class="profile-section">
+            <div class="header-content">
+              <h2 class="church-name">{{ first_name }} {{ last_name }}</h2>
+              <p class="location">{{ formattedLocation }}</p>
+              <p class="profile-type">{{ user_type }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-content">
+          <p class="description">{{ description }}</p>
+
+          <div class="tags-container">
+            <template v-if="tags && tags.length">
+              <span
+                v-for="(tag, index) in displayedTags"
+                :key="index"
+                class="tag"
+                :title="tag.tag_description"
+              >
+                {{ tag.tag_name }}
+              </span>
+              <div
+                v-if="hasMoreTags"
+                class="more-tags"
+                @click="showAllTags = !showAllTags"
+              >
+                {{ showAllTags ? "Show less" : `${hiddenTagsCount} more` }}
+              </div>
+            </template>
+            <span v-else class="no-tags">No tags</span>
+          </div>
+
+          <button class="view-profile-btn" @click="viewProfile">
+            View Profile
+          </button>
         </div>
       </div>
     </div>
-
-    <div class="card-content">
-      <p class="description">{{ description }}</p>
-
-      <div class="tags-container">
-        <template v-if="tags && tags.length">
-          <span
-            v-for="(tag, index) in displayedTags"
-            :key="index"
-            class="tag"
-            :title="tag.tag_description"
-          >
-            {{ tag.tag_name }}
-          </span>
-          <div
-            v-if="hasMoreTags"
-            class="more-tags"
-            @click="showAllTags = !showAllTags"
-          >
-            {{ showAllTags ? "Show less" : `${hiddenTagsCount} more` }}
-          </div>
-        </template>
-        <span v-else class="no-tags">No tags</span>
-      </div>
-
-      <button class="view-profile-btn" @click="viewProfile">
-        View Profile
-      </button>
-    </div>
   </div>
 
-  <!--
   <div id="ProfileWindow">
     <transition name="fade" appear>
       <div
@@ -67,7 +70,7 @@
       </div>
     </transition>
   </div>
---></template>
+</template>
 
 <script>
 import userImage from "@/assets/pictures/missionaryprof.jpeg";
@@ -133,6 +136,13 @@ export default {
     },
     hiddenTagsCount() {
       return this.tags ? this.tags.length - this.maxVisibleTags : 0;
+    },
+    formattedLocation() {
+      const parts = [];
+      if (this.city) parts.push(this.city);
+      if (this.state) parts.push(this.state);
+      if (this.country) parts.push(this.country);
+      return parts.join(", ");
     },
   },
   methods: {
@@ -414,17 +424,5 @@ body {
 .slide-enter,
 .slide-leave-to {
   transform: translateY(-50%) translateX(100vw);
-}
-
-.card {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 20px;
 }
 </style>

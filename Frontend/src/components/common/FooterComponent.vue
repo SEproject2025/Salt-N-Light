@@ -59,4 +59,38 @@
   width: 165px;
   object-fit: contain;
 }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .max-w-6xl {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .site-logo {
+    margin-bottom: 10px;
+  }
+
+  .absolute {
+    position: static;
+    transform: none;
+    margin: 10px 0;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .space-x-6 {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .space-x-4 {
+    justify-content: center;
+  }
+}
 </style>

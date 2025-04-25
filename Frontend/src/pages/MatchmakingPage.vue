@@ -83,7 +83,9 @@ export default {
             Authorization: `Bearer ${token}`,
           },
         });
-        this.users = response.data;
+        this.users = response.data.filter(
+          (user) => user.first_name || user.last_name
+        );
         console.log("Length: ", this.users.length);
       } catch (err) {
         if (err.response && err.response.status === 401 && retry) {

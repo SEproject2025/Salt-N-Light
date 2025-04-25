@@ -20,19 +20,28 @@ export default {
       const response = await api.get(`/api/search/?${queryParams.toString()}`);
 
       // Handle both array and paginated responses
+      let results = Array.isArray(response.data)
+        ? response.data
+        : response.data.results || [];
+
+      // Filter out profiles without names
+      results = results.filter(
+        (profile) => profile.first_name || profile.last_name
+      );
+
       if (Array.isArray(response.data)) {
         return {
-          count: response.data.length,
+          count: results.length,
           next: null,
           previous: null,
-          results: response.data,
+          results: results,
         };
       } else {
         return {
-          count: response.data.count || response.data.results?.length || 0,
+          count: results.length,
           next: response.data.next,
           previous: response.data.previous,
-          results: response.data.results || [],
+          results: results,
         };
       }
     } catch (error) {
