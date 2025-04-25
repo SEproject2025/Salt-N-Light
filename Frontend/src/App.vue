@@ -1,12 +1,9 @@
 <template>
-  <div id="app">
-    <AppNav />
+  <div id="app" class="min-h-screen flex flex-col">
     <HeaderComponent />
-    <div class="auth-wrapper">
-      <div class="auth-inner">
-        <router-view :key="$route.fullPath" />
-      </div>
-    </div>
+    <main class="flex-grow">
+      <router-view :key="$route.fullPath" />
+    </main>
     <FooterComponent />
   </div>
 </template>

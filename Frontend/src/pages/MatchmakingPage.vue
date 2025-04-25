@@ -1,31 +1,67 @@
 <template>
-  <div class="container">
-    <h1>User Profiles</h1>
-    <div v-if="loading">Loading...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else class="profiles">
-      <div v-for="user in users" :key="user.user" class="profile-card">
-        <h2>{{ user.first_name }} {{ user.last_name }}</h2>
-        <p>Username: {{ user.user.username }}</p>
-        <p>User Type: {{ user.user_type }}</p>
-        <div v-if="user.tags.length">
-          <p><strong>Tags:</strong></p>
-          <ul class="tags-list">
-            <li v-for="tagId in user.tags" :key="tagId" class="tag-item">
-              {{ tags[tagId] || "Unknown Tag" }}
-            </li>
-          </ul>
-        </div>
-        <p v-else><strong>Tags:</strong> None</p>
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-center mb-4">Matches</h1>
+
+    <p class="text-center text-gray-600 mb-8">
+      This page shows users we think are a good match for you.
+    </p>
+
+    <div class="flex flex-col items-center gap-6">
+      <div v-if="loading" class="text-blue-600 text-lg font-semibold">
+        Loading...
+      </div>
+
+      <div
+        v-else-if="error"
+        class="text-red-500 text-lg font-semibold bg-red-100 px-4 py-2 rounded shadow"
+      >
+        {{ error }}
+      </div>
+
+      <div
+        v-else-if="users.length === 0"
+        class="text-center max-w-xl text-gray-700"
+      >
+        <h3 class="text-xl font-semibold mb-2">No matches found</h3>
+        <p>
+          Consider adding more tags to your profile to improve your matches.
+        </p>
+      </div>
+
+      <div
+        v-else
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full auto-rows-fr"
+      >
+        <UserCard
+          v-for="user in users"
+          :key="user.user.id"
+          :id="user.user.id"
+          :first_name="user.first_name"
+          :last_name="user.last_name"
+          :city="user.city"
+          :state="user.state"
+          :country="user.country"
+          :description="user.description"
+          :tags="
+            user.tags.map((tagId) => ({
+              tag_name: tags[tagId],
+              tag_description: '',
+            }))
+          "
+          :user_type="user.user_type"
+        />
       </div>
     </div>
   </div>
 </template>
-
 <script>
 import api from "@/api/axios.js";
+import UserCard from "@/components/search/UserCard.vue";
 
 export default {
+  components: {
+    UserCard,
+  },
   data() {
     return {
       users: [],
@@ -48,6 +84,7 @@ export default {
           },
         });
         this.users = response.data;
+        console.log("Length: ", this.users.length);
       } catch (err) {
         if (err.response && err.response.status === 401 && retry) {
           // If 401, try refreshing the token
